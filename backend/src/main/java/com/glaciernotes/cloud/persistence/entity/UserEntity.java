@@ -26,10 +26,14 @@ public class UserEntity {
     private String status;
     @Column(name = "password_hash")
     private String passwordHash;
+    @Column(name = "password_changed_at")
+    private Instant passwordChangedAt;
     @Column(name = "created_at")
     private Instant createdAt;
     @Column(name = "updated_at")
     private Instant updatedAt;
+    @Column(name = "activated_at")
+    private Instant activatedAt;
     @Version
     private long version;
 
@@ -57,8 +61,31 @@ public class UserEntity {
         this.updatedAt = now;
     }
 
+    public static UserEntity initialAdministrator(
+        UUID id,
+        String username,
+        String usernameNormalized,
+        String email,
+        String emailNormalized,
+        String displayName,
+        String passwordHash,
+        Instant now
+    ) {
+        var user = new UserEntity(
+            id, username, usernameNormalized, email, emailNormalized, "ADMIN", "ACTIVE", now
+        );
+        user.displayName = displayName;
+        user.passwordHash = passwordHash;
+        user.passwordChangedAt = now;
+        user.activatedAt = now;
+        return user;
+    }
+
     public UUID id() {
         return id;
     }
-}
 
+    public String passwordHash() {
+        return passwordHash;
+    }
+}

@@ -1,0 +1,175 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.setup-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 3rem 1.5rem;
+  background:
+    radial-gradient(circle at 18% 12%, rgb(73 130 153 / 24%), transparent 34rem),
+    linear-gradient(145deg, #08121b, #101e2a 56%, #0b1822);
+  color: #eef8fb;
+}
+
+.setup-card {
+  width: min(48rem, 100%);
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+  border: 1px solid #29424e;
+  border-radius: 1.5rem;
+  background: rgb(7 19 27 / 82%);
+  box-shadow: 0 2rem 5rem rgb(0 0 0 / 28%);
+}
+
+.brand {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 1.75rem;
+  place-items: center;
+  border: 1px solid rgb(183 232 244 / 30%);
+  border-radius: 0.85rem;
+  background: rgb(179 229 241 / 9%);
+  color: #c8f2fa;
+  font:
+    600 1.15rem / 1 ui-monospace,
+    monospace;
+}
+
+.eyebrow {
+  margin: 0 0 0.55rem;
+  color: #87c7d8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.35rem);
+  font-weight: 550;
+  letter-spacing: -0.04em;
+}
+
+.intro {
+  max-width: 39rem;
+  margin: 1rem 0 2rem;
+  color: #abc3cc;
+  line-height: 1.65;
+}
+
+form,
+.field {
+  display: grid;
+}
+
+form {
+  gap: 1.3rem;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  align-content: start;
+  gap: 0.45rem;
+}
+
+label {
+  color: #dbe9ed;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+label span,
+.hint {
+  color: #76919b;
+  font-weight: 400;
+}
+
+input {
+  width: 100%;
+  min-height: 2.9rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #36515d;
+  border-radius: 0.65rem;
+  outline: none;
+  background: #08151d;
+  color: #eef8fb;
+  font: inherit;
+}
+
+input:focus {
+  border-color: #76c2d5;
+  box-shadow: 0 0 0 0.2rem rgb(118 194 213 / 13%);
+}
+
+.hint,
+.field-error {
+  margin: 0;
+  font-size: 0.77rem;
+  line-height: 1.4;
+}
+
+.field-error {
+  color: #ffaaa4;
+}
+
+.notice {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 1.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.65rem;
+  font-size: 0.87rem;
+  line-height: 1.45;
+}
+
+.notice-error {
+  border: 1px solid rgb(237 127 121 / 42%);
+  background: rgb(101 28 32 / 32%);
+  color: #ffd1cd;
+}
+
+button {
+  min-height: 3rem;
+  margin-top: 0.4rem;
+  padding: 0.7rem 1.2rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: #9adcea;
+  color: #07151c;
+  font: 700 0.9rem / 1 inherit;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #c1eef6;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 40rem) {
+  .setup-shell {
+    place-items: start center;
+    padding: 1rem;
+  }
+
+  .setup-card {
+    padding: 1.4rem;
+    border-radius: 1rem;
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+}

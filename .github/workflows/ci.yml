@@ -54,3 +54,36 @@ jobs:
       - run: npm run test:ci
       - run: npm audit --omit=dev --audit-level=high
 
+  deployment:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create ephemeral Compose secrets
+        run: |
+          mkdir -p deployment/secrets
+          printf '%s\n' 'ci-database-password-with-32-characters' > deployment/secrets/database-password.txt
+          printf '%s\n' 'ci-bootstrap-token-with-at-least-32-characters' > deployment/secrets/bootstrap-token.txt
+          printf '%s\n' 'ci-session-secret-with-at-least-32-characters' > deployment/secrets/session-secret.txt
+      - name: Build and start the supported deployment
+        run: docker compose up --build --wait --wait-timeout 180
+      - name: Verify application and management endpoints
+        run: |
+          curl --fail --silent http://127.0.0.1:8080/ >/dev/null
+          curl --fail --silent http://127.0.0.1:8080/api/v1/setup/status | grep '"setupRequired":true'
+          curl --fail --silent http://127.0.0.1:9000/q/health/ready | grep '"status":"UP"'
+      - name: Verify bootstrap persists across container recreation
+        run: |
+          curl --fail --silent \
+            --header 'Content-Type: application/json' \
+            --header 'X-Bootstrap-Token: ci-bootstrap-token-with-at-least-32-characters' \
+            --data '{"username":"admin","email":"admin@example.com","password":"ci-container-smoke-passphrase-2026"}' \
+            http://127.0.0.1:8080/api/v1/setup/administrator | grep '"initialized":true'
+          docker compose up -d --force-recreate --wait --wait-timeout 120 app
+          curl --fail --silent http://127.0.0.1:8080/api/v1/setup/status | grep '"setupRequired":false'
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+      - name: Stop deployment
+        if: always()
+        run: docker compose down --volumes

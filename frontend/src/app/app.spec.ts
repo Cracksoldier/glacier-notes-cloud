@@ -17,6 +17,10 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
+    const statusRequest = TestBed.inject(HttpTestingController).expectOne('/api/v1/setup/status');
+    expect(statusRequest.request.method).toBe('GET');
+    statusRequest.flush({ setupRequired: false });
+
     const request = TestBed.inject(HttpTestingController).expectOne('/api/v1/ping');
     expect(request.request.method).toBe('GET');
     request.flush({
@@ -30,6 +34,22 @@ describe('App', () => {
 
     expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
       'API connected',
+    );
+  });
+
+  it('renders first-run setup when the instance is uninitialized', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/v1/setup/status')
+      .flush({ setupRequired: true });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-setup')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain(
+      'Create your administrator',
     );
   });
 });

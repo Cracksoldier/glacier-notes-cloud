@@ -9,6 +9,7 @@ servers:
   - url: /
 tags:
   - name: System
+  - name: Setup
 paths:
   /api/v1/ping:
     get:
@@ -28,6 +29,61 @@ paths:
                 $ref: '#/components/schemas/PingResponse'
         default:
           $ref: '#/components/responses/ProblemResponse'
+  /api/v1/setup/status:
+    get:
+      tags: [Setup]
+      summary: Check whether first-run setup is required
+      operationId: getSetupStatus
+      security: []
+      responses:
+        '200':
+          description: Current setup state
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetupStatus'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/setup/administrator:
+    post:
+      tags: [Setup]
+      summary: Create the first administrator and initialize the instance
+      operationId: createInitialAdministrator
+      security:
+        - bootstrapToken: []
+      parameters:
+        - $ref: '#/components/parameters/BootstrapToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitialAdministratorRequest'
+      responses:
+        '201':
+          description: Instance initialized
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetupCompletion'
+        '403':
+          $ref: '#/components/responses/ProblemResponse'
+        '404':
+          $ref: '#/components/responses/ProblemResponse'
+        '422':
+          $ref: '#/components/responses/ProblemResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitedProblemResponse'
+        '503':
+          $ref: '#/components/responses/ProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
 components:
   securitySchemes:
     sessionCookie:
@@ -40,6 +96,21 @@ components:
       in: header
       name: X-CSRF-Token
       description: Required on state-changing cookie-authenticated requests.
+    bootstrapToken:
+      type: apiKey
+      in: header
+      name: X-Bootstrap-Token
+      description: One-time deployment secret used only while the instance is uninitialized.
+  parameters:
+    BootstrapToken:
+      name: X-Bootstrap-Token
+      in: header
+      required: true
+      description: One-time bootstrap secret. It is never returned or persisted.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 512
   headers:
     CorrelationId:
       description: Request correlation identifier.
@@ -54,6 +125,20 @@ components:
       headers:
         X-Correlation-ID:
           $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    RateLimitedProblemResponse:
+      description: Too many bootstrap attempts
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+        Retry-After:
+          description: Seconds until another bootstrap attempt is permitted.
+          schema:
+            type: integer
+            minimum: 1
       content:
         application/problem+json:
           schema:
@@ -73,6 +158,43 @@ components:
           type: string
           const: v1
         serverTime:
+          type: string
+          format: date-time
+    SetupStatus:
+      type: object
+      required: [setupRequired]
+      properties:
+        setupRequired:
+          type: boolean
+    InitialAdministratorRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: '^[\p{L}\p{N}._-]+$'
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        displayName:
+          type: string
+          maxLength: 128
+        password:
+          type: string
+          format: password
+          minLength: 12
+          maxLength: 128
+          pattern: '^\S+$'
+    SetupCompletion:
+      type: object
+      required: [initialized, initializedAt]
+      properties:
+        initialized:
+          type: boolean
+        initializedAt:
           type: string
           format: date-time
     ProblemDetails:

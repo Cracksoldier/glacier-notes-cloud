@@ -14,6 +14,7 @@
     <quarkus.platform.version>3.37.3</quarkus.platform.version>
     <openapi.generator.version>7.24.0</openapi.generator.version>
     <surefire.version>3.5.4</surefire.version>
+    <password4j.version>1.8.4</password4j.version>
   </properties>
 
   <dependencyManagement>
@@ -74,6 +75,11 @@
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.password4j</groupId>
+      <artifactId>password4j</artifactId>
+      <version>${password4j.version}</version>
     </dependency>
   </dependencies>
 

@@ -1,0 +1,68 @@
+name: glacier-notes-cloud
+
+services:
+  postgres:
+    image: postgres:18.3-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: glacier_notes
+      POSTGRES_USER: glacier_notes
+      POSTGRES_PASSWORD_FILE: /run/secrets/database_password
+    secrets:
+      - database_password
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glacier_notes -d glacier_notes"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+  app:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile
+    image: glacier-notes-cloud:local
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GLACIER_DATABASE_URL: jdbc:postgresql://postgres:5432/glacier_notes
+      GLACIER_DATABASE_USERNAME: glacier_notes
+      GLACIER_DATABASE_PASSWORD_FILE: /run/secrets/database_password
+      GLACIER_BOOTSTRAP_TOKEN_FILE: /run/secrets/bootstrap_token
+      GLACIER_SECURITY_SESSION_SECRET_FILE: /run/secrets/session_secret
+    secrets:
+      - database_password
+      - bootstrap_token
+      - session_secret
+    ports:
+      - "${GLACIER_HTTP_BIND:-127.0.0.1}:${GLACIER_HTTP_PORT:-8080}:8080"
+      - "${GLACIER_MANAGEMENT_BIND:-127.0.0.1}:${GLACIER_MANAGEMENT_PORT:-9000}:9000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    volumes:
+      - image_data:/var/lib/glacier-notes/images
+      - backup_data:/var/lib/glacier-notes/backups
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+secrets:
+  database_password:
+    file: ${GLACIER_DATABASE_PASSWORD_FILE:-./deployment/secrets/database-password.txt}
+  bootstrap_token:
+    file: ${GLACIER_BOOTSTRAP_TOKEN_FILE:-./deployment/secrets/bootstrap-token.txt}
+  session_secret:
+    file: ${GLACIER_SESSION_SECRET_FILE:-./deployment/secrets/session-secret.txt}
+
+volumes:
+  postgres_data:
+  image_data:
+  backup_data:

@@ -26,3 +26,15 @@ Angular client from `openapi/glacier-notes-v1.yaml`. Generated files must not be
 
 See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for local startup, database, generation,
 and editor instructions.
+
+## Docker Compose deployment
+
+The production-oriented image serves the compiled Angular application from Quarkus and runs as an
+unprivileged user. Follow [deployment/README.md](deployment/README.md) to create secret files and run:
+
+```bash
+docker compose up --build -d
+```
+
+The application binds to `127.0.0.1:8080` and its management health endpoint to
+`127.0.0.1:9000` by default. PostgreSQL, image, and backup data are stored in named volumes.

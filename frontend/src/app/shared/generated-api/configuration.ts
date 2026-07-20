@@ -113,6 +113,17 @@ constructor({ accessToken, apiKeys, basePath, credentials, encodeParam, encoder,
                 }
             };
         }
+
+        // init default bootstrapToken credential
+        if (!this.credentials['bootstrapToken']) {
+            this.credentials['bootstrapToken'] = () => {
+                if (this.apiKeys === null || this.apiKeys === undefined) {
+                    return undefined;
+                } else {
+                    return this.apiKeys['bootstrapToken'] || this.apiKeys['X-Bootstrap-Token'];
+                }
+            };
+        }
     }
 
     /**

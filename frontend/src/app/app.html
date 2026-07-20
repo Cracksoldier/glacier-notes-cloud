@@ -1,11 +1,14 @@
+@switch (applicationState()) { @case ('setup') {
+<app-setup (initialized)="setupCompleted()" />
+} @case ('ready') {
 <main class="shell">
   <section class="hero" aria-labelledby="app-title">
     <div class="mark" aria-hidden="true">G</div>
     <p class="eyebrow">Private notes, on your infrastructure</p>
     <h1 id="app-title">Glacier Notes Cloud</h1>
     <p class="lede">
-      The architecture and PostgreSQL domain foundation are ready. Authentication and the note
-      workspace arrive in the next milestones.
+      Your private notes workspace is ready. Authentication and note editing arrive in the next
+      milestones.
     </p>
 
     <div class="connection" [attr.data-state]="connectionState()" role="status">
@@ -17,3 +20,17 @@
     </div>
   </section>
 </main>
+} @case ('error') {
+<main class="shell">
+  <section class="status-card" aria-labelledby="unavailable-title">
+    <div class="mark" aria-hidden="true">G</div>
+    <h1 id="unavailable-title">Server unavailable</h1>
+    <p class="lede">Glacier Notes could not check the instance setup status.</p>
+    <button type="button" (click)="retry()">Try again</button>
+  </section>
+</main>
+} @default {
+<main class="shell" aria-busy="true">
+  <p class="loading" role="status">Checking instance status…</p>
+</main>
+} }
