@@ -1,0 +1,19 @@
+<main class="shell">
+  <section class="hero" aria-labelledby="app-title">
+    <div class="mark" aria-hidden="true">G</div>
+    <p class="eyebrow">Private notes, on your infrastructure</p>
+    <h1 id="app-title">Glacier Notes Cloud</h1>
+    <p class="lede">
+      The architecture and PostgreSQL domain foundation are ready. Authentication and the note
+      workspace arrive in the next milestones.
+    </p>
+
+    <div class="connection" [attr.data-state]="connectionState()" role="status">
+      <span class="indicator" aria-hidden="true"></span>
+      @switch (connectionState()) { @case ('connecting') { Connecting to the versioned API… } @case
+      ('connected') { API connected @if (serverTime(); as timestamp) {
+      <span class="timestamp">· {{ timestamp }}</span>
+      } } @default { API unavailable — start the Quarkus backend on port 8080. } }
+    </div>
+  </section>
+</main>

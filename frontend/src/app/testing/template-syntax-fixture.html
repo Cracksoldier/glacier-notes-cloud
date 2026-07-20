@@ -1,0 +1,31 @@
+<section [attr.aria-label]="label">
+  <h2>{{ label | titlecase }}</h2>
+  <input aria-label="Selection" [(ngModel)]="selected">
+  @if (enabled) {
+  <p [class.active]="enabled">Enabled</p>
+  } @else {
+  <ng-template #disabled><p>Disabled</p></ng-template>
+  <ng-container [ngTemplateOutlet]="disabled" />
+  }
+
+  <ul>
+    @for (item of items; track item.id) {
+    <li>
+      <button
+        type="button"
+        [attr.aria-pressed]="selected === item.label.toLowerCase()"
+        (click)="select(item.label.toLowerCase())"
+      >
+        {{ item.label }}
+      </button>
+    </li>
+    }
+  </ul>
+  @switch (selected) { @case ('one') {
+  <span>First</span>
+  } @case ('two') {
+  <span>Second</span>
+  } @default {
+  <span *ngIf="selected">Custom</span>
+  } }
+</section>

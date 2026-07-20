@@ -1,0 +1,16 @@
+.idea/
+.vscode/*.local.json
+.env
+*.iml
+
+backend/target/
+frontend/.angular/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+
+*.log
+.DS_Store
+

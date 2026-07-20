@@ -1,0 +1,126 @@
+openapi: 3.1.0
+info:
+  title: Glacier Notes Cloud API
+  version: 1.0.0
+  description: |
+    Canonical contract for Glacier Notes Cloud. Operations are added before their
+    implementing milestone. UUIDs use RFC 4122 form and timestamps are ISO-8601 UTC.
+servers:
+  - url: /
+tags:
+  - name: System
+paths:
+  /api/v1/ping:
+    get:
+      tags: [System]
+      summary: Check API connectivity
+      operationId: ping
+      security: []
+      responses:
+        '200':
+          description: API is reachable
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PingResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: GLACIER_SESSION
+      description: Server-managed session cookie.
+    csrfHeader:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: Required on state-changing cookie-authenticated requests.
+  headers:
+    CorrelationId:
+      description: Request correlation identifier.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: '^[A-Za-z0-9._-]+$'
+  responses:
+    ProblemResponse:
+      description: Standardized API error
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+  schemas:
+    PingResponse:
+      type: object
+      required: [service, status, apiVersion, serverTime]
+      properties:
+        service:
+          type: string
+          const: glacier-notes-cloud
+        status:
+          type: string
+          enum: [ok]
+        apiVersion:
+          type: string
+          const: v1
+        serverTime:
+          type: string
+          format: date-time
+    ProblemDetails:
+      type: object
+      required: [type, title, status, detail, correlationId, errorCode]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        correlationId:
+          type: string
+        errorCode:
+          type: string
+          pattern: '^[A-Z][A-Z0-9_]+$'
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    ValidationError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+    PageMetadata:
+      type: object
+      required: [size, hasNext]
+      properties:
+        size:
+          type: integer
+          minimum: 0
+        hasNext:
+          type: boolean
+        nextCursor:
+          type: string
+security:
+  - sessionCookie: []
+    csrfHeader: []
