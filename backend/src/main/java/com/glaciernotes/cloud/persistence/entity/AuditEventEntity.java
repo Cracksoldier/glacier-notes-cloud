@@ -85,4 +85,22 @@ public class AuditEventEntity {
         event.metadataJson = Map.of();
         return event;
     }
+
+    public static AuditEventEntity administrative(
+        UUID id, String type, UUID actorId, UUID targetUserId, String entityType,
+        UUID entityId, Instant now, String correlationId, Map<String, String> metadata
+    ) {
+        var event = new AuditEventEntity();
+        event.id = id;
+        event.eventType = type;
+        event.occurredAt = now;
+        event.actorUserId = actorId;
+        event.targetUserId = targetUserId;
+        event.targetEntityType = entityType;
+        event.targetEntityId = entityId;
+        event.result = "SUCCESS";
+        event.correlationId = correlationId;
+        event.metadataJson = Map.copyOf(metadata);
+        return event;
+    }
 }

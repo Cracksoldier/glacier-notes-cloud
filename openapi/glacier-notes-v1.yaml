@@ -149,6 +149,98 @@ paths:
           $ref: '#/components/responses/ProblemResponse'
         default:
           $ref: '#/components/responses/ProblemResponse'
+  /api/v1/auth/invitations/inspect:
+    post:
+      tags: [Authentication]
+      summary: Inspect an invitation token
+      operationId: inspectInvitation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200':
+          description: Invitation details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationInspection'
+        '404':
+          $ref: '#/components/responses/ProblemResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitedProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/auth/invitations/accept:
+    post:
+      tags: [Authentication]
+      summary: Accept an invitation and activate the account
+      operationId: acceptInvitation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationAcceptanceRequest'
+      responses:
+        '204':
+          description: Invitation accepted
+        '404':
+          $ref: '#/components/responses/ProblemResponse'
+        '409':
+          $ref: '#/components/responses/ProblemResponse'
+        '422':
+          $ref: '#/components/responses/ProblemResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitedProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/auth/password-reset/request:
+    post:
+      tags: [Authentication]
+      summary: Request a password-reset email
+      operationId: requestPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '202':
+          description: Request accepted regardless of account existence
+        '429':
+          $ref: '#/components/responses/RateLimitedProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/auth/password-reset/complete:
+    post:
+      tags: [Authentication]
+      summary: Complete a password reset
+      operationId: completePasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetCompletionRequest'
+      responses:
+        '204':
+          description: Password changed and sessions revoked
+        '404':
+          $ref: '#/components/responses/ProblemResponse'
+        '422':
+          $ref: '#/components/responses/ProblemResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitedProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
   /api/v1/me/sessions:
     get:
       tags: [Sessions]
@@ -221,6 +313,209 @@ paths:
           $ref: '#/components/responses/ProblemResponse'
         default:
           $ref: '#/components/responses/ProblemResponse'
+  /api/v1/admin/users:
+    get:
+      tags: [Administration]
+      summary: List administrative user metadata
+      operationId: listUsers
+      parameters:
+        - { name: query, in: query, schema: { type: string, maxLength: 320 } }
+        - { name: role, in: query, schema: { type: string, enum: [USER, ADMIN] } }
+        - { name: status, in: query, schema: { type: string, enum: [PENDING_ACTIVATION, ACTIVE, LOCKED, DEACTIVATED, PENDING_DELETION, DELETED] } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 256 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: User metadata page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserPage'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/admin/users/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [Administration]
+      summary: Get administrative user metadata
+      operationId: getUser
+      responses:
+        '200':
+          description: Administrative user metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+        '404':
+          $ref: '#/components/responses/ProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    patch:
+      tags: [Administration]
+      summary: Change safe user identity or role fields
+      operationId: updateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserUpdate'
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+        '409':
+          $ref: '#/components/responses/ProblemResponse'
+        '422':
+          $ref: '#/components/responses/ProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/admin/users/{userId}/activate:
+    post:
+      tags: [Administration]
+      summary: Reactivate a deactivated user
+      operationId: activateUser
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses:
+        '204': { description: User activated }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/users/{userId}/deactivate:
+    post:
+      tags: [Administration]
+      summary: Deactivate a user and revoke sessions
+      operationId: deactivateUser
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses:
+        '204': { description: User deactivated }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/users/{userId}/unlock:
+    post:
+      tags: [Administration]
+      summary: Unlock a temporarily locked user
+      operationId: unlockUser
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses:
+        '204': { description: User unlocked }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/users/{userId}/password-reset:
+    post:
+      tags: [Administration]
+      summary: Generate a copyable password-reset link
+      operationId: createAdministrativePasswordReset
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses:
+        '201':
+          description: One-time password-reset token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetLink'
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/users/{userId}/sessions:
+    delete:
+      tags: [Administration]
+      summary: Revoke all sessions for a user
+      operationId: revokeUserSessions
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses:
+        '204': { description: Sessions revoked }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/invitations:
+    get:
+      tags: [Administration]
+      summary: List invitations without token values
+      operationId: listInvitations
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [PENDING, ACCEPTED, REVOKED, EXPIRED] } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 256 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: Invitation page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationPage'
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    post:
+      tags: [Administration]
+      summary: Create and deliver an invitation
+      operationId: createInvitation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationCreateRequest'
+      responses:
+        '201':
+          description: Invitation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationDelivery'
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/RateLimitedProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/invitations/{invitationId}/resend:
+    post:
+      tags: [Administration]
+      summary: Regenerate and redeliver an invitation
+      operationId: resendInvitation
+      parameters: [{ $ref: '#/components/parameters/InvitationId' }]
+      responses:
+        '200':
+          description: Replacement invitation delivery
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationDelivery'
+        '429': { $ref: '#/components/responses/RateLimitedProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/invitations/{invitationId}:
+    delete:
+      tags: [Administration]
+      summary: Revoke a pending invitation
+      operationId: revokeInvitation
+      parameters: [{ $ref: '#/components/parameters/InvitationId' }]
+      responses:
+        '204': { description: Invitation revoked }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/settings:
+    get:
+      tags: [Administration]
+      summary: Get lifecycle settings managed in M4
+      operationId: getAdminSettings
+      responses:
+        '200':
+          description: Lifecycle settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminSettings' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    patch:
+      tags: [Administration]
+      summary: Update lifecycle settings managed in M4
+      operationId: updateAdminSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminSettingsUpdate' }
+      responses:
+        '200':
+          description: Updated lifecycle settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminSettings' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
 components:
   securitySchemes:
     sessionCookie:
@@ -248,6 +543,16 @@ components:
         type: string
         minLength: 1
         maxLength: 512
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    InvitationId:
+      name: invitationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
   headers:
     CorrelationId:
       description: Request correlation identifier.
@@ -414,6 +719,132 @@ components:
         database:
           type: string
           enum: [up]
+    TokenRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, minLength: 32, maxLength: 512 }
+    InvitationInspection:
+      type: object
+      required: [emailHint, expiresAt]
+      properties:
+        emailHint: { type: string }
+        proposedUsername: { type: string }
+        displayName: { type: string }
+        expiresAt: { type: string, format: date-time }
+    InvitationAcceptanceRequest:
+      type: object
+      required: [token, username, password]
+      properties:
+        token: { type: string, minLength: 32, maxLength: 512 }
+        username: { type: string, minLength: 3, maxLength: 64, pattern: '^[\p{L}\p{N}._-]+$' }
+        displayName: { type: string, maxLength: 128 }
+        password: { type: string, format: password, minLength: 12, maxLength: 128, pattern: '^\S+$' }
+    PasswordResetRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email, maxLength: 320 }
+    PasswordResetCompletionRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token: { type: string, minLength: 32, maxLength: 512 }
+        password: { type: string, format: password, minLength: 12, maxLength: 128, pattern: '^\S+$' }
+    AdminUser:
+      type: object
+      required: [id, username, email, role, status, createdAt, storageBytes, noteCount, notebookCount, imageCount]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        role: { type: string, enum: [USER, ADMIN] }
+        status: { type: string, enum: [PENDING_ACTIVATION, ACTIVE, LOCKED, DEACTIVATED, PENDING_DELETION, DELETED] }
+        createdAt: { type: string, format: date-time }
+        lastLoginAt: { type: string, format: date-time }
+        storageBytes: { type: integer, format: int64, minimum: 0 }
+        noteCount: { type: integer, format: int64, minimum: 0 }
+        notebookCount: { type: integer, format: int64, minimum: 0 }
+        imageCount: { type: integer, format: int64, minimum: 0 }
+    AdminUserPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AdminUser' }
+        page: { $ref: '#/components/schemas/PageMetadata' }
+    AdminUserUpdate:
+      type: object
+      properties:
+        username: { type: string, minLength: 3, maxLength: 64 }
+        email: { type: string, format: email, maxLength: 320 }
+        displayName: { type: string, maxLength: 128 }
+        role: { type: string, enum: [USER, ADMIN] }
+    InvitationCreateRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email: { type: string, format: email, maxLength: 320 }
+        proposedUsername: { type: string, minLength: 3, maxLength: 64 }
+        displayName: { type: string, maxLength: 128 }
+        role: { type: string, enum: [USER, ADMIN] }
+    InvitationSummary:
+      type: object
+      required: [id, email, role, status, createdAt, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        proposedUsername: { type: string }
+        displayName: { type: string }
+        role: { type: string, enum: [USER, ADMIN] }
+        status: { type: string, enum: [PENDING, ACCEPTED, REVOKED, EXPIRED] }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        acceptedAt: { type: string, format: date-time }
+        revokedAt: { type: string, format: date-time }
+    InvitationPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/InvitationSummary' }
+        page: { $ref: '#/components/schemas/PageMetadata' }
+    InvitationDelivery:
+      type: object
+      required: [invitation, delivery]
+      properties:
+        invitation: { $ref: '#/components/schemas/InvitationSummary' }
+        delivery: { type: string, enum: [EMAIL_SENT, MANUAL] }
+        token: { type: string }
+        activationUrl: { type: string, format: uri }
+    ResetLink:
+      type: object
+      required: [token, resetUrl, expiresAt]
+      properties:
+        token: { type: string }
+        resetUrl: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+    AdminSettings:
+      type: object
+      required: [allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes]
+      properties:
+        allowedEmailDomains:
+          type: array
+          items: { type: string, maxLength: 253 }
+        invitationExpirationHours: { type: integer, minimum: 1, maximum: 720 }
+        passwordResetExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
+    AdminSettingsUpdate:
+      type: object
+      properties:
+        allowedEmailDomains:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 253 }
+        invitationExpirationHours: { type: integer, minimum: 1, maximum: 720 }
+        passwordResetExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
     ProblemDetails:
       type: object
       required: [type, title, status, detail, correlationId, errorCode]

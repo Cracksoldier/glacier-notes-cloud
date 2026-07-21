@@ -1,0 +1,80 @@
+.admin-shell {
+  display: grid;
+  grid-template-columns: minmax(11rem, 14rem) 1fr;
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 90rem;
+  margin: auto;
+}
+
+aside {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+}
+
+aside a,
+.card {
+  padding: 0.8rem;
+  border: 1px solid #29424e;
+  border-radius: 0.5rem;
+  color: #dcecf1;
+}
+
+aside .active {
+  background: #173442;
+  color: #fff;
+}
+
+.eyebrow {
+  color: #87c7d8;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+form,
+label {
+  display: grid;
+  gap: 0.6rem;
+}
+
+form {
+  grid-template-columns: repeat(2, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+
+input,
+select,
+button,
+textarea {
+  padding: 0.7rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 1.5rem 0;
+}
+
+.list {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1.5rem;
+}
+
+.list .card {
+  display: grid;
+  gap: 0.35rem;
+}
+
+@media (max-width: 700px) {
+  .admin-shell,
+  form {
+    grid-template-columns: 1fr;
+  }
+
+  aside {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

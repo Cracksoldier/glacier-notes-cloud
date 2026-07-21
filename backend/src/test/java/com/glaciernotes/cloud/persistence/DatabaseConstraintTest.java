@@ -88,6 +88,20 @@ class DatabaseConstraintTest {
             ));
             connection.rollback();
         }
+
+        try (var connection = transaction(); var statement = connection.createStatement()) {
+            assertThrows(SQLException.class, () -> statement.executeUpdate(
+                "update instance_settings set invitation_expiration_hours = 0"
+            ));
+            connection.rollback();
+        }
+
+        try (var connection = transaction(); var statement = connection.createStatement()) {
+            assertThrows(SQLException.class, () -> statement.executeUpdate(
+                "update instance_settings set password_reset_expiration_minutes = 1441"
+            ));
+            connection.rollback();
+        }
     }
 
     private Connection transaction() throws SQLException {

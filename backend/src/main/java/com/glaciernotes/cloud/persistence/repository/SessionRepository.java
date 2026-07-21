@@ -100,6 +100,17 @@ public class SessionRepository {
         }
     }
 
+    @Transactional
+    public void revokeAll(UUID userId) {
+        entityManager.createQuery(
+                "update SessionEntity s set s.revokedAt = :now "
+                    + "where s.user.id = :userId and s.revokedAt is null"
+            )
+            .setParameter("now", timeProvider.now())
+            .setParameter("userId", userId)
+            .executeUpdate();
+    }
+
     private SessionView view(SessionEntity session) {
         var user = session.user();
         return new SessionView(

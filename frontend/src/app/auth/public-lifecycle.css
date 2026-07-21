@@ -1,0 +1,46 @@
+.public-page {
+  min-height: calc(100vh - 4rem);
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.card {
+  width: min(32rem, 100%);
+  padding: 2rem;
+  border: 1px solid #29424e;
+  border-radius: 1rem;
+  background: rgb(7 19 27 / 94%);
+}
+
+.eyebrow {
+  color: #87c7d8;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+form,
+label {
+  display: grid;
+  gap: 0.75rem;
+}
+
+form {
+  margin: 1.25rem 0;
+}
+
+input,
+button {
+  padding: 0.8rem;
+}
+
+input {
+  border: 1px solid #45616d;
+  border-radius: 0.5rem;
+  background: #0e2029;
+  color: #eef8fb;
+}
+
+.error {
+  color: #ffb4ab;
+}

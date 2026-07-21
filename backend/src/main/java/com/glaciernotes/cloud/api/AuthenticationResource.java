@@ -5,7 +5,13 @@ import com.glaciernotes.cloud.application.auth.AuthenticationService;
 import com.glaciernotes.cloud.application.auth.SessionView;
 import com.glaciernotes.cloud.generated.api.AuthenticationApi;
 import com.glaciernotes.cloud.generated.model.LoginRequest;
+import com.glaciernotes.cloud.generated.model.InvitationAcceptanceRequest;
+import com.glaciernotes.cloud.generated.model.InvitationInspection;
+import com.glaciernotes.cloud.generated.model.PasswordResetCompletionRequest;
+import com.glaciernotes.cloud.generated.model.PasswordResetRequest;
 import com.glaciernotes.cloud.generated.model.SessionContext;
+import com.glaciernotes.cloud.generated.model.TokenRequest;
+import com.glaciernotes.cloud.application.lifecycle.LifecycleService;
 import com.glaciernotes.cloud.persistence.repository.SessionRepository;
 import com.glaciernotes.cloud.security.AuthenticationIdentity;
 import com.glaciernotes.cloud.security.CookieManager;
@@ -25,6 +31,7 @@ public class AuthenticationResource implements AuthenticationApi {
     private final SessionRepository sessions;
     private final CookieManager cookies;
     private final SecurityIdentity identity;
+    private final LifecycleService lifecycle;
 
     @Context
     HttpServerRequest request;
@@ -36,12 +43,14 @@ public class AuthenticationResource implements AuthenticationApi {
         AuthenticationService authentication,
         SessionRepository sessions,
         CookieManager cookies,
-        SecurityIdentity identity
+        SecurityIdentity identity,
+        LifecycleService lifecycle
     ) {
         this.authentication = authentication;
         this.sessions = sessions;
         this.cookies = cookies;
         this.identity = identity;
+        this.lifecycle = lifecycle;
     }
 
     @Override
@@ -74,6 +83,26 @@ public class AuthenticationResource implements AuthenticationApi {
         cookies.clear(response);
     }
 
+    @Override
+    public InvitationInspection inspectInvitation(TokenRequest tokenRequest) {
+        return lifecycle.inspectInvitation(tokenRequest.getToken(), clientAddress());
+    }
+
+    @Override
+    public void acceptInvitation(InvitationAcceptanceRequest request) {
+        lifecycle.acceptInvitation(request, clientAddress(), correlationId());
+    }
+
+    @Override
+    public void requestPasswordReset(PasswordResetRequest request) {
+        lifecycle.requestPasswordReset(request.getEmail(), clientAddress(), correlationId());
+    }
+
+    @Override
+    public void completePasswordReset(PasswordResetCompletionRequest request) {
+        lifecycle.completePasswordReset(request, clientAddress(), correlationId());
+    }
+
     private SessionView currentSession() {
         var session = identity.<SessionView>getAttribute(AuthenticationIdentity.SESSION);
         if (session == null) {
@@ -85,5 +114,9 @@ public class AuthenticationResource implements AuthenticationApi {
     private String clientAddress() {
         var address = request.remoteAddress();
         return address == null ? "0.0.0.0" : address.hostAddress();
+    }
+
+    private String correlationId() {
+        return Objects.toString(MDC.get("correlationId"), "unavailable");
     }
 }

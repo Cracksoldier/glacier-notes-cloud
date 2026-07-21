@@ -56,12 +56,18 @@ export class App {
           this.applicationState.set('ready');
           if (authenticated && this.router.url === '/login') {
             void this.router.navigate(['/']);
-          } else if (!authenticated && this.router.url !== '/login') {
+          } else if (!authenticated && !this.isPublicRoute()) {
             void this.router.navigate(['/login']);
           }
         });
       },
       error: () => this.applicationState.set('error'),
     });
+  }
+
+  private isPublicRoute(): boolean {
+    return ['/login', '/accept-invitation', '/forgot-password', '/reset-password'].some((path) =>
+      this.router.url.startsWith(path),
+    );
   }
 }

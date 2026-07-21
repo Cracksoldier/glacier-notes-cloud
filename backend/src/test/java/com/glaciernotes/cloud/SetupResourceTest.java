@@ -32,7 +32,10 @@ class SetupResourceTest {
         try (var connection = dataSource.getConnection();
             var statement = connection.createStatement()) {
             statement.executeUpdate("delete from audit_events");
+            statement.executeUpdate("delete from endpoint_rate_limits");
             statement.executeUpdate("delete from login_rate_limits");
+            statement.executeUpdate("delete from security_tokens");
+            statement.executeUpdate("delete from invitations");
             statement.executeUpdate("delete from user_sessions");
             statement.executeUpdate("delete from bootstrap_rate_limits");
             statement.executeUpdate("delete from app_users");

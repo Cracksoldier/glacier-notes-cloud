@@ -51,6 +51,18 @@ use `SameSite=Lax` and `Path=/`.
 | `GLACIER_PASSWORD_ARGON2_MEMORY_KIB` | Argon2id memory cost; minimum/default `19456` |
 | `GLACIER_PASSWORD_ARGON2_ITERATIONS`, `GLACIER_PASSWORD_ARGON2_PARALLELISM` | Argon2id time and parallelism; minimum/default `2` and `1` |
 | `GLACIER_PASSWORD_ARGON2_HASH_LENGTH`, `GLACIER_PASSWORD_SALT_LENGTH` | Hash and salt bytes; minimum/default `32` and `16` |
+| `GLACIER_SMTP_ENABLED` | Enables invitation and password-reset email; default `false` |
+| `GLACIER_SMTP_HOST`, `GLACIER_SMTP_PORT` | SMTP endpoint; defaults `localhost:587` |
+| `GLACIER_SMTP_START_TLS`, `GLACIER_SMTP_TLS` | STARTTLS mode and implicit TLS switch |
+| `GLACIER_SMTP_USERNAME`, `GLACIER_SMTP_PASSWORD_FILE` | SMTP login name and host path to its password file |
+| `GLACIER_SMTP_SENDER_NAME`, `GLACIER_SMTP_SENDER_ADDRESS` | Display name and envelope sender used by lifecycle email |
+
+SMTP is optional. With SMTP disabled, administrators receive copyable invitation and password-reset
+links in the dashboard; user-requested password resets remain neutral no-ops. To enable delivery,
+create a password file outside the repository, set its host path in `GLACIER_SMTP_PASSWORD_FILE`, and
+set `GLACIER_SMTP_ENABLED=true` plus the SMTP variables above. The password is bind-mounted read-only
+and is not exposed through the administration API. Ensure `GLACIER_PUBLIC_BASE_URL` is the browser
+origin users can reach before issuing links.
 
 For a reverse proxy, keep the application and management ports on loopback or a private Docker
 network, terminate TLS at the proxy, and forward only port 8080. Enable and restrict Quarkus forwarded

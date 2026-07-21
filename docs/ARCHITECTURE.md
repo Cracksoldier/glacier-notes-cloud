@@ -18,8 +18,9 @@ repository interface. Administrators use the same ownership rules as normal user
 own content.
 
 Time and ID generation are injected interfaces so security, retention, and concurrency tests
-can use deterministic implementations. Binary storage, outbound email, and password hashing are
-also application ports; later milestones provide adapters without coupling use cases to vendors.
+can use deterministic implementations. Binary storage and password hashing are application ports.
+Lifecycle email is isolated behind an application service so invitations and resets degrade to
+copyable administrator links when SMTP is disabled or unavailable.
 
 ## Frontend boundaries
 
@@ -27,15 +28,18 @@ Angular uses standalone components, Router, generated OpenAPI services, and stri
 checking. Future note features should depend on platform-neutral data-access interfaces so the
 portable model can remain compatible with the Electron desktop adapter.
 
-## Coding conventions
-
-- Keep generated DTOs out of domain and persistence signatures.
-
 Authentication uses opaque, random browser tokens backed by `user_sessions`; only keyed token
 hashes are persisted. Quarkus resolves the session cookie into a security identity and enforces
 `USER`/`ADMIN` roles server-side. Angular guards are navigation aids, not an authorization boundary.
 State-changing authenticated requests use a session-bound double-submit CSRF token. Login throttle
 state is persisted by normalized identifier and client IP so restarts do not reset abuse controls.
+Invitation and password-reset tokens use distinct keyed hashes and persistent endpoint-specific
+rate limits. Administrative directory projections contain account metadata and aggregate counts,
+never user-content previews.
+
+## Coding conventions
+
+- Keep generated DTOs out of domain and persistence signatures.
 - Put transaction boundaries on application operations or repository writes, never UI code.
 - Never log note content, checklist text, filenames, passwords, or tokens.
 - Normalize identity values before persistence while preserving original display casing.

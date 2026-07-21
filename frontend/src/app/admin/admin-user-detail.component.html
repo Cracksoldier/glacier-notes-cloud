@@ -1,0 +1,30 @@
+@if (user(); as value) {
+<h1>{{ value.username }}</h1>
+<p>{{ value.status }} · {{ value.role }}</p>
+<form (ngSubmit)="save()">
+  <label>Username<input name="username" [(ngModel)]="username"></label>
+  <label>Email<input name="email" type="email" [(ngModel)]="email"></label>
+  <label>Display name<input name="displayName" [(ngModel)]="displayName"></label>
+  <label
+    >Role<select name="role" [(ngModel)]="role">
+      <option value="USER">USER</option>
+      <option value="ADMIN">ADMIN</option>
+    </select></label
+  >
+  <button type="submit">Save account</button>
+</form>
+<div class="actions">
+  <button type="button" (click)="activate()">Activate</button>
+  <button type="button" (click)="deactivate()">Deactivate</button>
+  <button type="button" (click)="unlock()">Unlock</button>
+  <button type="button" (click)="revokeSessions()">Revoke sessions</button>
+  <button type="button" (click)="resetPassword()">Generate reset link</button>
+</div>
+@if (reset(); as link) {
+<label>One-time reset URL<input readonly [value]="link.resetUrl"></label>
+<button type="button" (click)="copy(link.resetUrl)">Copy reset link</button>
+} @if (message()) {
+<p role="status">{{ message() }}</p>
+} @if (error()) {
+<p role="alert">{{ error() }}</p>
+} }

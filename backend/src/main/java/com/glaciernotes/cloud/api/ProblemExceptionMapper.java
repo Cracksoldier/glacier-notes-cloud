@@ -2,6 +2,7 @@ package com.glaciernotes.cloud.api;
 
 import com.glaciernotes.cloud.application.setup.SetupFailure;
 import com.glaciernotes.cloud.application.auth.AuthenticationFailure;
+import com.glaciernotes.cloud.application.lifecycle.LifecycleFailure;
 import com.glaciernotes.cloud.generated.model.ProblemDetails;
 import com.glaciernotes.cloud.generated.model.ValidationError;
 import jakarta.validation.ConstraintViolationException;
@@ -30,7 +31,8 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
         var correlationId = Objects.toString(MDC.get("correlationId"), "unavailable");
         var description = describe(exception);
         if (description.status() >= 500 && !(exception instanceof SetupFailure)
-            && !(exception instanceof AuthenticationFailure)) {
+            && !(exception instanceof AuthenticationFailure)
+            && !(exception instanceof LifecycleFailure)) {
             LOG.errorf(
                 "Unhandled request failure correlationId=%s exception=%s",
                 correlationId,
@@ -64,6 +66,9 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
         }
         if (exception instanceof AuthenticationFailure authenticationFailure) {
             return describeAuthenticationFailure(authenticationFailure);
+        }
+        if (exception instanceof LifecycleFailure lifecycleFailure) {
+            return describeLifecycleFailure(lifecycleFailure);
         }
         if (exception instanceof ConstraintViolationException violations) {
             var validationErrors = violations.getConstraintViolations().stream()
@@ -148,6 +153,26 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
                 403, "Request Verification Failed", "CSRF_INVALID",
                 failure.getMessage(), List.of(), 0
             );
+        };
+    }
+
+    private Description describeLifecycleFailure(LifecycleFailure failure) {
+        return switch (failure.reason()) {
+            case NOT_FOUND -> new Description(404, "Not Found", "ENTITY_NOT_FOUND",
+                failure.getMessage(), List.of(), 0);
+            case INVALID_TOKEN -> new Description(404, "Invalid Token", "TOKEN_INVALID_OR_EXPIRED",
+                failure.getMessage(), List.of(), 0);
+            case CONFLICT -> new Description(409, "Identity Conflict", "IDENTITY_CONFLICT",
+                failure.getMessage(), List.of(), 0);
+            case INVALID_STATE -> new Description(409, "Invalid Account State", "ACCOUNT_STATE_CONFLICT",
+                failure.getMessage(), List.of(), 0);
+            case LAST_ADMIN -> new Description(409, "Last Administrator Required", "LAST_ADMIN_REQUIRED",
+                failure.getMessage(), List.of(), 0);
+            case INVALID_INPUT -> new Description(422, "Validation Failed", "VALIDATION_FAILED",
+                failure.getMessage(), failure.violations().stream()
+                    .map(value -> new ValidationError().field(value.field()).message(value.message())).toList(), 0);
+            case RATE_LIMITED -> new Description(429, "Too Many Requests", "LIFECYCLE_RATE_LIMITED",
+                failure.getMessage(), List.of(), failure.retryAfterSeconds());
         };
     }
 

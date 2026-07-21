@@ -123,6 +123,15 @@ class SecretProviderTest {
                     }
                 };
             }
+
+            @Override
+            public Smtp smtp() {
+                return new Smtp() {
+                    @Override public boolean enabled() { return false; }
+                    @Override public Optional<String> senderName() { return Optional.empty(); }
+                    @Override public Optional<String> senderAddress() { return Optional.empty(); }
+                };
+            }
         };
     }
 }

@@ -6,6 +6,7 @@ desktop UUIDs without collision while making cross-owner foreign keys structural
 ```mermaid
 erDiagram
   APP_USERS ||--o{ USER_SESSIONS : owns
+  APP_USERS ||--o{ INVITATIONS : creates
   APP_USERS ||--o{ NOTEBOOKS : owns
   APP_USERS ||--o{ LABELS : owns
   APP_USERS ||--o{ IMAGE_ASSETS : owns
@@ -29,6 +30,9 @@ All synchronizable mutable rows use UUIDs, `timestamptz` creation/update timesta
 non-negative optimistic `BIGINT` version. PostgreSQL check constraints protect string-backed
 enums without coupling future migrations to PostgreSQL enum types.
 
+Invitation and password-reset rows persist only domain-separated token hashes. Persistent endpoint
+rate-limit rows are keyed by scope and a keyed client/identifier hash; raw addresses, reset tokens,
+and invitation tokens are not stored.
+
 The note search vector uses the language-neutral `simple` configuration for title and content.
 M8 may extend vector maintenance to relational checklist and label text without changing note IDs.
-

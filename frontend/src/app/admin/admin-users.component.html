@@ -1,0 +1,19 @@
+<h1>Users</h1>
+<form (ngSubmit)="load()">
+  <label>Search <input name="query" [(ngModel)]="query"></label>
+  <button type="submit">Search</button>
+</form>
+@if (error()) {
+<p role="alert">{{ error() }}</p>
+}
+<div class="list">
+  @for (user of users(); track user.id) {
+  <a class="card" href="/admin/users" [routerLink]="[user.id]">
+    <strong>{{ user.username }}</strong><span>{{ user.email }}</span>
+    <span>{{ user.role }} · {{ user.status }}</span>
+    <span>{{ user.noteCount }} notes · {{ user.storageBytes }} bytes</span>
+  </a>
+  } @empty {
+  <p>No users found.</p>
+  }
+</div>

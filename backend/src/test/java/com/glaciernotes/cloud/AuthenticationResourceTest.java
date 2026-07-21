@@ -46,7 +46,10 @@ class AuthenticationResourceTest {
     void reset() throws SQLException {
         try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
             statement.executeUpdate("delete from audit_events");
+            statement.executeUpdate("delete from endpoint_rate_limits");
             statement.executeUpdate("delete from login_rate_limits");
+            statement.executeUpdate("delete from security_tokens");
+            statement.executeUpdate("delete from invitations");
             statement.executeUpdate("delete from user_sessions");
             statement.executeUpdate("delete from app_users");
             statement.executeUpdate("update instance_settings set public_base_url = null where singleton_key = 1");

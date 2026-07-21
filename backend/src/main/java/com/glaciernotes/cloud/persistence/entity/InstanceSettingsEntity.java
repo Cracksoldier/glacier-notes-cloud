@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.util.List;
+
 @Entity
 @Table(name = "instance_settings")
 public class InstanceSettingsEntity {
@@ -23,6 +25,12 @@ public class InstanceSettingsEntity {
     private int loginLockMinutes;
     @Column(name = "public_base_url")
     private String publicBaseUrl;
+    @Column(name = "invitation_expiration_hours")
+    private int invitationExpirationHours;
+    @Column(name = "password_reset_expiration_minutes")
+    private int passwordResetExpirationMinutes;
+    @Column(name = "allowed_email_domains", columnDefinition = "text[]")
+    private String[] allowedEmailDomains;
 
     protected InstanceSettingsEntity() {
     }
@@ -45,5 +53,15 @@ public class InstanceSettingsEntity {
 
     public String publicBaseUrl() {
         return publicBaseUrl;
+    }
+
+    public int invitationExpirationHours() { return invitationExpirationHours; }
+    public int passwordResetExpirationMinutes() { return passwordResetExpirationMinutes; }
+    public List<String> allowedEmailDomains() { return List.of(allowedEmailDomains); }
+
+    public void updateLifecycle(List<String> domains, Integer invitationHours, Integer resetMinutes) {
+        if (domains != null) allowedEmailDomains = domains.toArray(String[]::new);
+        if (invitationHours != null) invitationExpirationHours = invitationHours;
+        if (resetMinutes != null) passwordResetExpirationMinutes = resetMinutes;
     }
 }

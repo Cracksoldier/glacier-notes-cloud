@@ -37,6 +37,15 @@ services:
       GLACIER_BOOTSTRAP_TOKEN_FILE: /run/secrets/bootstrap_token
       GLACIER_SECURITY_SESSION_SECRET_FILE: /run/secrets/session_secret
       GLACIER_PUBLIC_BASE_URL: ${GLACIER_PUBLIC_BASE_URL:-http://localhost:8080}
+      GLACIER_SMTP_ENABLED: ${GLACIER_SMTP_ENABLED:-false}
+      GLACIER_SMTP_HOST: ${GLACIER_SMTP_HOST:-localhost}
+      GLACIER_SMTP_PORT: ${GLACIER_SMTP_PORT:-587}
+      GLACIER_SMTP_START_TLS: ${GLACIER_SMTP_START_TLS:-REQUIRED}
+      GLACIER_SMTP_TLS: ${GLACIER_SMTP_TLS:-false}
+      GLACIER_SMTP_USERNAME: ${GLACIER_SMTP_USERNAME:-}
+      GLACIER_SMTP_PASSWORD_FILE: /run/secrets/smtp_password
+      GLACIER_SMTP_SENDER_NAME: ${GLACIER_SMTP_SENDER_NAME:-Glacier Notes}
+      GLACIER_SMTP_SENDER_ADDRESS: ${GLACIER_SMTP_SENDER_ADDRESS:-noreply@localhost}
     secrets:
       - database_password
       - bootstrap_token
@@ -50,6 +59,10 @@ services:
     volumes:
       - image_data:/var/lib/glacier-notes/images
       - backup_data:/var/lib/glacier-notes/backups
+      - type: bind
+        source: ${GLACIER_SMTP_PASSWORD_FILE:-/dev/null}
+        target: /run/secrets/smtp_password
+        read_only: true
     cap_drop:
       - ALL
     security_opt:

@@ -34,6 +34,14 @@ public class SessionTokenService {
         return HexFormat.of().formatHex(hmac("session:" + token));
     }
 
+    public String hashInvitationToken(String token) {
+        return HexFormat.of().formatHex(hmac("invitation:" + token));
+    }
+
+    public String hashPasswordResetToken(String token) {
+        return HexFormat.of().formatHex(hmac("password-reset:" + token));
+    }
+
     public String csrfToken(String token) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(hmac("csrf:" + token));
     }

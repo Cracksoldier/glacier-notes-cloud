@@ -1,0 +1,52 @@
+<h1>Invitations</h1>
+<form (ngSubmit)="create()">
+  <label>Email<input name="email" type="email" [(ngModel)]="email" required></label>
+  <label>Proposed username<input name="username" [(ngModel)]="proposedUsername"></label>
+  <label>Display name<input name="displayName" [(ngModel)]="displayName"></label>
+  <label
+    >Role<select name="role" [(ngModel)]="role">
+      <option value="USER">USER</option>
+      <option value="ADMIN">ADMIN</option>
+    </select></label
+  >
+  <button type="submit">Create invitation</button>
+</form>
+@if (delivery(); as value) {
+<div class="card">
+  <strong>{{ message() }}</strong>
+  @if (value.activationUrl) {
+  <input readonly [value]="value.activationUrl">
+  <button type="button" (click)="copy(value.activationUrl)">Copy activation link</button>
+  } @if (value.token) {
+  <label>Full one-time token<input readonly [value]="value.token"></label>
+  <button type="button" (click)="copy(value.token)">Copy token</button>
+  }
+</div>
+} @if (error()) {
+<p role="alert">{{ error() }}</p>
+}
+<label
+  >Status<select name="status" [(ngModel)]="status" (ngModelChange)="load()">
+    <option value="">All</option>
+    <option value="PENDING">Pending</option>
+    <option value="ACCEPTED">Accepted</option>
+    <option value="REVOKED">Revoked</option>
+    <option value="EXPIRED">Expired</option>
+  </select></label
+>
+<div class="list">
+  @for (invitation of invitations(); track invitation.id) {
+  <article class="card">
+    <strong>{{ invitation.email }}</strong>
+    <span>{{ invitation.role }}· {{ invitation.status }} · expires {{ invitation.expiresAt }}</span>
+    @if (invitation.status === 'PENDING' || invitation.status === 'EXPIRED') {
+    <div class="actions">
+      <button type="button" (click)="resend(invitation.id)">Regenerate</button>
+      @if (invitation.status === 'PENDING') {
+      <button type="button" (click)="revoke(invitation.id)">Revoke</button>
+      }
+    </div>
+    }
+  </article>
+  }
+</div>

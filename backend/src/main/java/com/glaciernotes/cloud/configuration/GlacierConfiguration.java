@@ -16,6 +16,8 @@ public interface GlacierConfiguration {
 
     Password password();
 
+    Smtp smtp();
+
     interface Bootstrap {
         Optional<String> token();
 
@@ -56,5 +58,14 @@ public interface GlacierConfiguration {
             @WithDefault("32")
             int hashLength();
         }
+    }
+
+    interface Smtp {
+        @WithDefault("false")
+        boolean enabled();
+
+        Optional<String> senderName();
+
+        Optional<String> senderAddress();
     }
 }

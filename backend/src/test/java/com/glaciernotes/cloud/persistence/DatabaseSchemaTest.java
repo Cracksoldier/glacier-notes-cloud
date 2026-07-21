@@ -21,7 +21,7 @@ class DatabaseSchemaTest {
     @Test
     void flywayCreatedTheCompleteInitialSchema() throws SQLException {
         var expected = Set.of(
-            "app_users", "user_sessions", "invitations", "security_tokens", "notebooks",
+            "app_users", "user_sessions", "invitations", "security_tokens", "endpoint_rate_limits", "notebooks",
             "user_password_history", "notes", "checklist_items", "labels", "note_labels",
             "image_assets", "note_image_references", "note_versions",
             "note_version_image_references", "tombstones", "user_settings", "instance_state",
@@ -80,6 +80,7 @@ class DatabaseSchemaTest {
             assertTrue(indexes.contains("uq_notebooks_one_default"));
             assertTrue(indexes.contains("ix_bootstrap_rate_limits_blocked"));
             assertTrue(indexes.contains("ix_login_rate_limits_blocked"));
+            assertTrue(indexes.contains("ix_endpoint_rate_limits_blocked"));
         }
     }
 

@@ -2,12 +2,35 @@ package com.glaciernotes.cloud.api;
 
 import com.glaciernotes.cloud.generated.api.AdministrationApi;
 import com.glaciernotes.cloud.generated.model.AdminStatus;
+import com.glaciernotes.cloud.application.lifecycle.LifecycleService;
+import com.glaciernotes.cloud.generated.model.*;
+import com.glaciernotes.cloud.security.CookieManager;
+import io.quarkus.security.identity.SecurityIdentity;
+import io.vertx.core.http.HttpServerResponse;
+import jakarta.ws.rs.core.Context;
+import org.jboss.logging.MDC;
+
+import java.util.Objects;
+import java.util.UUID;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 @RolesAllowed("ADMIN")
 public class AdministrationResource implements AdministrationApi {
+    private final LifecycleService lifecycle;
+    private final SecurityIdentity identity;
+    private final CookieManager cookies;
+
+    @Context
+    HttpServerResponse response;
+
+    public AdministrationResource(LifecycleService lifecycle, SecurityIdentity identity, CookieManager cookies) {
+        this.lifecycle = lifecycle;
+        this.identity = identity;
+        this.cookies = cookies;
+    }
+
     @Override
     public AdminStatus getAdminStatus() {
         return new AdminStatus()
@@ -16,4 +39,73 @@ public class AdministrationResource implements AdministrationApi {
             .apiVersion(AdminStatus.ApiVersionEnum.V1)
             .database(AdminStatus.DatabaseEnum.UP);
     }
+
+    @Override
+    public AdminUserPage listUsers(String query, String role, String status, String cursor, Integer limit) {
+        return lifecycle.listUsers(query, role, status, cursor, limit);
+    }
+
+    @Override
+    public AdminUser getUser(UUID userId) { return lifecycle.getUser(userId); }
+
+    @Override
+    public AdminUser updateUser(UUID userId, AdminUserUpdate update) {
+        var result = lifecycle.updateUser(userId, update, actor(), correlationId());
+        if (userId.equals(actor()) && !"ADMIN".equals(result.getRole().toString())) cookies.clear(response);
+        return result;
+    }
+
+    @Override
+    public void activateUser(UUID userId) { lifecycle.activate(userId, actor(), correlationId()); }
+
+    @Override
+    public void deactivateUser(UUID userId) {
+        lifecycle.deactivate(userId, actor(), correlationId());
+        if (userId.equals(actor())) cookies.clear(response);
+    }
+
+    @Override
+    public void unlockUser(UUID userId) { lifecycle.unlock(userId, actor(), correlationId()); }
+
+    @Override
+    public ResetLink createAdministrativePasswordReset(UUID userId) {
+        return lifecycle.administrativeReset(userId, actor(), correlationId());
+    }
+
+    @Override
+    public void revokeUserSessions(UUID userId) {
+        lifecycle.revokeSessions(userId, actor(), correlationId());
+        if (userId.equals(actor())) cookies.clear(response);
+    }
+
+    @Override
+    public InvitationPage listInvitations(String status, String cursor, Integer limit) {
+        return lifecycle.listInvitations(status, cursor, limit);
+    }
+
+    @Override
+    public InvitationDelivery createInvitation(InvitationCreateRequest request) {
+        return lifecycle.createInvitation(request, actor(), correlationId());
+    }
+
+    @Override
+    public InvitationDelivery resendInvitation(UUID invitationId) {
+        return lifecycle.resendInvitation(invitationId, actor(), correlationId());
+    }
+
+    @Override
+    public void revokeInvitation(UUID invitationId) {
+        lifecycle.revokeInvitation(invitationId, actor(), correlationId());
+    }
+
+    @Override
+    public AdminSettings getAdminSettings() { return lifecycle.settingsModel(); }
+
+    @Override
+    public AdminSettings updateAdminSettings(AdminSettingsUpdate update) {
+        return lifecycle.updateSettings(update, actor(), correlationId());
+    }
+
+    private UUID actor() { return UUID.fromString(identity.getPrincipal().getName()); }
+    private String correlationId() { return Objects.toString(MDC.get("correlationId"), "unavailable"); }
 }

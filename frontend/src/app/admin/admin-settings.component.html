@@ -1,0 +1,34 @@
+<h1>Access settings</h1>
+<p>
+  Leave domains empty to allow invitations to any valid email address. Enter one exact domain per
+  line.
+</p>
+<form (ngSubmit)="save()">
+  <label
+    >Allowed email domains<textarea name="domains" rows="6" [(ngModel)]="domains"></textarea></label
+  >
+  <label
+    >Invitation expiration (hours)<input
+      name="invitationHours"
+      type="number"
+      min="1"
+      max="720"
+      [(ngModel)]="invitationHours"
+    ></label
+  >
+  <label
+    >Password reset expiration (minutes)<input
+      name="resetMinutes"
+      type="number"
+      min="5"
+      max="1440"
+      [(ngModel)]="resetMinutes"
+    ></label
+  >
+  <button type="submit">Save settings</button>
+</form>
+@if (message()) {
+<p role="status">{{ message() }}</p>
+} @if (error()) {
+<p role="alert">{{ error() }}</p>
+}

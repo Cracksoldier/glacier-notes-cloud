@@ -34,6 +34,8 @@ public class UserEntity {
     private Instant updatedAt;
     @Column(name = "activated_at")
     private Instant activatedAt;
+    @Column(name = "deactivated_at")
+    private Instant deactivatedAt;
     @Column(name = "failed_login_count")
     private int failedLoginCount;
     @Column(name = "locked_until")
@@ -117,6 +119,40 @@ public class UserEntity {
 
     public Instant lockedUntil() {
         return lockedUntil;
+    }
+
+    public Instant createdAt() { return createdAt; }
+    public Instant lastLoginAt() { return lastLoginAt; }
+
+    public static UserEntity activated(UUID id, String username, String usernameNormalized,
+                                       String email, String emailNormalized, String displayName,
+                                       String role, String passwordHash, Instant now) {
+        var user = new UserEntity(id, username, usernameNormalized, email, emailNormalized, role, "ACTIVE", now);
+        user.displayName = displayName;
+        user.passwordHash = passwordHash;
+        user.passwordChangedAt = now;
+        user.activatedAt = now;
+        return user;
+    }
+
+    public void updateIdentity(String username, String normalizedUsername, String email,
+                               String normalizedEmail, String displayName, String newRole, Instant now) {
+        this.username = username;
+        this.usernameNormalized = normalizedUsername;
+        this.email = email;
+        this.emailNormalized = normalizedEmail;
+        this.displayName = displayName;
+        this.role = newRole;
+        this.updatedAt = now;
+    }
+
+    public void deactivate(Instant now) { status = "DEACTIVATED"; deactivatedAt = now; updatedAt = now; }
+    public void activate(Instant now) { status = "ACTIVE"; activatedAt = now; deactivatedAt = null; updatedAt = now; }
+    public void unlock(Instant now) { status = "ACTIVE"; failedLoginCount = 0; lockedUntil = null; updatedAt = now; }
+    public void changePassword(String hash, Instant now) {
+        passwordHash = hash; passwordChangedAt = now; failedLoginCount = 0; lockedUntil = null;
+        if ("LOCKED".equals(status)) status = "ACTIVE";
+        updatedAt = now;
     }
 
     public int registerFailedLogin(int lockThreshold, Instant now, long lockMinutes) {
