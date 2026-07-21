@@ -25,7 +25,8 @@ npm run test:ci
 Angular client from `openapi/glacier-notes-v1.yaml`. Generated files must not be edited.
 
 See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for local startup, database, generation,
-and editor instructions.
+and editor instructions. Implemented roadmap scope is tracked in
+[docs/MILESTONE_STATUS.md](docs/MILESTONE_STATUS.md).
 
 ## Docker Compose deployment
 

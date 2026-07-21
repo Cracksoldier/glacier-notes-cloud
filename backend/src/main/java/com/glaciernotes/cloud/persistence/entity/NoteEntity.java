@@ -54,4 +54,38 @@ public class NoteEntity extends OwnedMutableEntity {
             pinned, archived, color, deletedAt, createdAt, updatedAt, version
         );
     }
+
+    public UUID id() { return key.id(); }
+    public UUID notebookId() { return notebookId; }
+    public String type() { return type; }
+    public String title() { return title; }
+    public String content() { return content; }
+    public boolean pinned() { return pinned; }
+    public boolean archived() { return archived; }
+    public String color() { return color; }
+    public Instant deletedAt() { return deletedAt; }
+
+    public void replace(String title, String content, boolean pinned, boolean archived,
+                        String color, Instant now) {
+        this.title = title;
+        this.content = content;
+        this.pinned = pinned;
+        this.archived = archived;
+        this.color = color;
+        this.updatedAt = now;
+    }
+
+    public void move(UUID notebookId, Instant now) {
+        this.notebookId = notebookId;
+        this.updatedAt = now;
+    }
+
+    public void convert(String type, String content, Instant now) {
+        this.type = type;
+        this.content = content;
+        this.updatedAt = now;
+    }
+
+    public void trash(Instant now) { deletedAt = now; updatedAt = now; }
+    public void restore(Instant now) { deletedAt = null; updatedAt = now; }
 }

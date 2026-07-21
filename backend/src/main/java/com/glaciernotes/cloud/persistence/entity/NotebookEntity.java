@@ -6,6 +6,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "notebooks")
 public class NotebookEntity extends OwnedMutableEntity {
@@ -41,5 +43,20 @@ public class NotebookEntity extends OwnedMutableEntity {
             createdAt, updatedAt, version
         );
     }
-}
 
+    public String name() { return name; }
+    public String color() { return color; }
+    public boolean defaultNotebook() { return defaultNotebook; }
+    public int sortOrder() { return sortOrder; }
+
+    public void change(String name, String color, Instant now) {
+        this.name = name;
+        this.color = color;
+        this.updatedAt = now;
+    }
+
+    public void reorder(int sortOrder, Instant now) {
+        this.sortOrder = sortOrder;
+        this.updatedAt = now;
+    }
+}

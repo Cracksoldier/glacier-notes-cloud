@@ -3,6 +3,7 @@ package com.glaciernotes.cloud.api;
 import com.glaciernotes.cloud.application.setup.SetupFailure;
 import com.glaciernotes.cloud.application.auth.AuthenticationFailure;
 import com.glaciernotes.cloud.application.lifecycle.LifecycleFailure;
+import com.glaciernotes.cloud.application.content.ContentFailure;
 import com.glaciernotes.cloud.generated.model.ProblemDetails;
 import com.glaciernotes.cloud.generated.model.ValidationError;
 import jakarta.validation.ConstraintViolationException;
@@ -32,7 +33,8 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
         var description = describe(exception);
         if (description.status() >= 500 && !(exception instanceof SetupFailure)
             && !(exception instanceof AuthenticationFailure)
-            && !(exception instanceof LifecycleFailure)) {
+            && !(exception instanceof LifecycleFailure)
+            && !(exception instanceof ContentFailure)) {
             LOG.errorf(
                 "Unhandled request failure correlationId=%s exception=%s",
                 correlationId,
@@ -50,6 +52,10 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
             .correlationId(correlationId)
             .errorCode(description.errorCode())
             .validationErrors(description.validationErrors());
+        if (exception instanceof ContentFailure contentFailure
+            && contentFailure.currentVersion() != null) {
+            problem.currentVersion(contentFailure.currentVersion());
+        }
 
         var response = Response.status(description.status())
             .type("application/problem+json")
@@ -69,6 +75,9 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
         }
         if (exception instanceof LifecycleFailure lifecycleFailure) {
             return describeLifecycleFailure(lifecycleFailure);
+        }
+        if (exception instanceof ContentFailure contentFailure) {
+            return describeContentFailure(contentFailure);
         }
         if (exception instanceof ConstraintViolationException violations) {
             var validationErrors = violations.getConstraintViolations().stream()
@@ -173,6 +182,22 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
                     .map(value -> new ValidationError().field(value.field()).message(value.message())).toList(), 0);
             case RATE_LIMITED -> new Description(429, "Too Many Requests", "LIFECYCLE_RATE_LIMITED",
                 failure.getMessage(), List.of(), failure.retryAfterSeconds());
+        };
+    }
+
+    private Description describeContentFailure(ContentFailure failure) {
+        return switch (failure.reason()) {
+            case NOT_FOUND -> new Description(404, "Not Found", "ENTITY_NOT_FOUND",
+                failure.getMessage(), List.of(), 0);
+            case CONFLICT -> new Description(409, "Content Conflict", "CONTENT_CONFLICT",
+                failure.getMessage(), List.of(), 0);
+            case INVALID_STATE -> new Description(409, "Invalid Content State", "CONTENT_STATE_CONFLICT",
+                failure.getMessage(), List.of(), 0);
+            case VERSION_CONFLICT -> new Description(409, "Content Changed", "CONTENT_VERSION_CONFLICT",
+                failure.getMessage(), List.of(), 0);
+            case INVALID -> new Description(422, "Validation Failed", "VALIDATION_FAILED",
+                failure.getMessage(), failure.violations().stream()
+                    .map(value -> new ValidationError().field(value.field()).message(value.message())).toList(), 0);
         };
     }
 

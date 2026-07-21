@@ -19,5 +19,6 @@ export interface ProblemDetails {
     correlationId: string;
     errorCode: string;
     validationErrors?: Array<ValidationError>;
+    currentVersion?: number;
 }
 

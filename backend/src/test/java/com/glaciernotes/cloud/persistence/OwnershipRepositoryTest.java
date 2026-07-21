@@ -4,6 +4,7 @@ import com.glaciernotes.cloud.domain.OwnerId;
 import com.glaciernotes.cloud.domain.notebook.Notebook;
 import com.glaciernotes.cloud.domain.notebook.NotebookRepository;
 import com.glaciernotes.cloud.persistence.entity.UserEntity;
+import com.glaciernotes.cloud.persistence.repository.CoreContentRepository;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -24,6 +25,9 @@ class OwnershipRepositoryTest {
     @Inject
     NotebookRepository notebooks;
 
+    @Inject
+    CoreContentRepository coreContent;
+
     @Test
     @TestTransaction
     void identicalPortableUuidCanExistForTwoOwnersWithoutCrossOwnerReads() {
@@ -42,6 +46,9 @@ class OwnershipRepositoryTest {
         assertEquals(1, notebooks.list(ownerA).size());
         assertEquals(1, notebooks.list(ownerB).size());
         assertTrue(notebooks.findById(new OwnerId(UUID.randomUUID()), portableId).isEmpty());
+        assertEquals("Alpha notebook", coreContent.notebook(ownerA, portableId, false).orElseThrow().name());
+        assertEquals("Beta notebook", coreContent.notebook(ownerB, portableId, false).orElseThrow().name());
+        assertTrue(coreContent.notebook(new OwnerId(UUID.randomUUID()), portableId, false).isEmpty());
     }
 
     private void persistUser(OwnerId ownerId, String name, Instant now) {
@@ -55,4 +62,3 @@ class OwnershipRepositoryTest {
         return new Notebook(owner, id, name, null, true, 0, now, now, 0);
     }
 }
-

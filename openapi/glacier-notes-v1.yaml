@@ -13,6 +13,9 @@ tags:
   - name: Authentication
   - name: Sessions
   - name: Administration
+  - name: Notebooks
+  - name: Notes
+  - name: Labels
 paths:
   /api/v1/ping:
     get:
@@ -516,6 +519,373 @@ paths:
               schema: { $ref: '#/components/schemas/AdminSettings' }
         '422': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notebooks:
+    get:
+      tags: [Notebooks]
+      summary: List the current user's notebooks
+      operationId: listNotebooks
+      responses:
+        '200':
+          description: Owned notebooks in display order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/NotebookView' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    post:
+      tags: [Notebooks]
+      summary: Create a notebook
+      operationId: createNotebook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotebookCreate' }
+      responses:
+        '201':
+          description: Notebook created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotebookView' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notebooks/default:
+    get:
+      tags: [Notebooks]
+      summary: Get the current user's default notebook
+      operationId: getDefaultNotebook
+      responses:
+        '200':
+          description: Default notebook
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotebookView' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notebooks/reorder:
+    post:
+      tags: [Notebooks]
+      summary: Replace the complete notebook display order
+      operationId: reorderNotebooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotebookReorder' }
+      responses:
+        '200':
+          description: Reordered notebooks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/NotebookView' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notebooks/{notebookId}:
+    parameters:
+      - $ref: '#/components/parameters/NotebookId'
+    get:
+      tags: [Notebooks]
+      summary: Get an owned notebook
+      operationId: getNotebook
+      responses:
+        '200':
+          description: Owned notebook
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotebookView' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    patch:
+      tags: [Notebooks]
+      summary: Rename or recolor an owned notebook
+      operationId: updateNotebook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotebookUpdate' }
+      responses:
+        '200':
+          description: Updated notebook
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotebookView' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    delete:
+      tags: [Notebooks]
+      summary: Delete a non-default notebook transactionally
+      operationId: deleteNotebook
+      parameters:
+        - name: strategy
+          in: query
+          required: true
+          schema: { type: string, enum: [MOVE_TO_DEFAULT, TRASH_NOTES] }
+        - name: version
+          in: query
+          required: true
+          schema: { type: integer, format: int64, minimum: 0 }
+      responses:
+        '204': { description: Notebook deleted }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes:
+    get:
+      tags: [Notes]
+      summary: List and filter owned note summaries
+      operationId: listNotes
+      parameters:
+        - { name: notebookId, in: query, schema: { type: string, format: uuid } }
+        - { name: labelId, in: query, schema: { type: string, format: uuid } }
+        - { name: noteType, in: query, schema: { $ref: '#/components/schemas/NoteType' } }
+        - { name: pinned, in: query, schema: { type: boolean } }
+        - { name: archive, in: query, schema: { type: string, enum: [ACTIVE, ARCHIVED, ALL], default: ACTIVE } }
+        - { name: trash, in: query, schema: { type: string, enum: [ACTIVE, TRASHED, ALL], default: ACTIVE } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 512 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: Note summary page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotePage' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    post:
+      tags: [Notes]
+      summary: Create a text or checklist note
+      operationId: createNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NoteCreate' }
+      responses:
+        '201':
+          description: Note created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentNote' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/trash:
+    delete:
+      tags: [Notes]
+      summary: Permanently delete all owned trashed notes
+      operationId: emptyTrash
+      responses:
+        '200':
+          description: Trash emptied
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmptyTrashResult' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/{noteId}:
+    parameters:
+      - $ref: '#/components/parameters/NoteId'
+    get:
+      tags: [Notes]
+      summary: Get a complete owned note aggregate
+      operationId: getNote
+      responses:
+        '200':
+          description: Complete note
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentNote' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    patch:
+      tags: [Notes]
+      summary: Update an owned note aggregate
+      operationId: updateNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NoteUpdate' }
+      responses:
+        '200':
+          description: Updated note
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentNote' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    delete:
+      tags: [Notes]
+      summary: Permanently delete an owned trashed note
+      operationId: purgeNote
+      parameters:
+        - name: version
+          in: query
+          required: true
+          schema: { type: integer, format: int64, minimum: 0 }
+      responses:
+        '204': { description: Note permanently deleted }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/{noteId}/trash:
+    post:
+      tags: [Notes]
+      summary: Move an owned note to trash
+      operationId: trashNote
+      parameters: [{ $ref: '#/components/parameters/NoteId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VersionRequest' }
+      responses:
+        '200':
+          description: Trashed note
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentNote' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/{noteId}/restore:
+    post:
+      tags: [Notes]
+      summary: Restore an owned trashed note
+      operationId: restoreNote
+      parameters: [{ $ref: '#/components/parameters/NoteId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VersionRequest' }
+      responses:
+        '200':
+          description: Restored note
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentNote' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/{noteId}/move:
+    post:
+      tags: [Notes]
+      summary: Move an owned note to another owned notebook
+      operationId: moveNote
+      parameters: [{ $ref: '#/components/parameters/NoteId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NoteMove' }
+      responses:
+        '200':
+          description: Moved note
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentNote' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/{noteId}/convert:
+    post:
+      tags: [Notes]
+      summary: Convert between text and checklist note types
+      operationId: convertNote
+      parameters: [{ $ref: '#/components/parameters/NoteId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NoteConversion' }
+      responses:
+        '200':
+          description: Converted note
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentNote' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/labels:
+    get:
+      tags: [Labels]
+      summary: List owned labels
+      operationId: listLabels
+      responses:
+        '200':
+          description: Owned labels
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/LabelView' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    post:
+      tags: [Labels]
+      summary: Create a label
+      operationId: createLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LabelCreate' }
+      responses:
+        '201':
+          description: Label created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LabelView' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/labels/{labelId}:
+    parameters:
+      - $ref: '#/components/parameters/LabelId'
+    patch:
+      tags: [Labels]
+      summary: Rename an owned label
+      operationId: updateLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LabelUpdate' }
+      responses:
+        '200':
+          description: Updated label
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LabelView' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    delete:
+      tags: [Labels]
+      summary: Delete a label and its note assignments
+      operationId: deleteLabel
+      parameters:
+        - name: version
+          in: query
+          required: true
+          schema: { type: integer, format: int64, minimum: 0 }
+      responses:
+        '204': { description: Label deleted }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
 components:
   securitySchemes:
     sessionCookie:
@@ -550,6 +920,21 @@ components:
       schema: { type: string, format: uuid }
     InvitationId:
       name: invitationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    NotebookId:
+      name: notebookId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    NoteId:
+      name: noteId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    LabelId:
+      name: labelId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -845,6 +1230,222 @@ components:
           items: { type: string, maxLength: 253 }
         invitationExpirationHours: { type: integer, minimum: 1, maximum: 720 }
         passwordResetExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
+    ContentColor:
+      type: string
+      enum: [DEFAULT, RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, GRAY]
+    NoteType:
+      type: string
+      enum: [TEXT, CHECKLIST]
+    NotebookView:
+      type: object
+      required: [id, name, color, defaultNotebook, sortOrder, noteCount, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 255 }
+        color: { $ref: '#/components/schemas/ContentColor' }
+        defaultNotebook: { type: boolean }
+        sortOrder: { type: integer, minimum: 0 }
+        noteCount: { type: integer, format: int64, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, format: int64, minimum: 0 }
+    NotebookCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 255 }
+        color: { $ref: '#/components/schemas/ContentColor' }
+      example:
+        name: Projects
+        color: BLUE
+    NotebookUpdate:
+      type: object
+      required: [version]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 255 }
+        color: { $ref: '#/components/schemas/ContentColor' }
+        version: { type: integer, format: int64, minimum: 0 }
+    NotebookOrderEntry:
+      type: object
+      required: [id, version]
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer, format: int64, minimum: 0 }
+    NotebookReorder:
+      type: object
+      required: [notebooks]
+      properties:
+        notebooks:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items: { $ref: '#/components/schemas/NotebookOrderEntry' }
+    LabelView:
+      type: object
+      required: [id, name, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 255 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, format: int64, minimum: 0 }
+    LabelCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 255 }
+      example:
+        name: Important
+    LabelUpdate:
+      type: object
+      required: [name, version]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 255 }
+        version: { type: integer, format: int64, minimum: 0 }
+    ChecklistItemInput:
+      type: object
+      required: [text, checked]
+      properties:
+        id: { type: string, format: uuid }
+        text: { type: string, maxLength: 10000 }
+        checked: { type: boolean }
+    ChecklistItemView:
+      type: object
+      required: [id, text, checked, sortOrder, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        text: { type: string }
+        checked: { type: boolean }
+        sortOrder: { type: integer, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, format: int64, minimum: 0 }
+    NoteCreate:
+      type: object
+      required: [noteType]
+      properties:
+        id: { type: string, format: uuid }
+        notebookId: { type: string, format: uuid }
+        noteType: { $ref: '#/components/schemas/NoteType' }
+        title: { type: string, maxLength: 10000, default: '' }
+        content: { type: string, default: '' }
+        checklistItems:
+          type: array
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/ChecklistItemInput' }
+        pinned: { type: boolean, default: false }
+        archived: { type: boolean, default: false }
+        color: { $ref: '#/components/schemas/ContentColor' }
+        labelIds:
+          type: array
+          maxItems: 500
+          items: { type: string, format: uuid }
+      example:
+        id: 80e10c3b-aaba-4f1c-a427-7564b1d5eaaf
+        notebookId: 6bc170c2-94c2-4400-a558-b00ffc449fb3
+        noteType: CHECKLIST
+        title: Release checklist
+        content: ''
+        checklistItems:
+          - { text: Run verification, checked: false }
+          - { text: Publish artifacts, checked: false }
+        pinned: true
+        archived: false
+        color: BLUE
+        labelIds: [a06bc822-d59c-4726-8ab1-c2a28d34242a]
+    NoteUpdate:
+      type: object
+      required: [title, content, checklistItems, pinned, archived, color, labelIds, version]
+      properties:
+        title: { type: string, maxLength: 10000 }
+        content: { type: string }
+        checklistItems:
+          type: array
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/ChecklistItemInput' }
+        pinned: { type: boolean }
+        archived: { type: boolean }
+        color: { $ref: '#/components/schemas/ContentColor' }
+        labelIds:
+          type: array
+          maxItems: 500
+          items: { type: string, format: uuid }
+        version: { type: integer, format: int64, minimum: 0 }
+    ContentNote:
+      type: object
+      required: [id, notebookId, noteType, title, content, checklistItems, pinned, archived, color, labelIds, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        notebookId: { type: string, format: uuid }
+        noteType: { $ref: '#/components/schemas/NoteType' }
+        title: { type: string }
+        content: { type: string }
+        checklistItems:
+          type: array
+          items: { $ref: '#/components/schemas/ChecklistItemView' }
+        pinned: { type: boolean }
+        archived: { type: boolean }
+        color: { $ref: '#/components/schemas/ContentColor' }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        deletedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, format: int64, minimum: 0 }
+    NoteSummary:
+      type: object
+      required: [id, notebookId, noteType, title, preview, checklistPreview, pinned, archived, color, labelIds, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        notebookId: { type: string, format: uuid }
+        noteType: { $ref: '#/components/schemas/NoteType' }
+        title: { type: string }
+        preview: { type: string, maxLength: 240 }
+        checklistPreview:
+          type: array
+          maxItems: 5
+          items: { $ref: '#/components/schemas/ChecklistItemView' }
+        pinned: { type: boolean }
+        archived: { type: boolean }
+        color: { $ref: '#/components/schemas/ContentColor' }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        deletedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, format: int64, minimum: 0 }
+    NotePage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/NoteSummary' }
+        page: { $ref: '#/components/schemas/PageMetadata' }
+    VersionRequest:
+      type: object
+      required: [version]
+      properties:
+        version: { type: integer, format: int64, minimum: 0 }
+    NoteMove:
+      type: object
+      required: [notebookId, version]
+      properties:
+        notebookId: { type: string, format: uuid }
+        version: { type: integer, format: int64, minimum: 0 }
+    NoteConversion:
+      type: object
+      required: [targetType, version]
+      properties:
+        targetType: { $ref: '#/components/schemas/NoteType' }
+        version: { type: integer, format: int64, minimum: 0 }
+    EmptyTrashResult:
+      type: object
+      required: [purgedCount]
+      properties:
+        purgedCount: { type: integer, format: int64, minimum: 0 }
     ProblemDetails:
       type: object
       required: [type, title, status, detail, correlationId, errorCode]
@@ -872,6 +1473,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ValidationError'
+        currentVersion:
+          type: integer
+          format: int64
+          minimum: 0
+      example:
+        type: https://glacier-notes.example/problems/content-version-conflict
+        title: Content Changed
+        status: 409
+        detail: The content changed since it was read.
+        instance: /api/v1/notes/80e10c3b-aaba-4f1c-a427-7564b1d5eaaf
+        correlationId: 35907ba3-c92f-46bb-84f0-936325851b91
+        errorCode: CONTENT_VERSION_CONFLICT
+        validationErrors: []
+        currentVersion: 4
     ValidationError:
       type: object
       required: [field, message]

@@ -75,6 +75,7 @@ class DatabaseSchemaTest {
                 indexes.add(rows.getString(1));
             }
             assertTrue(indexes.contains("ix_notes_owner_collection"));
+            assertTrue(indexes.contains("ix_notes_owner_type_collection"));
             assertTrue(indexes.contains("ix_notes_owner_notebook_updated"));
             assertTrue(indexes.contains("ix_notes_search_vector"));
             assertTrue(indexes.contains("uq_notebooks_one_default"));
