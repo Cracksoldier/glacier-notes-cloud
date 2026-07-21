@@ -40,6 +40,11 @@ class SecretProviderTest {
     private GlacierConfiguration configuration(Optional<Path> tokenFile, Optional<String> token) {
         return new GlacierConfiguration() {
             @Override
+            public Optional<String> publicBaseUrl() {
+                return Optional.empty();
+            }
+
+            @Override
             public Bootstrap bootstrap() {
                 return new Bootstrap() {
                     @Override

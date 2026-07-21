@@ -34,6 +34,12 @@ public class UserEntity {
     private Instant updatedAt;
     @Column(name = "activated_at")
     private Instant activatedAt;
+    @Column(name = "failed_login_count")
+    private int failedLoginCount;
+    @Column(name = "locked_until")
+    private Instant lockedUntil;
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
     @Version
     private long version;
 
@@ -87,5 +93,56 @@ public class UserEntity {
 
     public String passwordHash() {
         return passwordHash;
+    }
+
+    public String username() {
+        return username;
+    }
+
+    public String email() {
+        return email;
+    }
+
+    public String displayName() {
+        return displayName;
+    }
+
+    public String role() {
+        return role;
+    }
+
+    public String status() {
+        return status;
+    }
+
+    public Instant lockedUntil() {
+        return lockedUntil;
+    }
+
+    public int registerFailedLogin(int lockThreshold, Instant now, long lockMinutes) {
+        failedLoginCount++;
+        updatedAt = now;
+        if (failedLoginCount >= lockThreshold && "ACTIVE".equals(status)) {
+            status = "LOCKED";
+            lockedUntil = now.plusSeconds(lockMinutes * 60);
+        }
+        return failedLoginCount;
+    }
+
+    public void recordSuccessfulLogin(Instant now) {
+        failedLoginCount = 0;
+        lockedUntil = null;
+        status = "ACTIVE";
+        lastLoginAt = now;
+        updatedAt = now;
+    }
+
+    public void unlockIfTemporaryLockExpired(Instant now) {
+        if ("LOCKED".equals(status) && lockedUntil != null && !lockedUntil.isAfter(now)) {
+            status = "ACTIVE";
+            failedLoginCount = 0;
+            lockedUntil = null;
+            updatedAt = now;
+        }
     }
 }

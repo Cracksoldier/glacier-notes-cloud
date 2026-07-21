@@ -8,6 +8,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.net.InetAddress;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,6 +30,10 @@ public class AuditEventEntity {
     @Column(name = "target_entity_id")
     private UUID targetEntityId;
     private String result;
+    @Column(name = "ip_address", columnDefinition = "inet")
+    private InetAddress ipAddress;
+    @Column(name = "client_description")
+    private String clientDescription;
     @Column(name = "correlation_id")
     private String correlationId;
     @Column(name = "metadata_json", columnDefinition = "jsonb")
@@ -55,6 +60,29 @@ public class AuditEventEntity {
         event.result = "SUCCESS";
         event.correlationId = correlationId;
         event.metadataJson = Map.of("source", "setup");
+        return event;
+    }
+
+    public static AuditEventEntity authenticationFailed(
+        UUID id,
+        UUID targetUserId,
+        Instant now,
+        InetAddress ipAddress,
+        String clientDescription,
+        String correlationId
+    ) {
+        var event = new AuditEventEntity();
+        event.id = id;
+        event.eventType = "LOGIN_FAILED";
+        event.occurredAt = now;
+        event.targetUserId = targetUserId;
+        event.targetEntityType = targetUserId == null ? null : "USER";
+        event.targetEntityId = targetUserId;
+        event.result = "FAILURE";
+        event.ipAddress = ipAddress;
+        event.clientDescription = clientDescription;
+        event.correlationId = correlationId;
+        event.metadataJson = Map.of();
         return event;
     }
 }

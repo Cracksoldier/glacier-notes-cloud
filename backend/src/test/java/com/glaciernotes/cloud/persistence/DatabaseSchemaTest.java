@@ -26,7 +26,7 @@ class DatabaseSchemaTest {
             "image_assets", "note_image_references", "note_versions",
             "note_version_image_references", "tombstones", "user_settings", "instance_state",
             "instance_settings", "audit_events", "backup_jobs", "job_locks",
-            "bootstrap_rate_limits"
+            "bootstrap_rate_limits", "login_rate_limits"
         );
         try (var connection = dataSource.getConnection();
              var statement = connection.prepareStatement(
@@ -79,6 +79,7 @@ class DatabaseSchemaTest {
             assertTrue(indexes.contains("ix_notes_search_vector"));
             assertTrue(indexes.contains("uq_notebooks_one_default"));
             assertTrue(indexes.contains("ix_bootstrap_rate_limits_blocked"));
+            assertTrue(indexes.contains("ix_login_rate_limits_blocked"));
         }
     }
 

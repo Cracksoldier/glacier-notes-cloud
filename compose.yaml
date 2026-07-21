@@ -36,6 +36,7 @@ services:
       GLACIER_DATABASE_PASSWORD_FILE: /run/secrets/database_password
       GLACIER_BOOTSTRAP_TOKEN_FILE: /run/secrets/bootstrap_token
       GLACIER_SECURITY_SESSION_SECRET_FILE: /run/secrets/session_secret
+      GLACIER_PUBLIC_BASE_URL: ${GLACIER_PUBLIC_BASE_URL:-http://localhost:8080}
     secrets:
       - database_password
       - bootstrap_token

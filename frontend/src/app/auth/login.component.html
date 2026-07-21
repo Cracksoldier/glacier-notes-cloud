@@ -1,0 +1,34 @@
+<main class="auth-shell">
+  <section class="auth-card" aria-labelledby="login-title">
+    <div class="brand" aria-hidden="true">G</div>
+    <p class="eyebrow">Glacier Notes Cloud</p>
+    <h1 id="login-title">Welcome back</h1>
+    <p class="intro">Sign in with your username or email address.</p>
+    @if (errorMessage(); as message) {
+    <div class="notice" role="alert">
+      {{ message }}
+      @if (retryAfter(); as seconds) {
+      <span>Try again in {{ seconds }} seconds.</span>
+      }
+    </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <label>
+        Username or email
+        <input formControlName="identifier" autocomplete="username">
+      </label>
+      <label>
+        Password
+        <input formControlName="password" type="password" autocomplete="current-password">
+      </label>
+      <label class="remember">
+        <input formControlName="rememberMe" type="checkbox">
+        Keep me signed in on this device
+      </label>
+      <button type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Signing in…' : 'Sign in' }}
+      </button>
+    </form>
+  </section>
+</main>

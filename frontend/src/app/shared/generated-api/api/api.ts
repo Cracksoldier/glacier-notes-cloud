@@ -1,5 +1,11 @@
+export * from './administration.service';
+import { AdministrationService } from './administration.service';
+export * from './authentication.service';
+import { AuthenticationService } from './authentication.service';
+export * from './sessions.service';
+import { SessionsService } from './sessions.service';
 export * from './setup.service';
 import { SetupService } from './setup.service';
 export * from './system.service';
 import { SystemService } from './system.service';
-export const APIS = [SetupService, SystemService];
+export const APIS = [AdministrationService, AuthenticationService, SessionsService, SetupService, SystemService];

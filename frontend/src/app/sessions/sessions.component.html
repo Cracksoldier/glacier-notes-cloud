@@ -1,0 +1,40 @@
+<main class="page">
+  <section aria-labelledby="sessions-title">
+    <div class="heading">
+      <div>
+        <p class="eyebrow">Account security</p>
+        <h1 id="sessions-title">Signed-in devices</h1>
+      </div>
+      <button type="button" class="secondary" (click)="revokeOthers()">
+        Sign out other devices
+      </button>
+    </div>
+    @if (error(); as message) {
+    <p class="notice" role="alert">{{ message }}</p>
+    } @if (loading()) {
+    <p role="status">Loading sessions…</p>
+    } @else {
+    <ul>
+      @for (session of sessions(); track session.id) {
+      <li>
+        <div>
+          <strong>{{ session.clientDescription || 'Unknown browser' }}</strong>
+          @if (session.current) {
+          <span class="current">Current session</span>
+          }
+          <p>
+            Last active {{ session.lastSeenAt | date: 'medium' }} · Expires
+            {{ session.expiresAt | date: 'medium' }}
+          </p>
+        </div>
+        <button type="button" (click)="revoke(session)">
+          {{ session.current ? 'Sign out' : 'Revoke' }}
+        </button>
+      </li>
+      } @empty {
+      <li>No active sessions.</li>
+      }
+    </ul>
+    }
+  </section>
+</main>

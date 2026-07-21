@@ -10,6 +10,9 @@ servers:
 tags:
   - name: System
   - name: Setup
+  - name: Authentication
+  - name: Sessions
+  - name: Administration
 paths:
   /api/v1/ping:
     get:
@@ -84,6 +87,140 @@ paths:
           $ref: '#/components/responses/ProblemResponse'
         default:
           $ref: '#/components/responses/ProblemResponse'
+  /api/v1/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate with a username or email address
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated session
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Set-Cookie:
+              description: Session and CSRF cookies.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionContext'
+        '401':
+          $ref: '#/components/responses/ProblemResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitedProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Revoke the current session
+      operationId: logout
+      responses:
+        '204':
+          description: Session revoked
+        '401':
+          $ref: '#/components/responses/ProblemResponse'
+        '403':
+          $ref: '#/components/responses/ProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/auth/session:
+    get:
+      tags: [Authentication]
+      summary: Get the current authenticated session
+      operationId: getCurrentSession
+      responses:
+        '200':
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionContext'
+        '401':
+          $ref: '#/components/responses/ProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/me/sessions:
+    get:
+      tags: [Sessions]
+      summary: List active sessions for the current user
+      operationId: listSessions
+      responses:
+        '200':
+          description: Active sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionSummary'
+        '401':
+          $ref: '#/components/responses/ProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    delete:
+      tags: [Sessions]
+      summary: Revoke all sessions except the current one
+      operationId: revokeOtherSessions
+      responses:
+        '204':
+          description: Other sessions revoked
+        '401':
+          $ref: '#/components/responses/ProblemResponse'
+        '403':
+          $ref: '#/components/responses/ProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/me/sessions/{sessionId}:
+    delete:
+      tags: [Sessions]
+      summary: Revoke one of the current user's sessions
+      operationId: revokeSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session revoked
+        '401':
+          $ref: '#/components/responses/ProblemResponse'
+        '403':
+          $ref: '#/components/responses/ProblemResponse'
+        '404':
+          $ref: '#/components/responses/ProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/admin/status:
+    get:
+      tags: [Administration]
+      summary: Get non-sensitive administrative status
+      operationId: getAdminStatus
+      responses:
+        '200':
+          description: Administrative status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminStatus'
+        '401':
+          $ref: '#/components/responses/ProblemResponse'
+        '403':
+          $ref: '#/components/responses/ProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
 components:
   securitySchemes:
     sessionCookie:
@@ -130,12 +267,12 @@ components:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
     RateLimitedProblemResponse:
-      description: Too many bootstrap attempts
+      description: Too many attempts
       headers:
         X-Correlation-ID:
           $ref: '#/components/headers/CorrelationId'
         Retry-After:
-          description: Seconds until another bootstrap attempt is permitted.
+          description: Seconds until another attempt is permitted.
           schema:
             type: integer
             minimum: 1
@@ -197,6 +334,86 @@ components:
         initializedAt:
           type: string
           format: date-time
+    LoginRequest:
+      type: object
+      required: [identifier, password, rememberMe]
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 320
+        password:
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 128
+        rememberMe:
+          type: boolean
+          default: false
+    AuthenticatedUser:
+      type: object
+      required: [id, username, email, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        role:
+          type: string
+          enum: [USER, ADMIN]
+    SessionSummary:
+      type: object
+      required: [id, current, rememberMe, createdAt, lastSeenAt, expiresAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        current:
+          type: boolean
+        rememberMe:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        clientDescription:
+          type: string
+          maxLength: 512
+    SessionContext:
+      type: object
+      required: [user, session]
+      properties:
+        user:
+          $ref: '#/components/schemas/AuthenticatedUser'
+        session:
+          $ref: '#/components/schemas/SessionSummary'
+    AdminStatus:
+      type: object
+      required: [service, status, apiVersion, database]
+      properties:
+        service:
+          type: string
+          const: glacier-notes-cloud
+        status:
+          type: string
+          enum: [ok]
+        apiVersion:
+          type: string
+          const: v1
+        database:
+          type: string
+          enum: [up]
     ProblemDetails:
       type: object
       required: [type, title, status, detail, correlationId, errorCode]

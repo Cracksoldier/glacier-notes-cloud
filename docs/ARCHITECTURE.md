@@ -30,6 +30,12 @@ portable model can remain compatible with the Electron desktop adapter.
 ## Coding conventions
 
 - Keep generated DTOs out of domain and persistence signatures.
+
+Authentication uses opaque, random browser tokens backed by `user_sessions`; only keyed token
+hashes are persisted. Quarkus resolves the session cookie into a security identity and enforces
+`USER`/`ADMIN` roles server-side. Angular guards are navigation aids, not an authorization boundary.
+State-changing authenticated requests use a session-bound double-submit CSRF token. Login throttle
+state is persisted by normalized identifier and client IP so restarts do not reset abuse controls.
 - Put transaction boundaries on application operations or repository writes, never UI code.
 - Never log note content, checklist text, filenames, passwords, or tokens.
 - Normalize identity values before persistence while preserving original display casing.

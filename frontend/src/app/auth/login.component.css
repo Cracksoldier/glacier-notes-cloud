@@ -1,0 +1,120 @@
+:host {
+  display: block;
+}
+
+.auth-shell {
+  display: grid;
+  min-height: calc(100vh - 4.5rem);
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.auth-card {
+  width: min(29rem, 100%);
+  padding: clamp(1.5rem, 5vw, 2.75rem);
+  border: 1px solid #29424e;
+  border-radius: 1.35rem;
+  background: rgb(7 19 27 / 88%);
+  box-shadow: 0 2rem 5rem rgb(0 0 0 / 28%);
+}
+
+.brand {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 1.5rem;
+  place-items: center;
+  border: 1px solid rgb(183 232 244 / 30%);
+  border-radius: 0.85rem;
+  color: #c8f2fa;
+  font:
+    600 1.15rem / 1 ui-monospace,
+    monospace;
+}
+
+.eyebrow {
+  margin: 0 0 0.45rem;
+  color: #87c7d8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  color: #eef8fb;
+  font-size: clamp(2rem, 8vw, 3rem);
+  letter-spacing: -0.04em;
+}
+
+.intro {
+  margin: 0.75rem 0 1.8rem;
+  color: #abc3cc;
+}
+
+form,
+label {
+  display: grid;
+}
+
+form {
+  gap: 1.15rem;
+}
+
+label {
+  gap: 0.45rem;
+  color: #dbe9ed;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+input:not([type="checkbox"]) {
+  min-height: 2.9rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #36515d;
+  border-radius: 0.65rem;
+  outline: none;
+  background: #08151d;
+  color: #eef8fb;
+  font: inherit;
+}
+
+input:focus {
+  border-color: #76c2d5;
+  box-shadow: 0 0 0 0.2rem rgb(118 194 213 / 13%);
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-weight: 450;
+}
+
+.notice {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgb(237 127 121 / 42%);
+  border-radius: 0.65rem;
+  background: rgb(101 28 32 / 32%);
+  color: #ffd1cd;
+  font-size: 0.87rem;
+}
+
+button {
+  min-height: 3rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: #9adcea;
+  color: #07151c;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}

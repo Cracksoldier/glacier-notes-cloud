@@ -1,6 +1,7 @@
 package com.glaciernotes.cloud.api;
 
 import com.glaciernotes.cloud.application.setup.SetupFailure;
+import com.glaciernotes.cloud.application.auth.AuthenticationFailure;
 import com.glaciernotes.cloud.generated.model.ProblemDetails;
 import com.glaciernotes.cloud.generated.model.ValidationError;
 import jakarta.validation.ConstraintViolationException;
@@ -28,7 +29,8 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
     public Response toResponse(Throwable exception) {
         var correlationId = Objects.toString(MDC.get("correlationId"), "unavailable");
         var description = describe(exception);
-        if (description.status() >= 500 && !(exception instanceof SetupFailure)) {
+        if (description.status() >= 500 && !(exception instanceof SetupFailure)
+            && !(exception instanceof AuthenticationFailure)) {
             LOG.errorf(
                 "Unhandled request failure correlationId=%s exception=%s",
                 correlationId,
@@ -60,6 +62,9 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
         if (exception instanceof SetupFailure setupFailure) {
             return describeSetupFailure(setupFailure);
         }
+        if (exception instanceof AuthenticationFailure authenticationFailure) {
+            return describeAuthenticationFailure(authenticationFailure);
+        }
         if (exception instanceof ConstraintViolationException violations) {
             var validationErrors = violations.getConstraintViolations().stream()
                 .map(violation -> new ValidationError()
@@ -74,6 +79,18 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
         var status = exception instanceof WebApplicationException webException
             ? webException.getResponse().getStatus()
             : Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
+        if (status == 401) {
+            return new Description(
+                401, "Authentication Required", "AUTH_SESSION_EXPIRED",
+                "A valid session is required.", List.of(), 0
+            );
+        }
+        if (status == 403) {
+            return new Description(
+                403, "Forbidden", "AUTH_FORBIDDEN",
+                "You are not permitted to perform this action.", List.of(), 0
+            );
+        }
         return new Description(
             status,
             status == 404 ? "Not Found" : status >= 500 ? "Internal Server Error" : "Request Failed",
@@ -111,6 +128,27 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
 
     private Description description(int status, String title, String code, SetupFailure failure) {
         return new Description(status, title, code, failure.getMessage(), List.of(), 0);
+    }
+
+    private Description describeAuthenticationFailure(AuthenticationFailure failure) {
+        return switch (failure.reason()) {
+            case INVALID_CREDENTIALS -> new Description(
+                401, "Invalid Credentials", "AUTH_INVALID_CREDENTIALS",
+                failure.getMessage(), List.of(), 0
+            );
+            case RATE_LIMITED -> new Description(
+                429, "Too Many Requests", "AUTH_RATE_LIMITED",
+                failure.getMessage(), List.of(), failure.retryAfterSeconds()
+            );
+            case SESSION_NOT_FOUND -> new Description(
+                401, "Authentication Required", "AUTH_SESSION_EXPIRED",
+                failure.getMessage(), List.of(), 0
+            );
+            case CSRF_INVALID -> new Description(
+                403, "Request Verification Failed", "CSRF_INVALID",
+                failure.getMessage(), List.of(), 0
+            );
+        };
     }
 
     private String lastNode(String path) {

@@ -34,12 +34,18 @@ take precedence over direct bootstrap and session environment values. Secrets mu
 non-whitespace characters. Argon2id defaults are 19,456 KiB memory, 2 iterations, parallelism 1, a
 32-byte hash, and a 16-byte salt.
 
+Set `GLACIER_PUBLIC_BASE_URL` to the externally visible origin. When it starts with `https://`,
+authentication and CSRF cookies receive the `Secure` flag. A value stored later in instance settings
+takes precedence. The supported browser deployment is same-origin behind a reverse proxy; cookies
+use `SameSite=Lax` and `Path=/`.
+
 | Variable | Purpose |
 | --- | --- |
 | `GLACIER_DATABASE_URL`, `GLACIER_DATABASE_USERNAME` | PostgreSQL JDBC connection |
 | `GLACIER_DATABASE_PASSWORD_FILE` | PostgreSQL password file read by the container entrypoint |
 | `GLACIER_BOOTSTRAP_TOKEN_FILE` | One-time setup token file; overrides `GLACIER_BOOTSTRAP_TOKEN` |
 | `GLACIER_SECURITY_SESSION_SECRET_FILE` | HMAC/session secret file; overrides the direct value |
+| `GLACIER_PUBLIC_BASE_URL` | External origin used for secure-cookie policy; default `http://localhost:8080` |
 | `GLACIER_BOOTSTRAP_FAILURE_LIMIT` | Invalid attempts per window; default `5` |
 | `GLACIER_BOOTSTRAP_WINDOW_SECONDS`, `GLACIER_BOOTSTRAP_BLOCK_SECONDS` | Rate-limit window and block duration; defaults `900` |
 | `GLACIER_PASSWORD_ARGON2_MEMORY_KIB` | Argon2id memory cost; minimum/default `19456` |

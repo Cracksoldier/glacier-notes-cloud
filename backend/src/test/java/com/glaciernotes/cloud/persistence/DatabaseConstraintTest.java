@@ -73,6 +73,23 @@ class DatabaseConstraintTest {
         }
     }
 
+    @Test
+    void authenticationSettingsRejectUnsafeDurationsAndThresholds() throws SQLException {
+        try (var connection = transaction(); var statement = connection.createStatement()) {
+            assertThrows(SQLException.class, () -> statement.executeUpdate(
+                "update instance_settings set normal_session_duration_minutes = 14"
+            ));
+            connection.rollback();
+        }
+
+        try (var connection = transaction(); var statement = connection.createStatement()) {
+            assertThrows(SQLException.class, () -> statement.executeUpdate(
+                "update instance_settings set login_lock_threshold = login_delay_threshold"
+            ));
+            connection.rollback();
+        }
+    }
+
     private Connection transaction() throws SQLException {
         var connection = dataSource.getConnection();
         connection.setAutoCommit(false);

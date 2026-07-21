@@ -1,25 +1,21 @@
 @switch (applicationState()) { @case ('setup') {
 <app-setup (initialized)="setupCompleted()" />
 } @case ('ready') {
-<main class="shell">
-  <section class="hero" aria-labelledby="app-title">
-    <div class="mark" aria-hidden="true">G</div>
-    <p class="eyebrow">Private notes, on your infrastructure</p>
-    <h1 id="app-title">Glacier Notes Cloud</h1>
-    <p class="lede">
-      Your private notes workspace is ready. Authentication and note editing arrive in the next
-      milestones.
-    </p>
-
-    <div class="connection" [attr.data-state]="connectionState()" role="status">
-      <span class="indicator" aria-hidden="true"></span>
-      @switch (connectionState()) { @case ('connecting') { Connecting to the versioned API… } @case
-      ('connected') { API connected @if (serverTime(); as timestamp) {
-      <span class="timestamp">· {{ timestamp }}</span>
-      } } @default { API unavailable — start the Quarkus backend on port 8080. } }
-    </div>
-  </section>
-</main>
+<div class="application">
+  @if (auth.session(); as session) {
+  <header>
+    <a class="wordmark" href="/" routerLink="/">Glacier Notes</a>
+    <nav aria-label="Account navigation">
+      <a href="/sessions" routerLink="/sessions">Sessions</a>
+      @if (session.user.role === 'ADMIN') {
+      <a href="/admin" routerLink="/admin">Admin</a>
+      }
+      <button type="button" (click)="logout()">Sign out</button>
+    </nav>
+  </header>
+  }
+  <router-outlet />
+</div>
 } @case ('error') {
 <main class="shell">
   <section class="status-card" aria-labelledby="unavailable-title">
@@ -31,6 +27,6 @@
 </main>
 } @default {
 <main class="shell" aria-busy="true">
-  <p class="loading" role="status">Checking instance status…</p>
+  <p class="loading" role="status">Checking instance security…</p>
 </main>
 } }

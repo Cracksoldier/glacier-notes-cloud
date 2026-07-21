@@ -30,8 +30,10 @@ class SetupResourceTest {
     @AfterEach
     void resetBootstrapState() throws SQLException {
         try (var connection = dataSource.getConnection();
-             var statement = connection.createStatement()) {
+            var statement = connection.createStatement()) {
             statement.executeUpdate("delete from audit_events");
+            statement.executeUpdate("delete from login_rate_limits");
+            statement.executeUpdate("delete from user_sessions");
             statement.executeUpdate("delete from bootstrap_rate_limits");
             statement.executeUpdate("delete from app_users");
             statement.executeUpdate("""

@@ -81,6 +81,27 @@ jobs:
             http://127.0.0.1:8080/api/v1/setup/administrator | grep '"initialized":true'
           docker compose up -d --force-recreate --wait --wait-timeout 120 app
           curl --fail --silent http://127.0.0.1:8080/api/v1/setup/status | grep '"setupRequired":false'
+      - name: Verify login, persisted session, CSRF, and logout
+        run: |
+          curl --fail --silent \
+            --cookie-jar /tmp/glacier-cookies.txt \
+            --header 'Content-Type: application/json' \
+            --data '{"identifier":"ADMIN@example.com","password":"ci-container-smoke-passphrase-2026","rememberMe":true}' \
+            http://127.0.0.1:8080/api/v1/auth/login | grep '"role":"ADMIN"'
+          docker compose up -d --force-recreate --wait --wait-timeout 120 app
+          curl --fail --silent \
+            --cookie /tmp/glacier-cookies.txt \
+            http://127.0.0.1:8080/api/v1/auth/session | grep '"current":true'
+          csrf_token="$(awk '$6 == "GLACIER_CSRF" {print $7}' /tmp/glacier-cookies.txt)"
+          test -n "$csrf_token"
+          curl --fail --silent \
+            --cookie /tmp/glacier-cookies.txt \
+            --header "X-CSRF-Token: $csrf_token" \
+            --request POST \
+            http://127.0.0.1:8080/api/v1/auth/logout
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --cookie /tmp/glacier-cookies.txt \
+            http://127.0.0.1:8080/api/v1/auth/session)" = "401"
       - name: Show logs on failure
         if: failure()
         run: docker compose logs

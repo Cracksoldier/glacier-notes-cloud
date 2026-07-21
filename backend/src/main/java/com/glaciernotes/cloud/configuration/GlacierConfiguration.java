@@ -12,6 +12,8 @@ public interface GlacierConfiguration {
 
     Security security();
 
+    Optional<String> publicBaseUrl();
+
     Password password();
 
     interface Bootstrap {
