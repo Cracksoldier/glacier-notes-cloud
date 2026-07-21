@@ -69,9 +69,13 @@ jobs:
         run: docker compose up --build --wait --wait-timeout 180
       - name: Verify application and management endpoints
         run: |
-          curl --fail --silent http://127.0.0.1:8080/ >/dev/null
-          curl --fail --silent http://127.0.0.1:8080/api/v1/setup/status | grep '"setupRequired":true'
-          curl --fail --silent http://127.0.0.1:9000/q/health/ready | grep '"status":"UP"'
+          curl --fail --silent --show-error http://127.0.0.1:8080/ >/dev/null
+          curl --fail --silent --show-error \
+            http://127.0.0.1:8080/api/v1/setup/status \
+            | jq --exit-status '.setupRequired == true' >/dev/null
+          curl --fail --silent --show-error \
+            http://127.0.0.1:9000/q/health/ready \
+            | jq --exit-status '.status == "UP"' >/dev/null
       - name: Verify bootstrap persists across container recreation
         run: |
           curl --fail --silent \
