@@ -247,6 +247,130 @@ paths:
           $ref: '#/components/responses/RateLimitedProblemResponse'
         default:
           $ref: '#/components/responses/ProblemResponse'
+  /api/v1/auth/email-change/complete:
+    post:
+      tags: [Authentication]
+      summary: Confirm a verified email-address change
+      operationId: completeEmailChange
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TokenRequest' }
+      responses:
+        '204': { description: Email address changed }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/RateLimitedProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/profile:
+    get:
+      tags: [Current User]
+      summary: Get the current user's profile and self-service capabilities
+      operationId: getCurrentUserProfile
+      responses:
+        '200':
+          description: Current profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfile' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    patch:
+      tags: [Current User]
+      summary: Update the current user's username or display name
+      operationId: updateCurrentUserProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserProfileUpdate' }
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfile' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/password:
+    put:
+      tags: [Current User]
+      summary: Change the current user's password and revoke all sessions
+      operationId: changeCurrentUserPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordChangeRequest' }
+      responses:
+        '204': { description: Password changed and all sessions revoked }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/email-change:
+    post:
+      tags: [Current User]
+      summary: Request verification of a new email address
+      operationId: requestCurrentUserEmailChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmailChangeRequest' }
+      responses:
+        '202': { description: Verification email accepted for delivery }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/RateLimitedProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/settings:
+    get:
+      tags: [Current User]
+      summary: Get synchronized current-user preferences
+      operationId: getCurrentUserSettings
+      responses:
+        '200':
+          description: Current preferences and policy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserSettings' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    patch:
+      tags: [Current User]
+      summary: Update synchronized current-user preferences
+      operationId: updateCurrentUserSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserSettingsUpdate' }
+      responses:
+        '200':
+          description: Updated preferences and policy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserSettings' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/deletion:
+    post:
+      tags: [Current User]
+      summary: Irreversibly request deletion of the current account
+      operationId: deleteCurrentUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SelfDeletionRequest' }
+      responses:
+        '202': { description: Irreversible deletion accepted }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/me/sessions:
     get:
       tags: [Sessions]
@@ -611,6 +735,40 @@ paths:
       parameters: [{ $ref: '#/components/parameters/UserId' }]
       responses:
         '204': { description: Sessions revoked }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/users/{userId}/deletion:
+    post:
+      tags: [Administration]
+      summary: Schedule retained or immediate user deletion
+      operationId: scheduleUserDeletion
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminDeletionRequest' }
+      responses:
+        '202':
+          description: Deletion scheduled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminUser' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/users/{userId}/deletion/restore:
+    post:
+      tags: [Administration]
+      summary: Restore an account before retained deletion is due
+      operationId: restoreUserDeletion
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses:
+        '200':
+          description: Account restored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminUser' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/invitations:
     get:
@@ -1445,6 +1603,7 @@ components:
           minLength: 12
           maxLength: 128
           pattern: '^\S+$'
+        language: { type: string, enum: [en, de], default: en }
     SetupCompletion:
       type: object
       required: [initialized, initializedAt]
@@ -1561,6 +1720,7 @@ components:
         username: { type: string, minLength: 3, maxLength: 64, pattern: '^[\p{L}\p{N}._-]+$' }
         displayName: { type: string, maxLength: 128 }
         password: { type: string, format: password, minLength: 12, maxLength: 128, pattern: '^\S+$' }
+        language: { type: string, enum: [en, de], default: en }
     PasswordResetRequest:
       type: object
       required: [email]
@@ -1572,6 +1732,61 @@ components:
       properties:
         token: { type: string, minLength: 32, maxLength: 512 }
         password: { type: string, format: password, minLength: 12, maxLength: 128, pattern: '^\S+$' }
+    UserProfile:
+      type: object
+      required: [id, username, email, role, emailChangeAvailable, selfDeletionEnabled]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        role: { type: string, enum: [USER, ADMIN] }
+        emailChangeAvailable: { type: boolean }
+        selfDeletionEnabled: { type: boolean }
+    UserProfileUpdate:
+      type: object
+      properties:
+        username: { type: string, minLength: 3, maxLength: 64, pattern: '^[\p{L}\p{N}._-]+$' }
+        displayName: { type: string, maxLength: 128 }
+    PasswordChangeRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+        newPassword: { type: string, format: password, minLength: 12, maxLength: 128, pattern: '^\S+$' }
+    EmailChangeRequest:
+      type: object
+      required: [currentPassword, newEmail]
+      properties:
+        currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+        newEmail: { type: string, format: email, maxLength: 320 }
+    UserSettings:
+      type: object
+      required: [theme, language, moveCheckedToBottom, trashAutoPurgeDays, trashAutoPurgeMayBeDisabled]
+      properties:
+        theme: { type: string, enum: [dark, light] }
+        language: { type: string, enum: [en, de] }
+        moveCheckedToBottom: { type: boolean }
+        trashAutoPurgeDays: { type: integer, minimum: 0, maximum: 3650 }
+        trashAutoPurgeMayBeDisabled: { type: boolean }
+    UserSettingsUpdate:
+      type: object
+      properties:
+        theme: { type: string, enum: [dark, light] }
+        language: { type: string, enum: [en, de] }
+        moveCheckedToBottom: { type: boolean }
+        trashAutoPurgeDays: { type: integer, minimum: 0, maximum: 3650 }
+    SelfDeletionRequest:
+      type: object
+      required: [currentPassword]
+      properties:
+        currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+    AdminDeletionRequest:
+      type: object
+      required: [mode]
+      properties:
+        mode: { type: string, enum: [RETAINED, IMMEDIATE] }
+        confirmation: { type: string, maxLength: 64 }
     AdminUser:
       type: object
       required: [id, username, email, role, status, createdAt, storageBytes, noteCount, notebookCount, imageCount]
@@ -1584,6 +1799,8 @@ components:
         status: { type: string, enum: [PENDING_ACTIVATION, ACTIVE, LOCKED, DEACTIVATED, PENDING_DELETION, DELETED] }
         createdAt: { type: string, format: date-time }
         lastLoginAt: { type: string, format: date-time }
+        pendingDeletionAt: { type: string, format: date-time }
+        deletionDueAt: { type: string, format: date-time }
         storageBytes: { type: integer, format: int64, minimum: 0 }
         noteCount: { type: integer, format: int64, minimum: 0 }
         notebookCount: { type: integer, format: int64, minimum: 0 }
@@ -1650,13 +1867,14 @@ components:
         expiresAt: { type: string, format: date-time }
     AdminSettings:
       type: object
-      required: [allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours, noteVersionMaximumCount, noteVersionRetentionDays, userExportsEnabled]
+      required: [allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, emailChangeExpirationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours, noteVersionMaximumCount, noteVersionRetentionDays, userExportsEnabled, defaultTrashRetentionDays, usersMayDisableAutoPurge, adminDeletionRetentionDays, selfDeletionEnabled, commonPasswordCheckEnabled, passwordHistoryEnabled]
       properties:
         allowedEmailDomains:
           type: array
           items: { type: string, maxLength: 253 }
         invitationExpirationHours: { type: integer, minimum: 1, maximum: 720 }
         passwordResetExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
+        emailChangeExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
         allowedImageTypes:
           type: array
           items: { type: string, enum: [image/png, image/jpeg, image/webp] }
@@ -1666,6 +1884,12 @@ components:
         noteVersionMaximumCount: { type: integer, minimum: 1, maximum: 500 }
         noteVersionRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
         userExportsEnabled: { type: boolean }
+        defaultTrashRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
+        usersMayDisableAutoPurge: { type: boolean }
+        adminDeletionRetentionDays: { type: integer, minimum: 0, maximum: 3650 }
+        selfDeletionEnabled: { type: boolean }
+        commonPasswordCheckEnabled: { type: boolean }
+        passwordHistoryEnabled: { type: boolean }
     AdminSettingsUpdate:
       type: object
       properties:
@@ -1675,6 +1899,7 @@ components:
           items: { type: string, maxLength: 253 }
         invitationExpirationHours: { type: integer, minimum: 1, maximum: 720 }
         passwordResetExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
+        emailChangeExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
         allowedImageTypes:
           type: array
           uniqueItems: true
@@ -1685,6 +1910,12 @@ components:
         noteVersionMaximumCount: { type: integer, minimum: 1, maximum: 500 }
         noteVersionRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
         userExportsEnabled: { type: boolean }
+        defaultTrashRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
+        usersMayDisableAutoPurge: { type: boolean }
+        adminDeletionRetentionDays: { type: integer, minimum: 0, maximum: 3650 }
+        selfDeletionEnabled: { type: boolean }
+        commonPasswordCheckEnabled: { type: boolean }
+        passwordHistoryEnabled: { type: boolean }
     ImageMetadata:
       type: object
       required: [id, mimeType, byteSize, width, height, thumbnailMimeType, thumbnailByteSize, thumbnailWidth, thumbnailHeight, contentUrl, thumbnailUrl, createdAt]

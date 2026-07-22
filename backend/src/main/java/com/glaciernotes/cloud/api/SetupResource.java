@@ -34,6 +34,7 @@ public class SetupResource implements SetupApi {
             request.getUsername(),
             request.getEmail(),
             request.getDisplayName(),
+            request.getLanguage() == null ? "en" : request.getLanguage().toString(),
             request.getPassword(),
             clientAddress(),
             Objects.toString(MDC.get("correlationId"), "unavailable")

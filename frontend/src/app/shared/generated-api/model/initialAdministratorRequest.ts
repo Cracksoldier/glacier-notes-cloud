@@ -14,5 +14,12 @@ export interface InitialAdministratorRequest {
     email: string;
     displayName?: string;
     password: string;
+    language?: InitialAdministratorRequestLanguageEnum;
 }
+export enum InitialAdministratorRequestLanguageEnum {
+    En = 'en',
+    De = 'de'
+};
+
+
 

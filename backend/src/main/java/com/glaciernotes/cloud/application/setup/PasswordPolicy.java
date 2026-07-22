@@ -36,6 +36,10 @@ public class PasswordPolicy {
     }
 
     public void validate(char[] password) {
+        validate(password, true);
+    }
+
+    public void validate(char[] password, boolean rejectCommonPasswords) {
         var value = new String(password);
         var length = value.codePointCount(0, value.length());
         var violations = new HashSet<SetupFailure.FieldViolation>();
@@ -48,7 +52,7 @@ public class PasswordPolicy {
         if (value.codePoints().anyMatch(Character::isWhitespace)) {
             violations.add(new SetupFailure.FieldViolation("password", "Password must not contain whitespace"));
         }
-        if (commonPasswords.contains(comparisonForm(value))) {
+        if (rejectCommonPasswords && commonPasswords.contains(comparisonForm(value))) {
             violations.add(new SetupFailure.FieldViolation("password", "Choose a less common password"));
         }
         if (!violations.isEmpty()) {

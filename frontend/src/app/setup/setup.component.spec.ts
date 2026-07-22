@@ -37,6 +37,7 @@ describe('SetupComponent', () => {
       email: 'admin@example.com',
       displayName: 'Administrator',
       password: 'correct-horse-battery-staple',
+      language: 'en',
     });
     request.flush({ initialized: true, initializedAt: '2026-07-20T19:00:00Z' });
 

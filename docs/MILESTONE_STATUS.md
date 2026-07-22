@@ -16,7 +16,8 @@ implementation and repository verification gates pass.
 | M7 | Complete | Secure image processing, owner-scoped references, quotas, thumbnails, garbage collection, and filesystem/PostgreSQL/S3 storage |
 | M8 | Complete | Ranked owner-scoped PostgreSQL search, conflict-safe editing, retained note versions, restore, and cleanup policies |
 | M9 | Complete | Portable full/notebook/note transfer, desktop compatibility, conflict strategies, bounded jobs, and blind administrative import |
-| M10–M13 | Pending | Not yet implemented |
+| M10 | Complete | Account self-service, verified email changes, deletion retention, synchronized preferences, i18n, themes, and external email sharing |
+| M11–M13 | Pending | Not yet implemented |
 
 ## M5 Verification
 
@@ -91,3 +92,17 @@ round trips, image references, conflict strategies, disabled exports, and the bl
 The frontend production build type-checks the transfer dialog and administration controls. The
 standard gates above plus both Compose validation commands verify the milestone; the optional
 Playwright suite includes the browser import/export flow.
+
+## M10 Verification
+
+M10 adds profile and username updates; current-password-protected password and verified-email
+changes; password history and configurable common-password checks; immediate self-deletion; retained,
+restorable, and explicitly confirmed administrative deletion; synchronized theme, language,
+checklist-order, and trash-retention preferences; and scheduled account/trash cleanup. The browser
+uses English or German at runtime and composes note sharing locally through `mailto:` with Markdown
+checklists, image warnings, URL-length warnings, and a Markdown export alternative.
+
+Backend integration tests cover session revocation, password reuse, retained deletion restoration,
+destructive deletion, last-administrator protection, migration constraints, and existing lifecycle
+boundaries. The frontend gates type-check the account, policy, localized-date, checklist-order, and
+sharing surfaces. Run the standard backend and frontend verification commands above.

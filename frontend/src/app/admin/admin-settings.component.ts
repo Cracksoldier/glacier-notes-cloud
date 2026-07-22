@@ -17,12 +17,19 @@ export class AdminSettingsComponent {
   domains = '';
   invitationHours = 168;
   resetMinutes = 60;
+  emailChangeMinutes = 60;
   maximumImageMb = 10;
   quotaMb = 1024;
   orphanGraceHours = 24;
   noteVersionMaximumCount = 20;
   noteVersionRetentionDays = 30;
   userExportsEnabled = true;
+  defaultTrashRetentionDays = 30;
+  usersMayDisableAutoPurge = true;
+  adminDeletionRetentionDays = 30;
+  selfDeletionEnabled = true;
+  commonPasswordCheckEnabled = true;
+  passwordHistoryEnabled = false;
   imageTypes = new Set<string>(['image/png', 'image/jpeg', 'image/webp']);
 
   constructor() {
@@ -30,12 +37,19 @@ export class AdminSettingsComponent {
       this.domains = value.allowedEmailDomains.join('\n');
       this.invitationHours = value.invitationExpirationHours;
       this.resetMinutes = value.passwordResetExpirationMinutes;
+      this.emailChangeMinutes = value.emailChangeExpirationMinutes;
       this.maximumImageMb = value.maximumImageBytes / 1048576;
       this.quotaMb = value.perUserStorageQuotaBytes / 1048576;
       this.orphanGraceHours = value.imageOrphanGraceHours;
       this.noteVersionMaximumCount = value.noteVersionMaximumCount;
       this.noteVersionRetentionDays = value.noteVersionRetentionDays;
       this.userExportsEnabled = value.userExportsEnabled;
+      this.defaultTrashRetentionDays = value.defaultTrashRetentionDays;
+      this.usersMayDisableAutoPurge = value.usersMayDisableAutoPurge;
+      this.adminDeletionRetentionDays = value.adminDeletionRetentionDays;
+      this.selfDeletionEnabled = value.selfDeletionEnabled;
+      this.commonPasswordCheckEnabled = value.commonPasswordCheckEnabled;
+      this.passwordHistoryEnabled = value.passwordHistoryEnabled;
       this.imageTypes = new Set(value.allowedImageTypes);
     });
   }
@@ -50,6 +64,7 @@ export class AdminSettingsComponent {
         allowedEmailDomains,
         invitationExpirationHours: this.invitationHours,
         passwordResetExpirationMinutes: this.resetMinutes,
+        emailChangeExpirationMinutes: this.emailChangeMinutes,
         allowedImageTypes: new Set([
           ...this.imageTypes,
         ] as AdminSettingsUpdateAllowedImageTypesEnum[]),
@@ -59,6 +74,12 @@ export class AdminSettingsComponent {
         noteVersionMaximumCount: this.noteVersionMaximumCount,
         noteVersionRetentionDays: this.noteVersionRetentionDays,
         userExportsEnabled: this.userExportsEnabled,
+        defaultTrashRetentionDays: this.defaultTrashRetentionDays,
+        usersMayDisableAutoPurge: this.usersMayDisableAutoPurge,
+        adminDeletionRetentionDays: this.adminDeletionRetentionDays,
+        selfDeletionEnabled: this.selfDeletionEnabled,
+        commonPasswordCheckEnabled: this.commonPasswordCheckEnabled,
+        passwordHistoryEnabled: this.passwordHistoryEnabled,
       })
       .subscribe({
         next: (value) => {

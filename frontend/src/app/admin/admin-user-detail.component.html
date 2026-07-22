@@ -1,6 +1,9 @@
 @if (user(); as value) {
 <h1>{{ value.username }}</h1>
 <p>{{ value.status }} · {{ value.role }}</p>
+@if (value.deletionDueAt) {
+<p role="status">Deletion due: {{ value.deletionDueAt }}</p>
+}
 <form (ngSubmit)="save()">
   <label>Username<input name="username" [(ngModel)]="username"></label>
   <label>Email<input name="email" type="email" [(ngModel)]="email"></label>
@@ -19,6 +22,12 @@
   <button type="button" (click)="unlock()">Unlock</button>
   <button type="button" (click)="revokeSessions()">Revoke sessions</button>
   <button type="button" (click)="resetPassword()">Generate reset link</button>
+  @if (value.status === 'PENDING_DELETION') {
+  <button type="button" (click)="restoreDeletion()">Restore account</button>
+  } @else {
+  <button type="button" (click)="scheduleDeletion()">Schedule retained deletion</button>
+  <button type="button" class="danger" (click)="deleteImmediately()">Delete immediately…</button>
+  }
 </div>
 <section class="card blind-import">
   <h2>Blind portable import</h2>

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AuthenticationService } from '../shared/generated-api/api/authentication.service';
+import { InvitationAcceptanceRequestLanguageEnum } from '../shared/generated-api/model/invitationAcceptanceRequest';
 import type { InvitationInspection } from '../shared/generated-api/model/invitationInspection';
 
 @Component({
@@ -53,6 +54,9 @@ export class AcceptInvitationComponent {
         username: this.username,
         displayName: this.displayName || undefined,
         password: this.password,
+        language: navigator.language.toLowerCase().startsWith('de')
+          ? InvitationAcceptanceRequestLanguageEnum.De
+          : InvitationAcceptanceRequestLanguageEnum.En,
       })
       .subscribe({
         next: () => {

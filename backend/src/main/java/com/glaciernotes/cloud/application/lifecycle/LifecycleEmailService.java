@@ -43,6 +43,25 @@ public class LifecycleEmailService {
             """.formatted(resetUrl));
     }
 
+    public boolean sendEmailChangeVerification(String recipient, String verificationUrl) {
+        return send(recipient, "Verify your new Glacier Notes email address", """
+            A change to this email address was requested for your Glacier Notes account.
+
+            Open this link to verify the new address:
+            %s
+
+            If you did not request this change, you can ignore this message.
+            """.formatted(verificationUrl));
+    }
+
+    public boolean sendEmailChangedNotice(String recipient) {
+        return send(recipient, "Your Glacier Notes email address changed", """
+            The email address for your Glacier Notes account was changed successfully.
+
+            If you did not make this change, contact your Glacier Notes administrator immediately.
+            """);
+    }
+
     private boolean send(String recipient, String subject, String body) {
         if (!configured()) return false;
         try {

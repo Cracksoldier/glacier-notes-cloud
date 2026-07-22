@@ -12,6 +12,7 @@ import com.glaciernotes.cloud.generated.model.PasswordResetRequest;
 import com.glaciernotes.cloud.generated.model.SessionContext;
 import com.glaciernotes.cloud.generated.model.TokenRequest;
 import com.glaciernotes.cloud.application.lifecycle.LifecycleService;
+import com.glaciernotes.cloud.application.lifecycle.AccountService;
 import com.glaciernotes.cloud.persistence.repository.SessionRepository;
 import com.glaciernotes.cloud.security.AuthenticationIdentity;
 import com.glaciernotes.cloud.security.CookieManager;
@@ -32,6 +33,7 @@ public class AuthenticationResource implements AuthenticationApi {
     private final CookieManager cookies;
     private final SecurityIdentity identity;
     private final LifecycleService lifecycle;
+    private final AccountService accounts;
 
     @Context
     HttpServerRequest request;
@@ -44,13 +46,15 @@ public class AuthenticationResource implements AuthenticationApi {
         SessionRepository sessions,
         CookieManager cookies,
         SecurityIdentity identity,
-        LifecycleService lifecycle
+        LifecycleService lifecycle,
+        AccountService accounts
     ) {
         this.authentication = authentication;
         this.sessions = sessions;
         this.cookies = cookies;
         this.identity = identity;
         this.lifecycle = lifecycle;
+        this.accounts = accounts;
     }
 
     @Override
@@ -101,6 +105,11 @@ public class AuthenticationResource implements AuthenticationApi {
     @Override
     public void completePasswordReset(PasswordResetCompletionRequest request) {
         lifecycle.completePasswordReset(request, clientAddress(), correlationId());
+    }
+
+    @Override
+    public void completeEmailChange(TokenRequest tokenRequest) {
+        accounts.completeEmailChange(tokenRequest.getToken(), clientAddress(), correlationId());
     }
 
     private SessionView currentSession() {

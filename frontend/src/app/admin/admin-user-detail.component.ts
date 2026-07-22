@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '../core/auth.store';
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
+import { AdminDeletionRequestModeEnum } from '../shared/generated-api/model/adminDeletionRequest';
 import type { AdminUser } from '../shared/generated-api/model/adminUser';
 import { AdminUserUpdateRoleEnum } from '../shared/generated-api/model/adminUserUpdate';
 import { ImportApplyRequestStrategyEnum } from '../shared/generated-api/model/importApplyRequest';
@@ -89,6 +90,54 @@ export class AdminUserDetailComponent {
   resetPassword(): void {
     this.api.createAdministrativePasswordReset(this.id).subscribe({
       next: (value) => this.reset.set(value),
+      error: (failure) => this.fail(failure),
+    });
+  }
+
+  scheduleDeletion(): void {
+    if (!confirm('Schedule this account for retained deletion? Access is revoked immediately.'))
+      return;
+    this.api
+      .scheduleUserDeletion(this.id, { mode: AdminDeletionRequestModeEnum.Retained })
+      .subscribe({
+        next: (value) => {
+          this.user.set(value);
+          this.message.set('Account deletion scheduled. It can be restored until the due time.');
+          this.checkSelf();
+        },
+        error: (failure) => this.fail(failure),
+      });
+  }
+
+  deleteImmediately(): void {
+    const user = this.user();
+    if (!user) return;
+    const confirmation = prompt(`Type ${user.username} to permanently delete this account now.`);
+    if (confirmation === null) return;
+    this.api
+      .scheduleUserDeletion(this.id, {
+        mode: AdminDeletionRequestModeEnum.Immediate,
+        confirmation,
+      })
+      .subscribe({
+        next: () => {
+          if (this.auth.session()?.user.id === this.id) {
+            this.auth.clear();
+            void this.router.navigate(['/login']);
+          } else {
+            void this.router.navigate(['/admin/users']);
+          }
+        },
+        error: (failure) => this.fail(failure),
+      });
+  }
+
+  restoreDeletion(): void {
+    this.api.restoreUserDeletion(this.id).subscribe({
+      next: (value) => {
+        this.user.set(value);
+        this.message.set('Scheduled deletion canceled.');
+      },
       error: (failure) => this.fail(failure),
     });
   }

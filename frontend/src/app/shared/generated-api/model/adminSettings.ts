@@ -13,6 +13,7 @@ export interface AdminSettings {
     allowedEmailDomains: Array<string>;
     invitationExpirationHours: number;
     passwordResetExpirationMinutes: number;
+    emailChangeExpirationMinutes: number;
     allowedImageTypes: Array<AdminSettingsAllowedImageTypesEnum>;
     maximumImageBytes: number;
     perUserStorageQuotaBytes: number;
@@ -20,6 +21,12 @@ export interface AdminSettings {
     noteVersionMaximumCount: number;
     noteVersionRetentionDays: number;
     userExportsEnabled: boolean;
+    defaultTrashRetentionDays: number;
+    usersMayDisableAutoPurge: boolean;
+    adminDeletionRetentionDays: number;
+    selfDeletionEnabled: boolean;
+    commonPasswordCheckEnabled: boolean;
+    passwordHistoryEnabled: boolean;
 }
 export enum AdminSettingsAllowedImageTypesEnum {
     ImagePng = 'image/png',

@@ -9,6 +9,7 @@ import com.glaciernotes.cloud.domain.TimeProvider;
 import com.glaciernotes.cloud.domain.notebook.Notebook;
 import com.glaciernotes.cloud.persistence.entity.AuditEventEntity;
 import com.glaciernotes.cloud.persistence.entity.InstanceStateEntity;
+import com.glaciernotes.cloud.persistence.entity.InstanceSettingsEntity;
 import com.glaciernotes.cloud.persistence.entity.NotebookEntity;
 import com.glaciernotes.cloud.persistence.entity.UserEntity;
 import com.glaciernotes.cloud.persistence.entity.UserSettingsEntity;
@@ -76,7 +77,9 @@ public class BootstrapTransaction {
         entityManager.persist(new NotebookEntity(new Notebook(
             new OwnerId(administratorId), notebookId, "Notes", null, true, 0, now, now, 0
         )));
-        entityManager.persist(new UserSettingsEntity(administratorId, notebookId, now));
+        var settings = entityManager.find(InstanceSettingsEntity.class, (short) 1);
+        entityManager.persist(new UserSettingsEntity(administratorId, notebookId, command.language(),
+            settings.defaultTrashRetentionDays(), now));
         instance.initialize(administratorId, now);
         entityManager.persist(AuditEventEntity.instanceBootstrapped(
             idGenerator.nextId(), administratorId, now, correlationId

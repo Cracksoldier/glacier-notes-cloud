@@ -91,6 +91,18 @@ public class AdministrationResource implements AdministrationApi {
     }
 
     @Override
+    public AdminUser scheduleUserDeletion(UUID userId, AdminDeletionRequest request) {
+        var result = lifecycle.scheduleDeletion(userId, request, actor(), correlationId());
+        if (userId.equals(actor())) cookies.clear(response);
+        return result;
+    }
+
+    @Override
+    public AdminUser restoreUserDeletion(UUID userId) {
+        return lifecycle.restoreDeletion(userId, actor(), correlationId());
+    }
+
+    @Override
     public InvitationPage listInvitations(String status, String cursor, Integer limit) {
         return lifecycle.listInvitations(status, cursor, limit);
     }

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { AccountSettingsComponent } from './account/account-settings.component';
 import { AdminInvitationsComponent } from './admin/admin-invitations.component';
 import { AdminSettingsComponent } from './admin/admin-settings.component';
 import { AdminShellComponent } from './admin/admin-shell.component';
@@ -9,6 +10,7 @@ import { AcceptInvitationComponent } from './auth/accept-invitation.component';
 import { ForgotPasswordComponent } from './auth/forgot-password.component';
 import { LoginComponent } from './auth/login.component';
 import { ResetPasswordComponent } from './auth/reset-password.component';
+import { VerifyEmailChangeComponent } from './auth/verify-email-change.component';
 import { adminGuard, anonymousGuard, authGuard } from './core/auth.guards';
 import { NotesShellComponent } from './notes/notes-shell.component';
 import { NotesViewMarkerComponent } from './notes/notes-view-marker.component';
@@ -36,6 +38,12 @@ export const routes: Routes = [
   },
   { path: 'forgot-password', component: ForgotPasswordComponent, canActivate: [anonymousGuard] },
   { path: 'reset-password', component: ResetPasswordComponent, canActivate: [anonymousGuard] },
+  {
+    path: 'verify-email-change',
+    component: VerifyEmailChangeComponent,
+    canActivate: [anonymousGuard],
+  },
+  { path: 'settings', component: AccountSettingsComponent, canActivate: [authGuard] },
   { path: 'sessions', component: SessionsComponent, canActivate: [authGuard] },
   {
     path: 'admin',

@@ -1,0 +1,151 @@
+<main class="account-page">
+  <header class="account-heading">
+    <div>
+      <a href="/notes" routerLink="/notes"
+        ><i class="fa-solid fa-arrow-left"></i> {{ i18n.t('notes') }}</a
+      >
+      <h1>{{ i18n.t('accountSettings') }}</h1>
+      <p>{{ i18n.t('accountSettingsIntro') }}</p>
+    </div>
+  </header>
+  @if (profile(); as value) {
+  <div class="settings-grid">
+    <section class="settings-card">
+      <h2>{{ i18n.t('profile') }}</h2>
+      <p>{{ i18n.t('usernameUnique') }}</p>
+      <form (ngSubmit)="saveProfile()">
+        <label
+          >{{ i18n.t('username') }}
+          <input name="username" required minlength="3" [(ngModel)]="username"></label
+        >
+        <label
+          >{{ i18n.t('displayName') }}
+          <input name="displayName" maxlength="128" [(ngModel)]="displayName"></label
+        >
+        <label>{{ i18n.t('email') }}<input disabled [value]="value.email"></label>
+        <button type="submit" [disabled]="busy()">{{ i18n.t('saveProfile') }}</button>
+      </form>
+    </section>
+
+    <section class="settings-card">
+      <h2>{{ i18n.t('appearanceBehavior') }}</h2>
+      <form (ngSubmit)="savePreferences()">
+        <label
+          >{{ i18n.t('theme') }}
+          <select name="theme" [(ngModel)]="theme">
+            <option value="dark">{{ i18n.t('dark') }}</option>
+            <option value="light">{{ i18n.t('light') }}</option>
+          </select></label
+        >
+        <label
+          >{{ i18n.t('language') }}
+          <select name="language" [(ngModel)]="language">
+            <option value="en">English</option>
+            <option value="de">Deutsch</option>
+          </select></label
+        >
+        <label class="check-row"
+          ><input name="moveChecked" type="checkbox" [(ngModel)]="moveCheckedToBottom">
+          {{ i18n.t('moveChecked') }}</label
+        >
+        <label
+          >{{ i18n.t('purgeTrashDays') }}
+          <input
+            name="trashDays"
+            type="number"
+            [min]="settings()?.trashAutoPurgeMayBeDisabled ? 0 : 1"
+            max="3650"
+            [(ngModel)]="trashAutoPurgeDays"
+          >
+          @if (settings()?.trashAutoPurgeMayBeDisabled) {
+          <small>{{ i18n.t('keepTrashHint') }}</small>
+          }</label
+        >
+        <button type="submit" [disabled]="busy()">{{ i18n.t('savePreferences') }}</button>
+      </form>
+    </section>
+
+    <section class="settings-card">
+      <h2>{{ i18n.t('changePassword') }}</h2>
+      <p>{{ i18n.t('passwordRevokesSessions') }}</p>
+      <form (ngSubmit)="changePassword()">
+        <label
+          >{{ i18n.t('currentPassword') }}
+          <input
+            name="currentPassword"
+            type="password"
+            autocomplete="current-password"
+            required
+            [(ngModel)]="currentPassword"
+          ></label
+        >
+        <label
+          >{{ i18n.t('newPassword') }}
+          <input
+            name="newPassword"
+            type="password"
+            autocomplete="new-password"
+            minlength="12"
+            required
+            [(ngModel)]="newPassword"
+          ></label
+        >
+        <button type="submit" [disabled]="busy()">{{ i18n.t('changePassword') }}</button>
+      </form>
+    </section>
+
+    <section class="settings-card">
+      <h2>{{ i18n.t('changeEmail') }}</h2>
+      @if (value.emailChangeAvailable) {
+      <p>{{ i18n.t('emailPendingHint') }}</p>
+      <form (ngSubmit)="requestEmailChange()">
+        <label
+          >{{ i18n.t('newEmail') }}
+          <input name="newEmail" type="email" required [(ngModel)]="newEmail"></label
+        >
+        <label
+          >{{ i18n.t('currentPassword') }}
+          <input
+            name="emailPassword"
+            type="password"
+            autocomplete="current-password"
+            required
+            [(ngModel)]="emailPassword"
+          ></label
+        >
+        <button type="submit" [disabled]="busy()">{{ i18n.t('sendVerification') }}</button>
+      </form>
+      } @else {
+      <p class="callout">{{ i18n.t('emailUnavailable') }}</p>
+      }
+    </section>
+    @if (value.selfDeletionEnabled) {
+    <section class="settings-card danger-zone">
+      <h2>{{ i18n.t('deleteAccount') }}</h2>
+      <p>{{ i18n.t('deletionWarning') }}</p>
+      <form (ngSubmit)="deleteAccount()">
+        <label
+          >{{ i18n.t('currentPassword') }}
+          <input
+            name="deletionPassword"
+            type="password"
+            autocomplete="current-password"
+            required
+            [(ngModel)]="deletionPassword"
+          ></label
+        >
+        <button type="submit" class="danger" [disabled]="busy()">
+          {{ i18n.t('deletePermanently') }}
+        </button>
+      </form>
+    </section>
+    }
+  </div>
+  } @else {
+  <p aria-busy="true">{{ i18n.t('loadingSettings') }}</p>
+  } @if (message()) {
+  <p class="notice" role="status">{{ message() }}</p>
+  } @if (error()) {
+  <p class="notice error" role="alert">{{ error() }}</p>
+  }
+</main>

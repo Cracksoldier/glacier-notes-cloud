@@ -48,9 +48,6 @@ public class ImagesResource {
     @DELETE @Path("/images/{id}")
     public Response delete(@PathParam("id") UUID id) { images.delete(owner(), id); return Response.noContent().build(); }
 
-    @GET @Path("/me/storage") @Produces(MediaType.APPLICATION_JSON)
-    public Object usage() { return images.usage(owner()); }
-
     private Response response(ImageService.Download download) {
         return Response.ok(download.object().stream(), download.mimeType())
             .header("Content-Length", download.object().contentLength())

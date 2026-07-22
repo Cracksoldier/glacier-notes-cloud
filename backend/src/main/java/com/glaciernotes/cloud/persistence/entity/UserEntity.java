@@ -42,6 +42,12 @@ public class UserEntity {
     private Instant lockedUntil;
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
+    @Column(name = "pending_deletion_at")
+    private Instant pendingDeletionAt;
+    @Column(name = "deletion_due_at")
+    private Instant deletionDueAt;
+    @Column(name = "deletion_initiated_by")
+    private UUID deletionInitiatedBy;
     @Version
     private long version;
 
@@ -123,6 +129,8 @@ public class UserEntity {
 
     public Instant createdAt() { return createdAt; }
     public Instant lastLoginAt() { return lastLoginAt; }
+    public Instant pendingDeletionAt() { return pendingDeletionAt; }
+    public Instant deletionDueAt() { return deletionDueAt; }
 
     public static UserEntity activated(UUID id, String username, String usernameNormalized,
                                        String email, String emailNormalized, String displayName,
@@ -152,6 +160,39 @@ public class UserEntity {
     public void changePassword(String hash, Instant now) {
         passwordHash = hash; passwordChangedAt = now; failedLoginCount = 0; lockedUntil = null;
         if ("LOCKED".equals(status)) status = "ACTIVE";
+        updatedAt = now;
+    }
+
+    public void scheduleDeletion(UUID actor, Instant now, Instant due) {
+        status = "PENDING_DELETION";
+        pendingDeletionAt = now;
+        deletionDueAt = due;
+        deletionInitiatedBy = actor;
+        updatedAt = now;
+    }
+
+    public void restoreDeletion(Instant now) {
+        status = deactivatedAt == null ? "ACTIVE" : "DEACTIVATED";
+        pendingDeletionAt = null;
+        deletionDueAt = null;
+        deletionInitiatedBy = null;
+        updatedAt = now;
+    }
+
+    public void anonymizeDeleted(Instant now) {
+        String marker = id.toString();
+        username = "deleted-" + marker;
+        usernameNormalized = username;
+        email = marker + "@deleted.invalid";
+        emailNormalized = email;
+        displayName = null;
+        role = "USER";
+        status = "DELETED";
+        passwordHash = null;
+        passwordChangedAt = null;
+        failedLoginCount = 0;
+        lockedUntil = null;
+        deletionDueAt = null;
         updatedAt = now;
     }
 

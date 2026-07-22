@@ -18,6 +18,7 @@ configuration.ts
 encoder.ts
 git_push.sh
 index.ts
+model/adminDeletionRequest.ts
 model/adminSettings.ts
 model/adminSettingsUpdate.ts
 model/adminStatus.ts
@@ -29,6 +30,7 @@ model/checklistItemInput.ts
 model/checklistItemView.ts
 model/contentColor.ts
 model/contentNote.ts
+model/emailChangeRequest.ts
 model/emptyTrashResult.ts
 model/exportRequest.ts
 model/imageMetadata.ts
@@ -62,11 +64,13 @@ model/notebookReorder.ts
 model/notebookUpdate.ts
 model/notebookView.ts
 model/pageMetadata.ts
+model/passwordChangeRequest.ts
 model/passwordResetCompletionRequest.ts
 model/passwordResetRequest.ts
 model/pingResponse.ts
 model/problemDetails.ts
 model/resetLink.ts
+model/selfDeletionRequest.ts
 model/sessionContext.ts
 model/sessionSummary.ts
 model/setupCompletion.ts
@@ -75,6 +79,10 @@ model/storageUsage.ts
 model/tokenRequest.ts
 model/transferCounts.ts
 model/transferJob.ts
+model/userProfile.ts
+model/userProfileUpdate.ts
+model/userSettings.ts
+model/userSettingsUpdate.ts
 model/validationError.ts
 model/versionRequest.ts
 ng-package.json

@@ -202,6 +202,10 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
                 failure.getMessage(), List.of(), 0);
             case LAST_ADMIN -> new Description(409, "Last Administrator Required", "LAST_ADMIN_REQUIRED",
                 failure.getMessage(), List.of(), 0);
+            case INVALID_CREDENTIALS -> new Description(403, "Current Password Required", "CURRENT_PASSWORD_INVALID",
+                failure.getMessage(), List.of(), 0);
+            case UNAVAILABLE -> new Description(503, "Service Unavailable", "LIFECYCLE_UNAVAILABLE",
+                failure.getMessage(), List.of(), 0);
             case INVALID_INPUT -> new Description(422, "Validation Failed", "VALIDATION_FAILED",
                 failure.getMessage(), failure.violations().stream()
                     .map(value -> new ValidationError().field(value.field()).message(value.message())).toList(), 0);

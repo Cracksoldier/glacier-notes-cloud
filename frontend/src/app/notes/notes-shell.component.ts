@@ -12,6 +12,8 @@ import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router
 import { filter, Subscription } from 'rxjs';
 
 import { AuthStore } from '../core/auth.store';
+import { I18nService } from '../core/i18n.service';
+import { PreferencesService } from '../core/preferences.service';
 import { ProblemService } from '../core/problem.service';
 import { ThemeService } from '../core/theme.service';
 import type { LabelView } from '../shared/generated-api/model/labelView';
@@ -39,6 +41,8 @@ export class NotesShellComponent implements OnInit, OnDestroy {
   protected readonly store = inject(NotesStore);
   protected readonly auth = inject(AuthStore);
   protected readonly theme = inject(ThemeService);
+  protected readonly i18n = inject(I18nService);
+  protected readonly preferences = inject(PreferencesService);
   protected readonly problems = inject(ProblemService);
   private readonly router = inject(Router);
 
@@ -90,6 +94,11 @@ export class NotesShellComponent implements OnInit, OnDestroy {
     );
     window.addEventListener('focus', this.focusHandler);
     document.addEventListener('keydown', this.shortcutHandler, true);
+    try {
+      await this.preferences.load();
+    } catch (error) {
+      this.problems.report(error);
+    }
     await this.store.initialize();
     await this.activateRoute();
   }
@@ -213,6 +222,11 @@ export class NotesShellComponent implements OnInit, OnDestroy {
         void this.router.navigate(['/login']);
       },
     });
+  }
+
+  protected toggleTheme(): void {
+    const next = this.theme.dark() ? 'light' : 'dark';
+    void this.preferences.update({ theme: next }).catch((error) => this.problems.report(error));
   }
 
   private async activateRoute(): Promise<void> {

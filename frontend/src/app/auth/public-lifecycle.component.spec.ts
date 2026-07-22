@@ -53,6 +53,7 @@ describe('public lifecycle flows', () => {
       username: 'member',
       displayName: 'Member',
       password: 'correct-horse-battery-staple',
+      language: 'en',
     });
     acceptance.flush(null);
 

@@ -3,6 +3,8 @@ import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router
 import { filter } from 'rxjs';
 
 import { AuthStore } from './core/auth.store';
+import { I18nService } from './core/i18n.service';
+import { PreferencesService } from './core/preferences.service';
 import { SetupComponent } from './setup/setup.component';
 import { SetupService } from './shared/generated-api/api/setup.service';
 
@@ -18,6 +20,8 @@ export class App {
   private readonly setupApi = inject(SetupService);
   private readonly router = inject(Router);
   protected readonly auth = inject(AuthStore);
+  protected readonly i18n = inject(I18nService);
+  private readonly preferences = inject(PreferencesService);
 
   protected readonly applicationState = signal<ApplicationState>('loading');
   protected readonly notesActive = signal(false);
@@ -60,6 +64,7 @@ export class App {
         }
         this.auth.restore().subscribe((authenticated) => {
           this.applicationState.set('ready');
+          if (authenticated) void this.preferences.load().catch(() => undefined);
           if (authenticated && this.router.url === '/login') {
             void this.router.navigate(['/notes']);
           } else if (!authenticated && !this.isPublicRoute()) {
@@ -72,8 +77,12 @@ export class App {
   }
 
   private isPublicRoute(): boolean {
-    return ['/login', '/accept-invitation', '/forgot-password', '/reset-password'].some((path) =>
-      this.router.url.startsWith(path),
-    );
+    return [
+      '/login',
+      '/accept-invitation',
+      '/forgot-password',
+      '/reset-password',
+      '/verify-email-change',
+    ].some((path) => this.router.url.startsWith(path));
   }
 }

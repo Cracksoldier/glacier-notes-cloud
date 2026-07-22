@@ -6,6 +6,7 @@ public record SetupCommand(
     String email,
     String emailNormalized,
     String displayName,
+    String language,
     char[] password
 ) {
 }

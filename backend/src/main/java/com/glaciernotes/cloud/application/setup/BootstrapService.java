@@ -49,6 +49,7 @@ public class BootstrapService {
         String username,
         String email,
         String displayName,
+        String language,
         String passwordValue,
         String clientAddress,
         String correlationId
@@ -75,6 +76,7 @@ public class BootstrapService {
                 identity.email(),
                 identity.emailNormalized(),
                 identity.displayName(),
+                "de".equals(language) ? "de" : "en",
                 password
             ), correlationId);
             rateLimiter.clear(clientKey);

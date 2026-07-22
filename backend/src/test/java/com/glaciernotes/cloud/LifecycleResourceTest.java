@@ -50,7 +50,11 @@ class LifecycleResourceTest {
             statement.executeUpdate("""
                 update instance_settings set allowed_email_domains = array[]::text[],
                     invitation_expiration_hours = 168, password_reset_expiration_minutes = 60,
-                    note_version_maximum_count = 20, note_version_retention_days = 30
+                    email_change_expiration_minutes = 60, note_version_maximum_count = 20,
+                    note_version_retention_days = 30, default_trash_retention_days = 30,
+                    users_may_disable_auto_purge = true, admin_deletion_retention_days = 30,
+                    self_deletion_enabled = true, common_password_check_enabled = true,
+                    password_history_enabled = false
                 where singleton_key = 1
                 """);
         }
@@ -179,6 +183,117 @@ class LifecycleResourceTest {
             .body("errorCode", equalTo("LIFECYCLE_RATE_LIMITED"));
     }
 
+    @Test
+    void profilePreferencesAndPasswordChangesAreAccountScoped() throws SQLException {
+        insertCompleteUser(USER_ID, "member", "member@example.com", "USER");
+        var member = login("member", PASSWORD);
+        var request = adminRequest(member);
+
+        given().cookie("GLACIER_SESSION", member.getCookie("GLACIER_SESSION"))
+            .get("/api/v1/me/profile").then().statusCode(200)
+            .body("username", equalTo("member"))
+            .body("emailChangeAvailable", equalTo(false));
+        request.body("""
+            {"currentPassword":"%s","newEmail":"member.new@example.com"}
+            """.formatted(PASSWORD)).post("/api/v1/me/email-change").then().statusCode(503)
+            .body("errorCode", equalTo("LIFECYCLE_UNAVAILABLE"));
+
+        request.body("""
+            {"username":"Member.New","displayName":"New display name"}
+            """).patch("/api/v1/me/profile").then().statusCode(200)
+            .body("username", equalTo("Member.New"));
+        request.body("""
+            {"theme":"light","language":"de","moveCheckedToBottom":true,"trashAutoPurgeDays":0}
+            """).patch("/api/v1/me/settings").then().statusCode(200)
+            .body("theme", equalTo("light")).body("language", equalTo("de"))
+            .body("trashAutoPurgeDays", equalTo(0));
+
+        request.body("""
+            {"currentPassword":"wrong-password","newPassword":"replacement-horse-battery-2026"}
+            """).put("/api/v1/me/password").then().statusCode(403)
+            .body("errorCode", equalTo("CURRENT_PASSWORD_INVALID"));
+
+        request.body("""
+            {"currentPassword":"%s","newPassword":"123qweasdzxc"}
+            """.formatted(PASSWORD)).put("/api/v1/me/password").then().statusCode(422);
+
+        try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+            statement.executeUpdate("update instance_settings set common_password_check_enabled=false where singleton_key=1");
+        }
+        request.body("""
+            {"currentPassword":"%s","newPassword":"123qweasdzxc"}
+            """.formatted(PASSWORD)).put("/api/v1/me/password").then().statusCode(204);
+        given().cookie("GLACIER_SESSION", member.getCookie("GLACIER_SESSION"))
+            .get("/api/v1/auth/session").then().statusCode(401);
+        login("Member.New", PASSWORD).then().statusCode(401);
+        var commonPasswordLogin = login("member.new", "123qweasdzxc");
+        commonPasswordLogin.then().statusCode(200);
+        try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+            statement.executeUpdate("update instance_settings set password_history_enabled=true where singleton_key=1");
+        }
+        adminRequest(commonPasswordLogin).body("""
+            {"currentPassword":"123qweasdzxc","newPassword":"replacement-horse-battery-2026"}
+            """).put("/api/v1/me/password").then().statusCode(204);
+        var replacement = login("member.new", "replacement-horse-battery-2026");
+        replacement.then().statusCode(200);
+        adminRequest(replacement).body("""
+            {"currentPassword":"replacement-horse-battery-2026","newPassword":"123qweasdzxc"}
+            """).put("/api/v1/me/password").then().statusCode(422);
+    }
+
+    @Test
+    void retainedDeletionCanBeRestoredAndImmediateDeletionIsDestructive() throws SQLException {
+        insertCompleteUser(USER_ID, "member", "member@example.com", "USER");
+        var member = login("member", PASSWORD);
+        var admin = login("admin", PASSWORD);
+
+        adminRequest(admin).body("{\"mode\":\"RETAINED\"}")
+            .post("/api/v1/admin/users/" + USER_ID + "/deletion").then().statusCode(202)
+            .body("status", equalTo("PENDING_DELETION"));
+        given().cookie("GLACIER_SESSION", member.getCookie("GLACIER_SESSION"))
+            .get("/api/v1/auth/session").then().statusCode(401);
+
+        adminRequest(admin).post("/api/v1/admin/users/" + USER_ID + "/deletion/restore")
+            .then().statusCode(200).body("status", equalTo("ACTIVE"));
+        login("member", PASSWORD).then().statusCode(200);
+
+        adminRequest(admin).body("{\"mode\":\"IMMEDIATE\",\"confirmation\":\"wrong\"}")
+            .post("/api/v1/admin/users/" + USER_ID + "/deletion").then().statusCode(409);
+        adminRequest(admin).body("{\"mode\":\"IMMEDIATE\",\"confirmation\":\"member\"}")
+            .post("/api/v1/admin/users/" + USER_ID + "/deletion").then().statusCode(202)
+            .body("status", equalTo("DELETED"));
+        login("member", PASSWORD).then().statusCode(401);
+        try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+            assertEquals(0, count(statement, "select count(*) from notebooks where owner_id='" + USER_ID + "'"));
+            assertEquals(0, count(statement, "select count(*) from user_settings where user_id='" + USER_ID + "'"));
+            assertEquals(1, count(statement, "select count(*) from app_users where id='" + USER_ID
+                + "' and status='DELETED' and username like 'deleted-%'"));
+        }
+    }
+
+    @Test
+    void selfDeletionRequiresPasswordAndProtectsLastAdministrator() throws SQLException {
+        insertCompleteUser(USER_ID, "member", "member@example.com", "USER");
+        var member = login("member", PASSWORD);
+
+        adminRequest(member).body("{\"currentPassword\":\"wrong-password\"}")
+            .post("/api/v1/me/deletion").then().statusCode(403)
+            .body("errorCode", equalTo("CURRENT_PASSWORD_INVALID"));
+        adminRequest(member).body("{\"currentPassword\":\"" + PASSWORD + "\"}")
+            .post("/api/v1/me/deletion").then().statusCode(202);
+        given().cookie("GLACIER_SESSION", member.getCookie("GLACIER_SESSION"))
+            .get("/api/v1/auth/session").then().statusCode(401);
+        try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+            assertEquals(1, count(statement, "select count(*) from app_users where id='" + USER_ID
+                + "' and status='DELETED'"));
+        }
+
+        var admin = login("admin", PASSWORD);
+        adminRequest(admin).body("{\"currentPassword\":\"" + PASSWORD + "\"}")
+            .post("/api/v1/me/deletion").then().statusCode(409)
+            .body("errorCode", equalTo("LAST_ADMIN_REQUIRED"));
+    }
+
     private io.restassured.specification.RequestSpecification adminRequest(Response login) {
         return given().contentType(ContentType.JSON)
             .cookie("GLACIER_SESSION", login.getCookie("GLACIER_SESSION"))
@@ -208,6 +323,30 @@ class LifecycleResourceTest {
             statement.setString(7, status);
             statement.setString(8, passwords.hash(PASSWORD.toCharArray()));
             statement.executeUpdate();
+        }
+    }
+
+    private void insertCompleteUser(UUID id, String username, String email, String role) throws SQLException {
+        insertUser(id, username, email, role, "ACTIVE");
+        UUID notebookId = UUID.randomUUID();
+        try (var connection = dataSource.getConnection()) {
+            try (var statement = connection.prepareStatement("""
+                insert into notebooks(owner_id,id,name,is_default,sort_order)
+                values (?,?,'Notes',true,0)
+                """)) {
+                statement.setObject(1, id);
+                statement.setObject(2, notebookId);
+                statement.executeUpdate();
+            }
+            try (var statement = connection.prepareStatement("""
+                insert into user_settings(user_id,theme,language,move_checked_to_bottom,
+                    trash_auto_purge_days,last_selected_notebook_id)
+                values (?,'dark','en',false,30,?)
+                """)) {
+                statement.setObject(1, id);
+                statement.setObject(2, notebookId);
+                statement.executeUpdate();
+            }
         }
     }
 

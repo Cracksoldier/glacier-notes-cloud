@@ -1,0 +1,121 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.account-page {
+  width: min(74rem, calc(100% - 2rem));
+  margin: auto;
+  padding: 2.5rem 0 5rem;
+}
+
+.account-heading a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+h1 {
+  margin: 1rem 0 0.4rem;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+.account-heading p,
+.settings-card p,
+small {
+  color: var(--color-text-muted);
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.settings-card {
+  padding: 1.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  background: var(--color-surface);
+}
+
+.settings-card h2 {
+  margin-top: 0;
+}
+
+form,
+label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+form {
+  gap: 1rem;
+}
+
+input,
+select,
+button {
+  min-height: 2.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.55rem;
+  background: var(--color-bg);
+  color: inherit;
+  font: inherit;
+}
+
+input,
+select {
+  padding: 0.55rem 0.7rem;
+}
+
+button {
+  padding: 0.55rem 1rem;
+  border-color: #71bdcd;
+  background: #71bdcd;
+  color: #071319;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+}
+
+.check-row input {
+  min-height: auto;
+}
+
+.danger-zone {
+  grid-column: 1 / -1;
+  border-color: #79434b;
+}
+
+button.danger {
+  border-color: #a84f5d;
+  background: #a84f5d;
+  color: white;
+}
+
+.notice {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 0.5rem;
+  background: #255c48;
+}
+
+.notice.error,
+.callout {
+  background: #5d3038;
+}
+
+@media (max-width: 48rem) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}

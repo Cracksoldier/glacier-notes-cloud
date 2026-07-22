@@ -18,6 +18,8 @@ export interface AdminUser {
     status: AdminUserStatusEnum;
     createdAt: string;
     lastLoginAt?: string;
+    pendingDeletionAt?: string;
+    deletionDueAt?: string;
     storageBytes: number;
     noteCount: number;
     notebookCount: number;

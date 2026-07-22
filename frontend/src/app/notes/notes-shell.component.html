@@ -18,7 +18,7 @@
         <input
           #searchInput
           type="search"
-          placeholder="Search notes…"
+          [placeholder]="i18n.t('search')"
           [value]="searchValue()"
           (input)="updateSearch($any($event.target).value)"
           (keydown)="searchKeydown($event)"
@@ -131,7 +131,7 @@
       <button
         type="button"
         [attr.aria-label]="theme.dark() ? 'Switch to light theme' : 'Switch to dark theme'"
-        (click)="theme.toggle()"
+        (click)="toggleTheme()"
       >
         <i class="fa-solid" [class.fa-sun]="theme.dark()" [class.fa-moon]="!theme.dark()"></i>
       </button>
@@ -145,16 +145,21 @@
         <summary aria-label="Account menu"><i class="fa-solid fa-user"></i></summary>
         <div>
           <strong>{{ auth.session()?.user?.displayName || auth.session()?.user?.username }}</strong>
-          <a href="/sessions" routerLink="/sessions"><i class="fa-solid fa-laptop"></i> Sessions</a>
+          <a href="/settings" routerLink="/settings"
+            ><i class="fa-solid fa-gear"></i> {{ i18n.t('settings') }}</a
+          >
+          <a href="/sessions" routerLink="/sessions"
+            ><i class="fa-solid fa-laptop"></i> {{ i18n.t('sessions') }}</a
+          >
           @if (auth.session()?.user?.role === 'ADMIN') {
           <a href="/admin" routerLink="/admin"
             ><i class="fa-solid fa-shield-halved"></i>
-            Administration</a
+            {{ i18n.t('administration') }}</a
           >
           }
           <button type="button" (click)="logout()">
             <i class="fa-solid fa-right-from-bracket"></i>
-            Sign out
+            {{ i18n.t('signOut') }}
           </button>
         </div>
       </details>
@@ -172,7 +177,7 @@
     }
     <aside class="sidebar" [class.sidebar--open]="drawerOpen()">
       <section>
-        <h2>Notebooks</h2>
+        <h2>{{ i18n.t('notebooks') }}</h2>
         <ul>
           @for (notebook of store.notebooks(); track notebook.id; let first = $first; let last =
           $last) {
@@ -248,7 +253,7 @@
       </section>
 
       <section>
-        <h2>Labels</h2>
+        <h2>{{ i18n.t('labels') }}</h2>
         <ul>
           @for (label of store.labels(); track label.id) {
           <li class="sidebar-row">
@@ -310,7 +315,7 @@
           href="/notes/archive"
           routerLink="/notes/archive"
           ><i class="fa-solid fa-box-archive"></i>
-          Archive</a
+          {{ i18n.t('archive') }}</a
         >
         <a
           class="sidebar-item"
@@ -318,7 +323,7 @@
           href="/notes/trash"
           routerLink="/notes/trash"
           ><i class="fa-solid fa-trash-can"></i>
-          Trash</a
+          {{ i18n.t('trash') }}</a
         >
         <button type="button" class="sidebar-item" (click)="overlay.set('transfer')">
           <i class="fa-solid fa-file-export"></i>
@@ -499,17 +504,17 @@ notebook) {
       </tbody>
     </table>
     } @else {
-    <h2>Settings</h2>
+    <h2>{{ i18n.t('settings') }}</h2>
     <p class="setting-row">
       <span>Theme</span
-      ><button type="button" (click)="theme.toggle()">
+      ><button type="button" (click)="toggleTheme()">
         Use {{ theme.dark() ? 'light' : 'dark' }} theme
       </button>
     </p>
-    <p class="future-note">
-      <i class="fa-solid fa-snowflake"></i>
-      Account preferences, language, and synchronized settings arrive in M10.
-    </p>
+    <p class="future-note">Theme changes are synchronized with your account.</p>
+    <a class="settings-link" href="/settings" routerLink="/settings" (click)="overlay.set(null)"
+      >Open account & settings</a
+    >
     }
     <footer><button type="button" (click)="overlay.set(null)">Close</button></footer>
   </section>

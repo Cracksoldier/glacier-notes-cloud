@@ -5,7 +5,10 @@ import com.glaciernotes.cloud.application.setup.SetupFailure;
 import java.util.List;
 
 public class LifecycleFailure extends RuntimeException {
-    public enum Reason { NOT_FOUND, INVALID_TOKEN, CONFLICT, INVALID_INPUT, INVALID_STATE, LAST_ADMIN, RATE_LIMITED }
+    public enum Reason {
+        NOT_FOUND, INVALID_TOKEN, CONFLICT, INVALID_INPUT, INVALID_STATE, LAST_ADMIN,
+        INVALID_CREDENTIALS, UNAVAILABLE, RATE_LIMITED
+    }
 
     private final Reason reason;
     private final List<SetupFailure.FieldViolation> violations;
@@ -34,6 +37,13 @@ public class LifecycleFailure extends RuntimeException {
     public static LifecycleFailure lastAdmin() {
         return new LifecycleFailure(Reason.LAST_ADMIN,
             "The last active administrator must remain active and retain the ADMIN role.", List.of(), 0);
+    }
+    public static LifecycleFailure invalidCredentials() {
+        return new LifecycleFailure(Reason.INVALID_CREDENTIALS,
+            "The current password is incorrect.", List.of(), 0);
+    }
+    public static LifecycleFailure unavailable(String message) {
+        return new LifecycleFailure(Reason.UNAVAILABLE, message, List.of(), 0);
     }
     public static LifecycleFailure invalid(List<SetupFailure.FieldViolation> violations) {
         return new LifecycleFailure(Reason.INVALID_INPUT, "The request contains invalid values.", violations, 0);

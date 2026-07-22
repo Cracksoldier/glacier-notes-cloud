@@ -3,6 +3,7 @@ import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { SetupService } from '../shared/generated-api/api/setup.service';
+import { InitialAdministratorRequestLanguageEnum } from '../shared/generated-api/model/initialAdministratorRequest';
 import type { ProblemDetails } from '../shared/generated-api/model/problemDetails';
 
 interface ControlErrors {
@@ -78,6 +79,9 @@ export class SetupComponent {
         email: values.email,
         displayName: values.displayName || undefined,
         password: values.password,
+        language: navigator.language.toLowerCase().startsWith('de')
+          ? InitialAdministratorRequestLanguageEnum.De
+          : InitialAdministratorRequestLanguageEnum.En,
       })
       .subscribe({
         next: () => {

@@ -14,5 +14,12 @@ export interface InvitationAcceptanceRequest {
     username: string;
     displayName?: string;
     password: string;
+    language?: InvitationAcceptanceRequestLanguageEnum;
 }
+export enum InvitationAcceptanceRequestLanguageEnum {
+    En = 'en',
+    De = 'de'
+};
+
+
 

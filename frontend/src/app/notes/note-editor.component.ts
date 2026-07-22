@@ -11,7 +11,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { lastValueFrom, tap } from 'rxjs';
-
+import { I18nService } from '../core/i18n.service';
+import { PreferencesService } from '../core/preferences.service';
 import { ProblemService } from '../core/problem.service';
 import { CurrentUserService } from '../shared/generated-api/api/currentUser.service';
 import { ImagesService } from '../shared/generated-api/api/images.service';
@@ -64,6 +65,8 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly store = inject(NotesStore);
   protected readonly markdown = inject(MarkdownService);
   protected readonly problems = inject(ProblemService);
+  protected readonly i18n = inject(I18nService);
+  protected readonly preferences = inject(PreferencesService);
   private readonly imagesApi = inject(ImagesService);
   private readonly currentUserApi = inject(CurrentUserService);
 
@@ -87,6 +90,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly versions = signal<NoteVersionSummary[]>([]);
   protected readonly selectedVersion = signal<NoteVersion | null>(null);
   protected readonly historyCursor = signal<string | null>(null);
+  protected readonly shareWarning = signal<{ url: string; reasons: string[] } | null>(null);
   protected readonly colors = Object.values(ContentColor);
   protected readonly toolbar: { action: ToolbarAction; label: string; icon?: string }[] = [
     { action: 'bold', label: 'Bold', icon: 'fa-bold' },
@@ -171,10 +175,62 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   protected toggleItem(index: number): void {
-    this.items.update((items) =>
-      items.map((item, i) => (i === index ? { ...item, checked: !item.checked } : item)),
-    );
+    this.items.update((items) => {
+      const changed = items.map((item, i) =>
+        i === index ? { ...item, checked: !item.checked } : item,
+      );
+      if (!this.preferences.value()?.moveCheckedToBottom) return changed;
+      return [
+        ...changed.filter((item) => !item.checked),
+        ...changed.filter((item) => item.checked),
+      ];
+    });
     this.changed();
+  }
+
+  protected shareByEmail(): void {
+    const url = this.mailtoUrl();
+    const reasons: string[] = [];
+    if (this.imageIds().length) reasons.push('Images cannot be attached to the email.');
+    if (url.length > 2000)
+      reasons.push('This note may be too long for your browser or mail application.');
+    if (reasons.length) {
+      this.shareWarning.set({ url, reasons });
+      return;
+    }
+    window.location.href = url;
+  }
+
+  protected continueShare(url: string): void {
+    this.shareWarning.set(null);
+    window.location.href = url;
+  }
+
+  protected exportMarkdown(): void {
+    const body = this.shareBody();
+    const title = this.title().trim() || 'Untitled note';
+    const blob = new Blob([`# ${title}\n\n${body}\n`], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${title.replace(/[^\p{L}\p{N}._-]+/gu, '-').slice(0, 80) || 'note'}.md`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    this.shareWarning.set(null);
+  }
+
+  private mailtoUrl(): string {
+    const subject = this.title().trim() || 'Untitled note';
+    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(this.shareBody())}`;
+  }
+
+  private shareBody(): string {
+    if (this.note()?.noteType === 'CHECKLIST') {
+      return this.items()
+        .map((item) => `- [${item.checked ? 'x' : ' '}] ${item.text}`)
+        .join('\n');
+    }
+    return this.content();
   }
 
   protected removeItem(index: number): void {

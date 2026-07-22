@@ -19,6 +19,10 @@ public class SecurityTokenEntity {
     private String tokenHash;
     @Column(name = "token_type")
     private String tokenType;
+    @Column(name = "target_email")
+    private String targetEmail;
+    @Column(name = "target_email_normalized")
+    private String targetEmailNormalized;
     @Column(name = "created_at")
     private Instant createdAt;
     @Column(name = "expires_at")
@@ -40,7 +44,20 @@ public class SecurityTokenEntity {
         this.expiresAt = expiresAt;
     }
 
+    public static SecurityTokenEntity emailChange(UUID id, UUID userId, String tokenHash,
+                                                  String email, String normalizedEmail,
+                                                  Instant now, Instant expiresAt) {
+        var token = new SecurityTokenEntity(id, userId, tokenHash, now, expiresAt);
+        token.tokenType = "EMAIL_CHANGE";
+        token.targetEmail = email;
+        token.targetEmailNormalized = normalizedEmail;
+        return token;
+    }
+
     public UUID userId() { return userId; }
+    public String tokenType() { return tokenType; }
+    public String targetEmail() { return targetEmail; }
+    public String targetEmailNormalized() { return targetEmailNormalized; }
     public Instant expiresAt() { return expiresAt; }
     public boolean usableAt(Instant now) {
         return consumedAt == null && revokedAt == null && expiresAt.isAfter(now);

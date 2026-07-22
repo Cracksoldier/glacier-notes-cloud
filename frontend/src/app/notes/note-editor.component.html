@@ -156,6 +156,10 @@
           <i class="fa-solid fa-clock-rotate-left"></i>
           History
         </button>
+        <button type="button" (click)="shareByEmail()">
+          <i class="fa-solid fa-envelope"></i>
+          {{ i18n.t('shareEmail') }}
+        </button>
         <button type="button" (click)="convert()">
           <i
             class="fa-solid"
@@ -285,7 +289,7 @@
           >
             <strong>{{ version.title || 'Untitled' }}</strong>
             <span>{{ version.reason.replaceAll('_', ' ') }}</span>
-            <small>{{ version.snapshotAt }}</small>
+            <small>{{ i18n.formatDate(version.snapshotAt) }}</small>
           </button>
           } @empty {
           <p>No saved versions yet.</p>
@@ -318,6 +322,30 @@
         </section>
       </div>
     </aside>
+    } @if (shareWarning(); as warning) {
+    <div
+      class="share-warning"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="share-warning-title"
+    >
+      <section>
+        <h2 id="share-warning-title">Before sharing</h2>
+        <ul>
+          @for (reason of warning.reasons; track reason) {
+          <li>{{ reason }}</li>
+          }
+        </ul>
+        <p>
+          Note content is passed directly to your email application and is never sent by the server.
+        </p>
+        <footer>
+          <button type="button" (click)="shareWarning.set(null)">Cancel</button>
+          <button type="button" (click)="exportMarkdown()">Export Markdown instead</button>
+          <button type="button" (click)="continueShare(warning.url)">Continue to email</button>
+        </footer>
+      </section>
+    </div>
     }
   </section>
   }

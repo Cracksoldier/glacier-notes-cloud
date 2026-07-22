@@ -6,10 +6,8 @@
 .application,
 .shell {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 20% 20%, rgb(73 130 153 / 24%), transparent 34rem),
-    linear-gradient(145deg, #08121b, #101e2a 56%, #0b1822);
-  color: #eef8fb;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 header {
@@ -19,12 +17,12 @@ header {
   justify-content: space-between;
   gap: 1rem;
   padding: 0 1.5rem;
-  border-bottom: 1px solid #284250;
-  background: rgb(3 12 18 / 58%);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .wordmark {
-  color: #eef8fb;
+  color: var(--color-text);
   font-weight: 700;
   text-decoration: none;
 }
@@ -37,7 +35,7 @@ nav {
 
 nav a,
 nav button {
-  color: #b7cbd2;
+  color: var(--color-text-muted);
   font: inherit;
   font-size: 0.86rem;
 }

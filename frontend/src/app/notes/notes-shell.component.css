@@ -490,6 +490,11 @@ kbd {
   color: var(--color-text-muted);
   line-height: 1.5;
 }
+.settings-link {
+  display: inline-flex;
+  margin-top: 0.5rem;
+  color: var(--color-accent);
+}
 .mobile-menu {
   display: none;
 }

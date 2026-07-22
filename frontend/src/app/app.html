@@ -5,12 +5,13 @@
   @if (auth.session(); as session) { @if (!notesActive()) {
   <header>
     <a class="wordmark" href="/notes" routerLink="/notes">Glacier Notes</a>
-    <nav aria-label="Account navigation">
-      <a href="/sessions" routerLink="/sessions">Sessions</a>
+    <nav [attr.aria-label]="i18n.t('accountNavigation')">
+      <a href="/sessions" routerLink="/sessions">{{ i18n.t('sessions') }}</a>
+      <a href="/settings" routerLink="/settings">{{ i18n.t('settings') }}</a>
       @if (session.user.role === 'ADMIN') {
-      <a href="/admin" routerLink="/admin">Admin</a>
+      <a href="/admin" routerLink="/admin">{{ i18n.t('administration') }}</a>
       }
-      <button type="button" (click)="logout()">Sign out</button>
+      <button type="button" (click)="logout()">{{ i18n.t('signOut') }}</button>
     </nav>
   </header>
   } }

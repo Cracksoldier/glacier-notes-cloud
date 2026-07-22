@@ -29,6 +29,8 @@ public class InstanceSettingsEntity {
     private int invitationExpirationHours;
     @Column(name = "password_reset_expiration_minutes")
     private int passwordResetExpirationMinutes;
+    @Column(name = "email_change_expiration_minutes")
+    private int emailChangeExpirationMinutes;
     @Column(name = "allowed_email_domains", columnDefinition = "text[]")
     private String[] allowedEmailDomains;
     @Column(name = "allowed_upload_types", columnDefinition = "text[]")
@@ -45,6 +47,18 @@ public class InstanceSettingsEntity {
     private int noteVersionRetentionDays;
     @Column(name = "user_exports_enabled")
     private boolean userExportsEnabled;
+    @Column(name = "default_trash_retention_days")
+    private int defaultTrashRetentionDays;
+    @Column(name = "users_may_disable_auto_purge")
+    private boolean usersMayDisableAutoPurge;
+    @Column(name = "admin_deletion_retention_days")
+    private int adminDeletionRetentionDays;
+    @Column(name = "self_deletion_enabled")
+    private boolean selfDeletionEnabled;
+    @Column(name = "common_password_check_enabled")
+    private boolean commonPasswordCheckEnabled;
+    @Column(name = "password_history_enabled")
+    private boolean passwordHistoryEnabled;
 
     protected InstanceSettingsEntity() {
     }
@@ -71,6 +85,7 @@ public class InstanceSettingsEntity {
 
     public int invitationExpirationHours() { return invitationExpirationHours; }
     public int passwordResetExpirationMinutes() { return passwordResetExpirationMinutes; }
+    public int emailChangeExpirationMinutes() { return emailChangeExpirationMinutes; }
     public List<String> allowedEmailDomains() { return List.of(allowedEmailDomains); }
     public List<String> allowedUploadTypes() { return List.of(allowedUploadTypes); }
     public long maximumImageBytes() { return maximumImageBytes; }
@@ -79,6 +94,12 @@ public class InstanceSettingsEntity {
     public int noteVersionMaximumCount() { return noteVersionMaximumCount; }
     public int noteVersionRetentionDays() { return noteVersionRetentionDays; }
     public boolean userExportsEnabled() { return userExportsEnabled; }
+    public int defaultTrashRetentionDays() { return defaultTrashRetentionDays; }
+    public boolean usersMayDisableAutoPurge() { return usersMayDisableAutoPurge; }
+    public int adminDeletionRetentionDays() { return adminDeletionRetentionDays; }
+    public boolean selfDeletionEnabled() { return selfDeletionEnabled; }
+    public boolean commonPasswordCheckEnabled() { return commonPasswordCheckEnabled; }
+    public boolean passwordHistoryEnabled() { return passwordHistoryEnabled; }
 
     public void updateLifecycle(List<String> domains, Integer invitationHours, Integer resetMinutes) {
         if (domains != null) allowedEmailDomains = domains.toArray(String[]::new);
@@ -100,5 +121,17 @@ public class InstanceSettingsEntity {
 
     public void updateTransfers(Boolean exportsEnabled) {
         if (exportsEnabled != null) userExportsEnabled = exportsEnabled;
+    }
+
+    public void updateAccount(Integer emailChangeMinutes, Integer trashDays, Boolean mayDisablePurge,
+                              Integer deletionDays, Boolean selfDeletion, Boolean commonPasswords,
+                              Boolean passwordHistory) {
+        if (emailChangeMinutes != null) emailChangeExpirationMinutes = emailChangeMinutes;
+        if (trashDays != null) defaultTrashRetentionDays = trashDays;
+        if (mayDisablePurge != null) usersMayDisableAutoPurge = mayDisablePurge;
+        if (deletionDays != null) adminDeletionRetentionDays = deletionDays;
+        if (selfDeletion != null) selfDeletionEnabled = selfDeletion;
+        if (commonPasswords != null) commonPasswordCheckEnabled = commonPasswords;
+        if (passwordHistory != null) passwordHistoryEnabled = passwordHistory;
     }
 }

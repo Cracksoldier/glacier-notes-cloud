@@ -39,6 +39,8 @@ public class LifecycleService {
     private final IdentityNormalizer identities;
     private final PasswordPolicy passwordPolicy;
     private final PasswordVerifier passwordVerifier;
+    private final PasswordManager passwordManager;
+    private final AccountDeletionService deletion;
     private final SessionTokenService tokens;
     private final ClientKeyHasher keyHasher;
     private final EndpointRateLimiter rateLimiter;
@@ -51,6 +53,7 @@ public class LifecycleService {
 
     public LifecycleService(EntityManager entityManager, IdentityNormalizer identities,
                             PasswordPolicy passwordPolicy, PasswordVerifier passwordVerifier,
+                            PasswordManager passwordManager, AccountDeletionService deletion,
                             SessionTokenService tokens, ClientKeyHasher keyHasher,
                             EndpointRateLimiter rateLimiter, SessionRepository sessions,
                             UserUsageRepository userUsage, LifecycleEmailService email,
@@ -60,6 +63,8 @@ public class LifecycleService {
         this.identities = identities;
         this.passwordPolicy = passwordPolicy;
         this.passwordVerifier = passwordVerifier;
+        this.passwordManager = passwordManager;
+        this.deletion = deletion;
         this.tokens = tokens;
         this.keyHasher = keyHasher;
         this.rateLimiter = rateLimiter;
@@ -155,11 +160,12 @@ public class LifecycleService {
         var invitation = findInvitationForUpdate(request.getToken());
         if (invitation == null || !invitation.usableAt(time.now())) throw LifecycleFailure.invalidToken();
         var identity = identities.normalize(request.getUsername(), invitation.email(), request.getDisplayName());
-        enforceDomain(identity.emailNormalized(), settings().allowedEmailDomains());
+        var instanceSettings = settings();
+        enforceDomain(identity.emailNormalized(), instanceSettings.allowedEmailDomains());
         assertIdentityAvailable(identity.emailNormalized(), identity.usernameNormalized(), null);
         var password = request.getPassword().toCharArray();
         try {
-            passwordPolicy.validate(password);
+            passwordPolicy.validate(password, instanceSettings.commonPasswordCheckEnabled());
             var now = time.now();
             var userId = ids.nextId();
             var notebookId = ids.nextId();
@@ -169,7 +175,9 @@ public class LifecycleService {
             entityManager.persist(user);
             entityManager.persist(new NotebookEntity(new Notebook(new OwnerId(userId), notebookId,
                 "Notes", null, true, 0, now, now, 0)));
-            entityManager.persist(new UserSettingsEntity(userId, notebookId, now));
+            entityManager.persist(new UserSettingsEntity(userId, notebookId,
+                request.getLanguage() == null ? "en" : request.getLanguage().toString(),
+                instanceSettings.defaultTrashRetentionDays(), now));
             invitation.accept(now);
             audit("INVITATION_ACCEPTED", userId, userId, "INVITATION", invitation.id(), correlationId, Map.of());
             entityManager.flush();
@@ -212,9 +220,8 @@ public class LifecycleService {
         if (!("ACTIVE".equals(user.status()) || "LOCKED".equals(user.status()))) throw LifecycleFailure.invalidToken();
         var password = request.getPassword().toCharArray();
         try {
-            passwordPolicy.validate(password);
             var now = time.now();
-            user.changePassword(passwordVerifier.hash(password), now);
+            passwordManager.change(user, password);
             token.consume(now);
             revokeResetTokens(user.id());
             sessions.revokeAll(user.id());
@@ -279,6 +286,7 @@ public class LifecycleService {
         if (roleChanged) changed.add("role");
         user.updateIdentity(identity.username(), identity.usernameNormalized(), identity.email(),
             identity.emailNormalized(), identity.displayName(), newRole, time.now());
+        if (changed.contains("email")) revokeEmailChangeTokens(userId);
         if (roleChanged) sessions.revokeAll(userId);
         audit("USER_UPDATED", actor, userId, "USER", userId, correlationId,
             Map.of("fields", String.join(",", changed)));
@@ -322,6 +330,17 @@ public class LifecycleService {
     }
 
     @Transactional
+    public AdminUser scheduleDeletion(UUID userId, AdminDeletionRequest request, UUID actor,
+                                      String correlationId) {
+        return adminUser(deletion.scheduleAdministrative(userId, request, actor, correlationId));
+    }
+
+    @Transactional
+    public AdminUser restoreDeletion(UUID userId, UUID actor, String correlationId) {
+        return adminUser(deletion.restore(userId, actor, correlationId));
+    }
+
+    @Transactional
     public AdminSettings settingsModel() { return settingsModel(settings()); }
 
     @Transactional
@@ -337,6 +356,15 @@ public class LifecycleService {
         );
         entity.updateHistory(update.getNoteVersionMaximumCount(), update.getNoteVersionRetentionDays());
         entity.updateTransfers(update.getUserExportsEnabled());
+        entity.updateAccount(update.getEmailChangeExpirationMinutes(), update.getDefaultTrashRetentionDays(),
+            update.getUsersMayDisableAutoPurge(), update.getAdminDeletionRetentionDays(),
+            update.getSelfDeletionEnabled(), update.getCommonPasswordCheckEnabled(),
+            update.getPasswordHistoryEnabled());
+        if (Boolean.FALSE.equals(update.getUsersMayDisableAutoPurge())) {
+            entityManager.createNativeQuery("update user_settings set trash_auto_purge_days = :days "
+                    + "where trash_auto_purge_days is null")
+                .setParameter("days", entity.defaultTrashRetentionDays()).executeUpdate();
+        }
         audit("INSTANCE_SETTINGS_CHANGED", actor, null, "INSTANCE_SETTINGS", null, correlationId,
             Map.of("area", "user-lifecycle"));
         return settingsModel(entity);
@@ -364,6 +392,12 @@ public class LifecycleService {
     private void revokeResetTokens(UUID userId) {
         entityManager.createQuery("update SecurityTokenEntity t set t.revokedAt = :now where t.userId = :userId "
                 + "and t.tokenType = 'PASSWORD_RESET' and t.consumedAt is null and t.revokedAt is null")
+            .setParameter("now", time.now()).setParameter("userId", userId).executeUpdate();
+    }
+
+    private void revokeEmailChangeTokens(UUID userId) {
+        entityManager.createQuery("update SecurityTokenEntity t set t.revokedAt = :now where t.userId = :userId "
+                + "and t.tokenType = 'EMAIL_CHANGE' and t.consumedAt is null and t.revokedAt is null")
             .setParameter("now", time.now()).setParameter("userId", userId).executeUpdate();
     }
 
@@ -468,7 +502,9 @@ public class LifecycleService {
             .createdAt(user.createdAt().atOffset(ZoneOffset.UTC))
             .lastLoginAt(user.lastLoginAt() == null ? null : user.lastLoginAt().atOffset(ZoneOffset.UTC))
             .storageBytes(usage.storageBytes()).noteCount(usage.noteCount())
-            .notebookCount(usage.notebookCount()).imageCount(usage.imageCount());
+            .notebookCount(usage.notebookCount()).imageCount(usage.imageCount())
+            .pendingDeletionAt(user.pendingDeletionAt() == null ? null : user.pendingDeletionAt().atOffset(ZoneOffset.UTC))
+            .deletionDueAt(user.deletionDueAt() == null ? null : user.deletionDueAt().atOffset(ZoneOffset.UTC));
     }
 
     private InvitationSummary invitationModel(InvitationEntity value) {
@@ -492,7 +528,14 @@ public class LifecycleService {
             .imageOrphanGraceHours(value.imageOrphanGraceHours())
             .noteVersionMaximumCount(value.noteVersionMaximumCount())
             .noteVersionRetentionDays(value.noteVersionRetentionDays())
-            .userExportsEnabled(value.userExportsEnabled());
+            .userExportsEnabled(value.userExportsEnabled())
+            .emailChangeExpirationMinutes(value.emailChangeExpirationMinutes())
+            .defaultTrashRetentionDays(value.defaultTrashRetentionDays())
+            .usersMayDisableAutoPurge(value.usersMayDisableAutoPurge())
+            .adminDeletionRetentionDays(value.adminDeletionRetentionDays())
+            .selfDeletionEnabled(value.selfDeletionEnabled())
+            .commonPasswordCheckEnabled(value.commonPasswordCheckEnabled())
+            .passwordHistoryEnabled(value.passwordHistoryEnabled());
     }
 
     private InstanceSettingsEntity settings() {
