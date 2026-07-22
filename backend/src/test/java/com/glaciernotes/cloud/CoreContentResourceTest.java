@@ -311,6 +311,121 @@ class CoreContentResourceTest {
             .statusCode(200).body("title", equalTo("Secret"));
     }
 
+    @Test
+    void searchesOwnedTextAndChecklistContentWithFiltersRankingAndPagination() {
+        Session alice = login("alice");
+        Session bob = login("bob");
+        Response label = write(alice).body("{\"name\":\"Research\"}").post("/api/v1/labels");
+        String labelId = label.jsonPath().getString("id");
+
+        Response titleMatch = write(alice).body("""
+            {"noteType":"TEXT","title":"Glacier expedition","content":"field notes",
+             "pinned":true,"labelIds":["%s"]}
+            """.formatted(labelId)).post("/api/v1/notes");
+        String titleId = titleMatch.jsonPath().getString("id");
+        Response bodyMatch = write(alice).body("""
+            {"noteType":"TEXT","title":"Travel","content":"glacier observations","archived":true}
+            """).post("/api/v1/notes");
+        String bodyId = bodyMatch.jsonPath().getString("id");
+        Response checklist = write(alice).body("""
+            {"noteType":"CHECKLIST","title":"Supplies","checklistItems":[
+              {"text":"thermal blanket","checked":false}]}
+            """).post("/api/v1/notes");
+        String checklistId = checklist.jsonPath().getString("id");
+        Response trashed = write(alice).body("""
+            {"noteType":"TEXT","title":"Glacier discarded","content":"old"}
+            """).post("/api/v1/notes");
+        String trashedId = trashed.jsonPath().getString("id");
+        write(alice).body("{\"version\":0}").post("/api/v1/notes/{id}/trash", trashedId)
+            .then().statusCode(200);
+        write(bob).body("""
+            {"noteType":"TEXT","title":"Glacier secret","content":"private"}
+            """).post("/api/v1/notes").then().statusCode(201);
+
+        Response ranked = read(alice).queryParam("query", "glacier").queryParam("limit", 1)
+            .get("/api/v1/notes/search");
+        ranked.then().statusCode(200).body("items", hasSize(1))
+            .body("items[0].id", equalTo(titleId)).body("page.hasNext", equalTo(true));
+        Response secondPage = read(alice).queryParam("query", "glacier").queryParam("limit", 1)
+            .queryParam("cursor", ranked.jsonPath().getString("page.nextCursor"))
+            .get("/api/v1/notes/search");
+        secondPage.then().statusCode(200).body("items", hasSize(1))
+            .body("items[0].id", equalTo(bodyId)).body("page.hasNext", equalTo(false));
+
+        read(alice).queryParam("query", "thermal").get("/api/v1/notes/search").then()
+            .statusCode(200).body("items", hasSize(1)).body("items[0].id", equalTo(checklistId));
+        read(alice).queryParam("query", "glacier").queryParam("archive", "ACTIVE")
+            .queryParam("pinned", true).queryParam("labelId", labelId)
+            .get("/api/v1/notes/search").then().statusCode(200)
+            .body("items", hasSize(1)).body("items[0].id", equalTo(titleId));
+        read(alice).queryParam("query", "glacier").queryParam("trash", "TRASHED")
+            .get("/api/v1/notes/search").then().statusCode(200)
+            .body("items", hasSize(1)).body("items[0].id", equalTo(trashedId));
+        read(alice).queryParam("query", "   ").get("/api/v1/notes/search").then()
+            .statusCode(200).body("items", hasSize(0)).body("page.hasNext", equalTo(false));
+
+        write(alice).body("""
+            {"title":"Supplies","content":"","checklistItems":[
+              {"id":"%s","text":"satellite beacon","checked":false}],
+             "pinned":false,"archived":false,"color":"DEFAULT","labelIds":[],"imageIds":[],"version":0}
+            """.formatted(checklist.jsonPath().getString("checklistItems[0].id")))
+            .patch("/api/v1/notes/{id}", checklistId).then().statusCode(200);
+        read(alice).queryParam("query", "thermal").get("/api/v1/notes/search").then()
+            .statusCode(200).body("items", hasSize(0));
+        read(alice).queryParam("query", "satellite").get("/api/v1/notes/search").then()
+            .statusCode(200).body("items", hasSize(1)).body("items[0].id", equalTo(checklistId));
+    }
+
+    @Test
+    void recordsDeduplicatesAndRestoresHistoryWhileRejectingTwoSessionConflicts() throws SQLException {
+        Session firstSession = login("alice");
+        Session secondSession = login("alice");
+        Session bob = login("bob");
+        Response created = write(firstSession).body("""
+            {"noteType":"TEXT","title":"First","content":"one"}
+            """).post("/api/v1/notes");
+        String noteId = created.jsonPath().getString("id");
+
+        write(firstSession).body("""
+            {"title":"Second","content":"two","checklistItems":[],"pinned":false,
+             "archived":false,"color":"DEFAULT","labelIds":[],"imageIds":[],"version":0}
+            """).patch("/api/v1/notes/{id}", noteId).then().statusCode(200).body("version", equalTo(1));
+        write(firstSession).body("{\"version\":1}")
+            .post("/api/v1/notes/{id}/versions/snapshot", noteId).then().statusCode(204);
+        write(firstSession).body("{\"version\":1}")
+            .post("/api/v1/notes/{id}/versions/snapshot", noteId).then().statusCode(204);
+        assertEquals(1, count("select count(*) from note_versions where owner_id = ? and note_id = ?",
+            ALICE_ID, UUID.fromString(noteId)));
+
+        write(firstSession).body("""
+            {"title":"Third","content":"three","checklistItems":[],"pinned":false,
+             "archived":false,"color":"DEFAULT","labelIds":[],"imageIds":[],"version":1}
+            """).patch("/api/v1/notes/{id}", noteId).then().statusCode(200).body("version", equalTo(2));
+        write(secondSession).body("""
+            {"title":"Stale overwrite","content":"lost","checklistItems":[],"pinned":false,
+             "archived":false,"color":"DEFAULT","labelIds":[],"imageIds":[],"version":1}
+            """).patch("/api/v1/notes/{id}", noteId).then().statusCode(409)
+            .body("errorCode", equalTo("CONTENT_VERSION_CONFLICT"))
+            .body("currentVersion", equalTo(2)).body("currentUpdatedAt", notNullValue());
+        read(firstSession).get("/api/v1/notes/{id}", noteId).then().statusCode(200)
+            .body("title", equalTo("Third")).body("content", equalTo("three"));
+
+        Response history = read(firstSession).get("/api/v1/notes/{id}/versions", noteId);
+        history.then().statusCode(200).body("items", hasSize(2))
+            .body("items[0].reason", equalTo("CONFLICT"));
+        String olderVersionId = history.jsonPath().getString("items[1].id");
+        read(bob).get("/api/v1/notes/{id}/versions", noteId).then().statusCode(404);
+        read(firstSession).get("/api/v1/notes/{id}/versions/{versionId}", noteId, olderVersionId)
+            .then().statusCode(200).body("title", equalTo("Second"));
+
+        write(firstSession).body("{\"version\":2}")
+            .post("/api/v1/notes/{id}/versions/{versionId}/restore", noteId, olderVersionId)
+            .then().statusCode(200).body("id", equalTo(noteId)).body("title", equalTo("Second"))
+            .body("version", equalTo(3));
+        read(firstSession).get("/api/v1/notes/{id}/versions", noteId).then().statusCode(200)
+            .body("items", hasSize(2));
+    }
+
     private Session login(String username) {
         Response response = given().contentType(ContentType.JSON)
             .body("""

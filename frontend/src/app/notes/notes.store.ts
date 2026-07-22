@@ -8,7 +8,9 @@ import type { NotebookView } from '../shared/generated-api/model/notebookView';
 import type { NoteSummary } from '../shared/generated-api/model/noteSummary';
 import { NoteType } from '../shared/generated-api/model/noteType';
 import type { NoteUpdate } from '../shared/generated-api/model/noteUpdate';
-import { NotesDataAccess, type NotesView } from './notes-data-access';
+import type { NoteVersion } from '../shared/generated-api/model/noteVersion';
+import type { NoteVersionPage } from '../shared/generated-api/model/noteVersionPage';
+import { NotesDataAccess, type NotesView, type SearchFilters } from './notes-data-access';
 
 @Injectable({ providedIn: 'root' })
 export class NotesStore {
@@ -24,6 +26,9 @@ export class NotesStore {
   readonly nextCursor = signal<string | null>(null);
   readonly editor = signal<ContentNote | null>(null);
   readonly editorLoading = signal(false);
+  readonly searchQuery = signal('');
+  readonly searchFilters = signal<SearchFilters>({ archive: 'ALL', trash: 'ACTIVE' });
+  readonly searching = computed(() => this.searchQuery().trim().length > 0);
 
   readonly defaultNotebook = computed(
     () => this.notebooks().find((notebook) => notebook.defaultNotebook) ?? null,
@@ -50,6 +55,7 @@ export class NotesStore {
   async loadView(view: NotesView): Promise<void> {
     const sequence = ++this.requestSequence;
     this.view.set(view);
+    this.searchQuery.set('');
     this.loading.set(true);
     try {
       const page = await this.api.listNotes(view);
@@ -66,7 +72,38 @@ export class NotesStore {
   async refresh(): Promise<void> {
     const view = this.view();
     if (!view || this.editor()) return;
-    await Promise.all([this.reloadReferences(), this.loadView(view)]);
+    await this.reloadReferences();
+    if (this.searching()) await this.search(this.searchQuery(), this.searchFilters());
+    else await this.loadView(view);
+  }
+
+  async search(query: string, filters: SearchFilters): Promise<void> {
+    const normalized = query.trim();
+    if (!normalized) {
+      const view = this.view();
+      if (view) await this.loadView(view);
+      return;
+    }
+    const sequence = ++this.requestSequence;
+    this.searchQuery.set(normalized);
+    this.searchFilters.set(filters);
+    this.loading.set(true);
+    try {
+      const page = await this.api.searchNotes(normalized, filters);
+      if (sequence !== this.requestSequence) return;
+      this.notes.set(page.items);
+      this.nextCursor.set(page.page.nextCursor ?? null);
+    } catch (error) {
+      if (sequence === this.requestSequence) this.problems.report(error);
+    } finally {
+      if (sequence === this.requestSequence) this.loading.set(false);
+    }
+  }
+
+  async clearSearch(): Promise<void> {
+    const view = this.view();
+    this.searchQuery.set('');
+    if (view) await this.loadView(view);
   }
 
   async loadMore(): Promise<void> {
@@ -75,7 +112,9 @@ export class NotesStore {
     if (!view || !cursor || this.loadingMore()) return;
     this.loadingMore.set(true);
     try {
-      const page = await this.api.listNotes(view, cursor);
+      const page = this.searching()
+        ? await this.api.searchNotes(this.searchQuery(), this.searchFilters(), cursor)
+        : await this.api.listNotes(view, cursor);
       this.notes.update((current) => [
         ...current,
         ...page.items.filter((item) => !current.some((existing) => existing.id === item.id)),
@@ -211,6 +250,25 @@ export class NotesStore {
 
   closeEditor(): void {
     this.editor.set(null);
+  }
+
+  snapshotEditorNote(note: ContentNote): Promise<void> {
+    return this.api.snapshotNoteVersion(note.id, note.version);
+  }
+
+  listNoteVersions(id: string, cursor?: string): Promise<NoteVersionPage> {
+    return this.api.listNoteVersions(id, cursor);
+  }
+
+  getNoteVersion(id: string, versionId: string): Promise<NoteVersion> {
+    return this.api.getNoteVersion(id, versionId);
+  }
+
+  async restoreNoteVersion(note: ContentNote, versionId: string): Promise<ContentNote> {
+    const restored = await this.api.restoreNoteVersion(note.id, versionId, note.version);
+    this.editor.set(restored);
+    this.replaceSummary(restored);
+    return restored;
   }
 
   async saveNote(note: ContentNote, input: NoteUpdate): Promise<ContentNote> {
@@ -372,7 +430,8 @@ export class NotesStore {
   private async refreshAfterMutation(): Promise<void> {
     await this.reloadReferences();
     const view = this.view();
-    if (view) await this.loadView(view);
+    if (this.searching()) await this.search(this.searchQuery(), this.searchFilters());
+    else if (view) await this.loadView(view);
   }
 
   private replaceSummary(note: ContentNote): void {

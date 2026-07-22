@@ -20,6 +20,8 @@ export class AdminSettingsComponent {
   maximumImageMb = 10;
   quotaMb = 1024;
   orphanGraceHours = 24;
+  noteVersionMaximumCount = 20;
+  noteVersionRetentionDays = 30;
   imageTypes = new Set<string>(['image/png', 'image/jpeg', 'image/webp']);
 
   constructor() {
@@ -30,6 +32,8 @@ export class AdminSettingsComponent {
       this.maximumImageMb = value.maximumImageBytes / 1048576;
       this.quotaMb = value.perUserStorageQuotaBytes / 1048576;
       this.orphanGraceHours = value.imageOrphanGraceHours;
+      this.noteVersionMaximumCount = value.noteVersionMaximumCount;
+      this.noteVersionRetentionDays = value.noteVersionRetentionDays;
       this.imageTypes = new Set(value.allowedImageTypes);
     });
   }
@@ -50,6 +54,8 @@ export class AdminSettingsComponent {
         maximumImageBytes: Math.round(this.maximumImageMb * 1048576),
         perUserStorageQuotaBytes: Math.round(this.quotaMb * 1048576),
         imageOrphanGraceHours: this.orphanGraceHours,
+        noteVersionMaximumCount: this.noteVersionMaximumCount,
+        noteVersionRetentionDays: this.noteVersionRetentionDays,
       })
       .subscribe({
         next: (value) => {

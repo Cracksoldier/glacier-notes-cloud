@@ -17,6 +17,8 @@ export interface AdminSettings {
     maximumImageBytes: number;
     perUserStorageQuotaBytes: number;
     imageOrphanGraceHours: number;
+    noteVersionMaximumCount: number;
+    noteVersionRetentionDays: number;
 }
 export enum AdminSettingsAllowedImageTypesEnum {
     ImagePng = 'image/png',

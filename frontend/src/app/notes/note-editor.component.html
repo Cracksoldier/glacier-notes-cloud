@@ -144,13 +144,18 @@
       <div>
         <strong>Another session changed this note.</strong><br>Your local draft has been retained.
       </div>
-      <button type="button" (click)="keepDraft()">Keep my draft</button>
-      <button type="button" (click)="loadServerCopy()">Load server copy</button>
+      <button type="button" (click)="copyLocalDraft()">Copy local draft</button>
+      <button type="button" (click)="loadServerCopy()">Reload server</button>
+      <button type="button" (click)="overwriteDraft()">Overwrite with draft</button>
     </div>
     }
 
     <footer class="editor__footer">
       <div class="editor__options">
+        <button type="button" (click)="openHistory()">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          History
+        </button>
         <button type="button" (click)="convert()">
           <i
             class="fa-solid"
@@ -253,6 +258,66 @@
         (click)="$event.stopPropagation()"
       >
     </div>
+    } @if (historyOpen()) {
+    <aside class="history-panel" aria-label="Note version history">
+      <header class="history-panel__header">
+        <div class="history-panel__heading">
+          <strong>Version history</strong
+          ><small>Restoring keeps the current notebook and trash state.</small>
+        </div>
+        <button
+          type="button"
+          class="history-panel__close"
+          aria-label="Close history"
+          (click)="historyOpen.set(false)"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+      <div class="history-panel__body">
+        <nav class="history-panel__versions" aria-label="Saved versions">
+          @for (version of versions(); track version.id) {
+          <button
+            type="button"
+            class="history-panel__version"
+            [class.active]="selectedVersion()?.id === version.id"
+            (click)="selectVersion(version.id)"
+          >
+            <strong>{{ version.title || 'Untitled' }}</strong>
+            <span>{{ version.reason.replaceAll('_', ' ') }}</span>
+            <small>{{ version.snapshotAt }}</small>
+          </button>
+          } @empty {
+          <p>No saved versions yet.</p>
+          } @if (historyCursor()) {
+          <button type="button" class="history-panel__version" (click)="loadOlderVersions()">
+            Load older versions
+          </button>
+          }
+        </nav>
+        <section class="history-preview">
+          @if (historyLoading()) {
+          <p><i class="fa-solid fa-circle-notch fa-spin"></i> Loading history…</p>
+          } @else if (selectedVersion(); as version) {
+          <h2>{{ version.title || 'Untitled' }}</h2>
+          <pre>{{ versionBody(version) }}</pre>
+          <dl>
+            <div class="history-preview__metadata">
+              <dt>Type</dt>
+              <dd>{{ version.noteType }}</dd>
+            </div>
+            <div class="history-preview__metadata">
+              <dt>Source version</dt>
+              <dd>{{ version.sourceVersion }}</dd>
+            </div>
+          </dl>
+          <button type="button" class="history-restore" (click)="restoreSelectedVersion()">
+            Restore this version
+          </button>
+          }
+        </section>
+      </div>
+    </aside>
     }
   </section>
   }

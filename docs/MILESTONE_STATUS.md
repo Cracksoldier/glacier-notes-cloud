@@ -14,7 +14,8 @@ implementation and repository verification gates pass.
 | M5 | Complete | Owner-scoped notebooks, notes, checklists, labels, archive, trash, conversion, and pagination APIs |
 | M6 | Complete | Desktop-aligned Angular notes UI, secure Markdown, checklists, autosave, conflicts, themes, shortcuts, and responsive browser tests |
 | M7 | Complete | Secure image processing, owner-scoped references, quotas, thumbnails, garbage collection, and filesystem/PostgreSQL/S3 storage |
-| M8–M13 | Pending | Not yet implemented |
+| M8 | Complete | Ranked owner-scoped PostgreSQL search, conflict-safe editing, retained note versions, restore, and cleanup policies |
+| M9–M13 | Pending | Not yet implemented |
 
 ## M5 Verification
 
@@ -62,3 +63,16 @@ The standard backend and frontend gates above verify M7. Validate both deploymen
 docker compose config --quiet
 docker compose -f compose.yaml -f compose.minio.yaml config --quiet
 ~~~
+
+## M8 Verification
+
+M8 adds PostgreSQL `simple` full-text search across titles, Markdown, and checklist text with owned
+filters, ranked cursor pagination, and explicit active/trash scope. Note conflicts return the current
+version and timestamp without overwriting server state; the editor can copy the local draft, reload
+the server copy, or explicitly overwrite. Semantic note snapshots support preview and restore while
+retaining referenced images. Hourly cleanup enforces the administrator-configurable 20-version and
+30-day defaults.
+
+The standard backend and frontend gates above cover search isolation and ranking, checklist index
+maintenance, two-session conflicts, snapshot deduplication and restore, cleanup boundaries, editor
+conflict actions, and search pagination.

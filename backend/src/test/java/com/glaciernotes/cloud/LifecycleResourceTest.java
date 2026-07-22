@@ -49,7 +49,8 @@ class LifecycleResourceTest {
             statement.executeUpdate("delete from app_users");
             statement.executeUpdate("""
                 update instance_settings set allowed_email_domains = array[]::text[],
-                    invitation_expiration_hours = 168, password_reset_expiration_minutes = 60
+                    invitation_expiration_hours = 168, password_reset_expiration_minutes = 60,
+                    note_version_maximum_count = 20, note_version_retention_days = 30
                 where singleton_key = 1
                 """);
         }
@@ -103,9 +104,13 @@ class LifecycleResourceTest {
     void settingsEnforceDomainsAndLastAdministratorRule() {
         var admin = login("admin", PASSWORD);
         adminRequest(admin).body("""
-            {"allowedEmailDomains":["EXAMPLE.ORG"],"invitationExpirationHours":48,"passwordResetExpirationMinutes":30}
+            {"allowedEmailDomains":["EXAMPLE.ORG"],"invitationExpirationHours":48,
+             "passwordResetExpirationMinutes":30,"noteVersionMaximumCount":42,
+             "noteVersionRetentionDays":90}
             """).patch("/api/v1/admin/settings").then().statusCode(200)
-            .body("allowedEmailDomains[0]", equalTo("example.org"));
+            .body("allowedEmailDomains[0]", equalTo("example.org"))
+            .body("noteVersionMaximumCount", equalTo(42))
+            .body("noteVersionRetentionDays", equalTo(90));
 
         adminRequest(admin).body("""
             {"email":"member@example.com","role":"USER"}

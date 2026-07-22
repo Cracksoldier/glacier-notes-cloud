@@ -14,12 +14,23 @@ import type { NoteCreate } from '../shared/generated-api/model/noteCreate';
 import type { NotePage } from '../shared/generated-api/model/notePage';
 import { NoteType } from '../shared/generated-api/model/noteType';
 import type { NoteUpdate } from '../shared/generated-api/model/noteUpdate';
+import type { NoteVersion } from '../shared/generated-api/model/noteVersion';
+import type { NoteVersionPage } from '../shared/generated-api/model/noteVersionPage';
 
 export type NotesView =
   | { kind: 'notebook'; id: string }
   | { kind: 'label'; id: string }
   | { kind: 'archive' }
   | { kind: 'trash' };
+
+export interface SearchFilters {
+  notebookId?: string;
+  labelId?: string;
+  noteType?: NoteType;
+  pinned?: boolean;
+  archive: 'ACTIVE' | 'ARCHIVED' | 'ALL';
+  trash: 'ACTIVE' | 'TRASHED';
+}
 
 @Injectable({ providedIn: 'root' })
 export class NotesDataAccess {
@@ -75,6 +86,38 @@ export class NotesDataAccess {
     return firstValueFrom(
       this.notes.listNotes(notebookId, labelId, undefined, undefined, archive, trash, cursor, 50),
     );
+  }
+
+  searchNotes(query: string, filters: SearchFilters, cursor?: string): Promise<NotePage> {
+    return firstValueFrom(
+      this.notes.searchNotes(
+        query,
+        filters.notebookId,
+        filters.labelId,
+        filters.noteType,
+        filters.pinned,
+        filters.archive,
+        filters.trash,
+        cursor,
+        50,
+      ),
+    );
+  }
+
+  listNoteVersions(id: string, cursor?: string): Promise<NoteVersionPage> {
+    return firstValueFrom(this.notes.listNoteVersions(id, cursor, 50));
+  }
+
+  getNoteVersion(id: string, versionId: string): Promise<NoteVersion> {
+    return firstValueFrom(this.notes.getNoteVersion(id, versionId));
+  }
+
+  snapshotNoteVersion(id: string, version: number): Promise<void> {
+    return firstValueFrom(this.notes.snapshotNoteVersion(id, { version }));
+  }
+
+  restoreNoteVersion(id: string, versionId: string, version: number): Promise<ContentNote> {
+    return firstValueFrom(this.notes.restoreNoteVersion(id, versionId, { version }));
   }
 
   createNote(input: NoteCreate) {

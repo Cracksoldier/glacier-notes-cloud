@@ -33,10 +33,14 @@
   color: var(--color-accent);
   font-size: 20px;
 }
-.search-placeholder {
-  display: flex;
+.search-wrap {
+  position: relative;
   flex: 1;
   max-width: 560px;
+}
+.search-placeholder {
+  display: flex;
+  width: 100%;
   align-items: center;
   gap: 10px;
   padding: 8px 14px;
@@ -44,7 +48,6 @@
   border-radius: 8px;
   background: var(--color-bg);
   color: var(--color-text-muted);
-  opacity: 0.72;
 }
 .search-placeholder input {
   flex: 1;
@@ -53,6 +56,72 @@
   background: transparent;
   color: var(--color-text-muted);
   font: inherit;
+}
+.search-placeholder button {
+  padding: 3px 5px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.search-placeholder button:hover,
+.search-placeholder button.active {
+  background: var(--color-surface-elevated);
+  color: var(--color-accent);
+}
+.search-filters {
+  position: absolute;
+  z-index: 40;
+  top: 46px;
+  left: 0;
+  display: grid;
+  width: min(560px, 80vw);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-elevated);
+  box-shadow: 0 12px 32px var(--color-shadow);
+}
+.search-filters label {
+  display: grid;
+  gap: 4px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.search-filters select {
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+.search-scope {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.search-scope button {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.search-scope button.active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.search-scope button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 .header-actions {
   display: flex;
@@ -466,7 +535,31 @@ kbd {
   }
 }
 @media (max-width: 620px) {
+  .notes-header {
+    gap: 8px;
+    padding: 0 8px;
+  }
+  .brand {
+    display: none;
+  }
+  .search-wrap {
+    min-width: 0;
+  }
   .search-placeholder {
+    gap: 5px;
+    padding: 7px 8px;
+  }
+  .search-filters {
+    position: fixed;
+    top: 56px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+  }
+  .header-actions {
+    gap: 0;
+  }
+  .header-actions > button:nth-child(2) {
     display: none;
   }
   .view-heading {

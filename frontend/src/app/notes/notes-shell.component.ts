@@ -1,4 +1,13 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 
@@ -11,7 +20,7 @@ import { NoteType } from '../shared/generated-api/model/noteType';
 import { NoteCardComponent } from './note-card.component';
 import { NoteEditorComponent } from './note-editor.component';
 import { NotesStore } from './notes.store';
-import type { NotesView } from './notes-data-access';
+import type { NotesView, SearchFilters } from './notes-data-access';
 
 @Component({
   selector: 'app-notes-shell',
@@ -37,8 +46,18 @@ export class NotesShellComponent implements OnInit, OnDestroy {
     'MOVE_TO_DEFAULT',
   );
   protected readonly overlay = signal<'shortcuts' | 'settings' | 'transfer' | null>(null);
+  protected readonly searchValue = signal('');
+  protected readonly searchFiltersOpen = signal(false);
+  protected readonly searchScope = signal<'ALL' | 'CURRENT'>('ALL');
+  protected readonly searchNotebook = signal('');
+  protected readonly searchLabel = signal('');
+  protected readonly searchType = signal<'' | NoteType>('');
+  protected readonly searchPinned = signal<'' | 'true' | 'false'>('');
+  protected readonly searchArchive = signal<'ALL' | 'ACTIVE' | 'ARCHIVED'>('ALL');
+  protected readonly searchTrash = signal<'ACTIVE' | 'TRASHED'>('ACTIVE');
 
   protected readonly viewTitle = computed(() => {
+    if (this.store.searching()) return `Search: ${this.store.searchQuery()}`;
     const view = this.store.view();
     if (!view) return 'Notes';
     if (view.kind === 'archive') return 'Archive';
@@ -49,6 +68,8 @@ export class NotesShellComponent implements OnInit, OnDestroy {
   });
 
   private readonly subscriptions = new Subscription();
+  private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly focusHandler = () => void this.store.refresh();
   private readonly shortcutHandler = (event: KeyboardEvent) => this.onShortcut(event);
 
@@ -67,9 +88,55 @@ export class NotesShellComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
     this.subscriptions.unsubscribe();
     window.removeEventListener('focus', this.focusHandler);
     document.removeEventListener('keydown', this.shortcutHandler, true);
+  }
+
+  protected updateSearch(value: string): void {
+    this.searchValue.set(value);
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    if (!value.trim()) {
+      void this.store.clearSearch();
+      return;
+    }
+    this.searchTimer = setTimeout(() => void this.runSearch(), 200);
+  }
+
+  protected runSearch(): Promise<void> {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = null;
+    const query = this.searchValue().trim();
+    if (!query) return this.store.clearSearch();
+    return this.store.search(query, this.currentSearchFilters());
+  }
+
+  protected clearSearch(): void {
+    this.searchValue.set('');
+    void this.store.clearSearch();
+    this.searchInput()?.nativeElement.focus();
+  }
+
+  protected searchKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.searchValue()) {
+      event.preventDefault();
+      this.clearSearch();
+    }
+  }
+
+  private currentSearchFilters(): SearchFilters {
+    const view = this.store.view();
+    const currentNotebook =
+      this.searchScope() === 'CURRENT' && view?.kind === 'notebook' ? view.id : undefined;
+    return {
+      notebookId: this.searchNotebook() || currentNotebook,
+      labelId: this.searchLabel() || undefined,
+      noteType: this.searchType() || undefined,
+      pinned: this.searchPinned() === '' ? undefined : this.searchPinned() === 'true',
+      archive: this.searchArchive(),
+      trash: this.searchTrash(),
+    };
   }
 
   protected closeDrawer(): void {
@@ -187,6 +254,9 @@ export class NotesShellComponent implements OnInit, OnDestroy {
     } else if (key === '/') {
       event.preventDefault();
       this.overlay.set('shortcuts');
+    } else if (key === 'f') {
+      event.preventDefault();
+      this.searchInput()?.nativeElement.focus();
     }
   }
 }

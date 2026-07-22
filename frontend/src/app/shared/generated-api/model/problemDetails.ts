@@ -20,5 +20,6 @@ export interface ProblemDetails {
     errorCode: string;
     validationErrors?: Array<ValidationError>;
     currentVersion?: number;
+    currentUpdatedAt?: string;
 }
 

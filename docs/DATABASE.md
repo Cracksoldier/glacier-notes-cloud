@@ -34,5 +34,6 @@ Invitation and password-reset rows persist only domain-separated token hashes. P
 rate-limit rows are keyed by scope and a keyed client/identifier hash; raw addresses, reset tokens,
 and invitation tokens are not stored.
 
-The note search vector uses the language-neutral `simple` configuration for title and content.
-M8 may extend vector maintenance to relational checklist and label text without changing note IDs.
+The generated note search vector uses the language-neutral `simple` configuration with weighted
+title, Markdown source, and checklist text. Checklist triggers maintain the relational text aggregate,
+and a GIN index supports ranked full-text queries without changing portable note IDs.

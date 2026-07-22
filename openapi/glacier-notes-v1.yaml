@@ -680,6 +680,30 @@ paths:
         '409': { $ref: '#/components/responses/ProblemResponse' }
         '422': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/search:
+    get:
+      tags: [Notes]
+      summary: Search owned notes using PostgreSQL full-text search
+      operationId: searchNotes
+      parameters:
+        - { name: query, in: query, required: true, schema: { type: string, maxLength: 500 } }
+        - { name: notebookId, in: query, schema: { type: string, format: uuid } }
+        - { name: labelId, in: query, schema: { type: string, format: uuid } }
+        - { name: noteType, in: query, schema: { $ref: '#/components/schemas/NoteType' } }
+        - { name: pinned, in: query, schema: { type: boolean } }
+        - { name: archive, in: query, schema: { type: string, enum: [ACTIVE, ARCHIVED, ALL], default: ALL } }
+        - { name: trash, in: query, schema: { type: string, enum: [ACTIVE, TRASHED], default: ACTIVE } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 1024 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: Ranked owned note summaries
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotePage' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/images:
     post:
       tags: [Images]
@@ -920,6 +944,79 @@ paths:
         '404': { $ref: '#/components/responses/ProblemResponse' }
         '409': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/{noteId}/versions:
+    get:
+      tags: [Notes]
+      summary: List retained versions of an owned note
+      operationId: listNoteVersions
+      parameters:
+        - { $ref: '#/components/parameters/NoteId' }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 512 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: Retained version page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NoteVersionPage' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/{noteId}/versions/snapshot:
+    post:
+      tags: [Notes]
+      summary: Snapshot meaningful editor state when the editor closes
+      operationId: snapshotNoteVersion
+      parameters: [{ $ref: '#/components/parameters/NoteId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VersionRequest' }
+      responses:
+        '204': { description: Snapshot recorded or deduplicated }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/{noteId}/versions/{versionId}:
+    get:
+      tags: [Notes]
+      summary: Get an owned retained note version
+      operationId: getNoteVersion
+      parameters:
+        - { $ref: '#/components/parameters/NoteId' }
+        - { $ref: '#/components/parameters/VersionId' }
+      responses:
+        '200':
+          description: Retained note version
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NoteVersion' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/notes/{noteId}/versions/{versionId}/restore:
+    post:
+      tags: [Notes]
+      summary: Restore editable state from an owned retained version
+      operationId: restoreNoteVersion
+      parameters:
+        - { $ref: '#/components/parameters/NoteId' }
+        - { $ref: '#/components/parameters/VersionId' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VersionRequest' }
+      responses:
+        '200':
+          description: Restored current note
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentNote' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/labels:
     get:
       tags: [Labels]
@@ -1032,6 +1129,11 @@ components:
       schema: { type: string, format: uuid }
     NoteId:
       name: noteId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    VersionId:
+      name: versionId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -1322,7 +1424,7 @@ components:
         expiresAt: { type: string, format: date-time }
     AdminSettings:
       type: object
-      required: [allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours]
+      required: [allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours, noteVersionMaximumCount, noteVersionRetentionDays]
       properties:
         allowedEmailDomains:
           type: array
@@ -1335,6 +1437,8 @@ components:
         maximumImageBytes: { type: integer, format: int64, minimum: 1048576, maximum: 52428800 }
         perUserStorageQuotaBytes: { type: integer, format: int64, minimum: 10485760, maximum: 1099511627776 }
         imageOrphanGraceHours: { type: integer, minimum: 1, maximum: 720 }
+        noteVersionMaximumCount: { type: integer, minimum: 1, maximum: 500 }
+        noteVersionRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
     AdminSettingsUpdate:
       type: object
       properties:
@@ -1351,6 +1455,8 @@ components:
         maximumImageBytes: { type: integer, format: int64, minimum: 1048576, maximum: 52428800 }
         perUserStorageQuotaBytes: { type: integer, format: int64, minimum: 10485760, maximum: 1099511627776 }
         imageOrphanGraceHours: { type: integer, minimum: 1, maximum: 720 }
+        noteVersionMaximumCount: { type: integer, minimum: 1, maximum: 500 }
+        noteVersionRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
     ImageMetadata:
       type: object
       required: [id, mimeType, byteSize, width, height, thumbnailMimeType, thumbnailByteSize, thumbnailWidth, thumbnailHeight, contentUrl, thumbnailUrl, createdAt]
@@ -1584,6 +1690,52 @@ components:
           type: array
           items: { $ref: '#/components/schemas/NoteSummary' }
         page: { $ref: '#/components/schemas/PageMetadata' }
+    NoteVersionReason:
+      type: string
+      enum: [EDITOR_CLOSE, PERIODIC, CONFLICT, TRASH_RESTORE, VERSION_RESTORE]
+    NoteVersionSummary:
+      type: object
+      required: [id, noteId, sourceVersion, reason, snapshotAt, noteType, title]
+      properties:
+        id: { type: string, format: uuid }
+        noteId: { type: string, format: uuid }
+        sourceVersion: { type: integer, format: int64, minimum: 0 }
+        reason: { $ref: '#/components/schemas/NoteVersionReason' }
+        snapshotAt: { type: string, format: date-time }
+        noteType: { $ref: '#/components/schemas/NoteType' }
+        title: { type: string }
+    NoteVersion:
+      type: object
+      required: [id, noteId, sourceVersion, reason, snapshotAt, noteType, title, content, checklistItems, pinned, archived, color, labelIds, imageIds]
+      properties:
+        id: { type: string, format: uuid }
+        noteId: { type: string, format: uuid }
+        sourceVersion: { type: integer, format: int64, minimum: 0 }
+        reason: { $ref: '#/components/schemas/NoteVersionReason' }
+        snapshotAt: { type: string, format: date-time }
+        noteType: { $ref: '#/components/schemas/NoteType' }
+        title: { type: string }
+        content: { type: string }
+        checklistItems:
+          type: array
+          items: { $ref: '#/components/schemas/ChecklistItemInput' }
+        pinned: { type: boolean }
+        archived: { type: boolean }
+        color: { $ref: '#/components/schemas/ContentColor' }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        imageIds:
+          type: array
+          items: { type: string, format: uuid }
+    NoteVersionPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/NoteVersionSummary' }
+        page: { $ref: '#/components/schemas/PageMetadata' }
     VersionRequest:
       type: object
       required: [version]
@@ -1637,6 +1789,9 @@ components:
           type: integer
           format: int64
           minimum: 0
+        currentUpdatedAt:
+          type: string
+          format: date-time
       example:
         type: https://glacier-notes.example/problems/content-version-conflict
         title: Content Changed

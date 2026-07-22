@@ -8,6 +8,7 @@ import com.glaciernotes.cloud.application.image.ImageFailure;
 import com.glaciernotes.cloud.generated.model.ProblemDetails;
 import com.glaciernotes.cloud.generated.model.ValidationError;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -27,11 +28,19 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
 
     @Context
     UriInfo uriInfo;
+    @Inject
+    com.glaciernotes.cloud.application.content.ContentService content;
 
     @Override
     public Response toResponse(Throwable exception) {
         var correlationId = Objects.toString(MDC.get("correlationId"), "unavailable");
         var description = describe(exception);
+        if (exception instanceof ContentFailure failure && failure.conflictOwner() != null) {
+            try { content.recordConflictSnapshot(failure.conflictOwner(), failure.conflictNoteId()); }
+            catch (RuntimeException snapshotFailure) {
+                LOG.warnf("Could not record conflict snapshot correlationId=%s", correlationId);
+            }
+        }
         if (description.status() >= 500 && !(exception instanceof SetupFailure)
             && !(exception instanceof AuthenticationFailure)
             && !(exception instanceof LifecycleFailure)
@@ -56,6 +65,9 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
         if (exception instanceof ContentFailure contentFailure
             && contentFailure.currentVersion() != null) {
             problem.currentVersion(contentFailure.currentVersion());
+            if (contentFailure.currentUpdatedAt() != null) {
+                problem.currentUpdatedAt(contentFailure.currentUpdatedAt().atOffset(java.time.ZoneOffset.UTC));
+            }
         }
 
         var response = Response.status(description.status())

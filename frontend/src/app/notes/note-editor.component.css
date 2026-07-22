@@ -12,11 +12,107 @@
   background: rgb(4 10 18 / 66%);
 }
 .editor__body {
+  position: relative;
   display: flex;
   flex-direction: column;
   max-height: 88vh;
   padding: 16px 18px 10px;
   background: var(--note-current, var(--note-default));
+}
+.history-panel {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: var(--color-surface);
+}
+.history-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.history-panel__heading {
+  display: grid;
+  gap: 3px;
+}
+.history-panel__heading small {
+  color: var(--color-text-muted);
+}
+.history-panel__close {
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.history-panel__body {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: 220px 1fr;
+}
+.history-panel__versions {
+  padding: 10px 10px 10px 0;
+  overflow: auto;
+  border-right: 1px solid var(--color-border);
+}
+.history-panel__version {
+  display: grid;
+  width: 100%;
+  gap: 3px;
+  padding: 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+.history-panel__version:hover,
+.history-panel__version.active {
+  background: var(--color-surface-elevated);
+}
+.history-panel__version span,
+.history-panel__version small {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+.history-preview {
+  min-width: 0;
+  padding: 16px;
+  overflow: auto;
+}
+.history-preview pre {
+  min-height: 180px;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  white-space: pre-wrap;
+}
+.history-preview__metadata {
+  display: flex;
+  gap: 8px;
+}
+.history-preview dt {
+  color: var(--color-text-muted);
+}
+.history-preview dd {
+  margin: 0;
+}
+.history-restore {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--color-accent);
+  color: white;
+  cursor: pointer;
 }
 .editor__header {
   display: flex;
@@ -354,5 +450,13 @@ summary {
   .editor__content,
   .checklist {
     min-height: 180px;
+  }
+  .history-panel__body {
+    grid-template-columns: 1fr;
+  }
+  .history-panel__versions {
+    max-height: 180px;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
   }
 }

@@ -86,6 +86,17 @@ public class NoteEntity extends OwnedMutableEntity {
         this.updatedAt = now;
     }
 
+    public void restoreEditable(String type, String title, String content, boolean pinned,
+                                boolean archived, String color, Instant now) {
+        this.type = type;
+        this.title = title;
+        this.content = content;
+        this.pinned = pinned;
+        this.archived = archived;
+        this.color = color;
+        this.updatedAt = now;
+    }
+
     public void trash(Instant now) { deletedAt = now; updatedAt = now; }
     public void restore(Instant now) { deletedAt = null; updatedAt = now; }
 }

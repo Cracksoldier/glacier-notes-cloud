@@ -335,6 +335,7 @@ public class LifecycleService {
                 ? null : update.getAllowedImageTypes().stream().map(Object::toString).toList(),
             update.getMaximumImageBytes(), update.getPerUserStorageQuotaBytes(), update.getImageOrphanGraceHours()
         );
+        entity.updateHistory(update.getNoteVersionMaximumCount(), update.getNoteVersionRetentionDays());
         audit("INSTANCE_SETTINGS_CHANGED", actor, null, "INSTANCE_SETTINGS", null, correlationId,
             Map.of("area", "user-lifecycle"));
         return settingsModel(entity);
@@ -487,7 +488,9 @@ public class LifecycleService {
             .allowedImageTypes(value.allowedUploadTypes().stream().map(AdminSettings.AllowedImageTypesEnum::fromValue).toList())
             .maximumImageBytes(value.maximumImageBytes())
             .perUserStorageQuotaBytes(value.perUserStorageQuotaBytes())
-            .imageOrphanGraceHours(value.imageOrphanGraceHours());
+            .imageOrphanGraceHours(value.imageOrphanGraceHours())
+            .noteVersionMaximumCount(value.noteVersionMaximumCount())
+            .noteVersionRetentionDays(value.noteVersionRetentionDays());
     }
 
     private InstanceSettingsEntity settings() {

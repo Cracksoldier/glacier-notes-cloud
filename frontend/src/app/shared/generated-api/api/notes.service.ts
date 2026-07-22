@@ -33,6 +33,10 @@ import { NoteType } from '../model/noteType';
 // @ts-ignore
 import { NoteUpdate } from '../model/noteUpdate';
 // @ts-ignore
+import { NoteVersion } from '../model/noteVersion';
+// @ts-ignore
+import { NoteVersionPage } from '../model/noteVersionPage';
+// @ts-ignore
 import { ProblemDetails } from '../model/problemDetails';
 // @ts-ignore
 import { VersionRequest } from '../model/versionRequest';
@@ -311,6 +315,157 @@ export class NotesService extends BaseService {
         return this.httpClient.request<ContentNote>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Get an owned retained note version
+     * @endpoint get /api/v1/notes/{noteId}/versions/{versionId}
+     * @param noteId 
+     * @param versionId 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getNoteVersion(noteId: string, versionId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<NoteVersion>;
+    public getNoteVersion(noteId: string, versionId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<NoteVersion>>;
+    public getNoteVersion(noteId: string, versionId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<NoteVersion>>;
+    public getNoteVersion(noteId: string, versionId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (noteId === null || noteId === undefined) {
+            throw new Error('Required parameter noteId was null or undefined when calling getNoteVersion.');
+        }
+        if (versionId === null || versionId === undefined) {
+            throw new Error('Required parameter versionId was null or undefined when calling getNoteVersion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (csrfHeader) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
+
+        // authentication (sessionCookie) required
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/notes/${this.configuration.encodeParam({name: "noteId", value: noteId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/versions/${this.configuration.encodeParam({name: "versionId", value: versionId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<NoteVersion>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * List retained versions of an owned note
+     * @endpoint get /api/v1/notes/{noteId}/versions
+     * @param noteId 
+     * @param cursor 
+     * @param limit 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listNoteVersions(noteId: string, cursor?: string, limit?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<NoteVersionPage>;
+    public listNoteVersions(noteId: string, cursor?: string, limit?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<NoteVersionPage>>;
+    public listNoteVersions(noteId: string, cursor?: string, limit?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<NoteVersionPage>>;
+    public listNoteVersions(noteId: string, cursor?: string, limit?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (noteId === null || noteId === undefined) {
+            throw new Error('Required parameter noteId was null or undefined when calling listNoteVersions.');
+        }
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'cursor',
+            <any>cursor,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'limit',
+            <any>limit,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (csrfHeader) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
+
+        // authentication (sessionCookie) required
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/notes/${this.configuration.encodeParam({name: "noteId", value: noteId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/versions`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<NoteVersionPage>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -678,6 +833,315 @@ export class NotesService extends BaseService {
         let localVarPath = `/api/v1/notes/${this.configuration.encodeParam({name: "noteId", value: noteId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/restore`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<ContentNote>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: versionRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Restore editable state from an owned retained version
+     * @endpoint post /api/v1/notes/{noteId}/versions/{versionId}/restore
+     * @param noteId 
+     * @param versionId 
+     * @param versionRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public restoreNoteVersion(noteId: string, versionId: string, versionRequest: VersionRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ContentNote>;
+    public restoreNoteVersion(noteId: string, versionId: string, versionRequest: VersionRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ContentNote>>;
+    public restoreNoteVersion(noteId: string, versionId: string, versionRequest: VersionRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ContentNote>>;
+    public restoreNoteVersion(noteId: string, versionId: string, versionRequest: VersionRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (noteId === null || noteId === undefined) {
+            throw new Error('Required parameter noteId was null or undefined when calling restoreNoteVersion.');
+        }
+        if (versionId === null || versionId === undefined) {
+            throw new Error('Required parameter versionId was null or undefined when calling restoreNoteVersion.');
+        }
+        if (versionRequest === null || versionRequest === undefined) {
+            throw new Error('Required parameter versionRequest was null or undefined when calling restoreNoteVersion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (csrfHeader) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
+
+        // authentication (sessionCookie) required
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/notes/${this.configuration.encodeParam({name: "noteId", value: noteId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/versions/${this.configuration.encodeParam({name: "versionId", value: versionId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/restore`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ContentNote>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: versionRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Search owned notes using PostgreSQL full-text search
+     * @endpoint get /api/v1/notes/search
+     * @param query 
+     * @param notebookId 
+     * @param labelId 
+     * @param noteType 
+     * @param pinned 
+     * @param archive 
+     * @param trash 
+     * @param cursor 
+     * @param limit 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public searchNotes(query: string, notebookId?: string, labelId?: string, noteType?: NoteType, pinned?: boolean, archive?: 'ACTIVE' | 'ARCHIVED' | 'ALL', trash?: 'ACTIVE' | 'TRASHED', cursor?: string, limit?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<NotePage>;
+    public searchNotes(query: string, notebookId?: string, labelId?: string, noteType?: NoteType, pinned?: boolean, archive?: 'ACTIVE' | 'ARCHIVED' | 'ALL', trash?: 'ACTIVE' | 'TRASHED', cursor?: string, limit?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<NotePage>>;
+    public searchNotes(query: string, notebookId?: string, labelId?: string, noteType?: NoteType, pinned?: boolean, archive?: 'ACTIVE' | 'ARCHIVED' | 'ALL', trash?: 'ACTIVE' | 'TRASHED', cursor?: string, limit?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<NotePage>>;
+    public searchNotes(query: string, notebookId?: string, labelId?: string, noteType?: NoteType, pinned?: boolean, archive?: 'ACTIVE' | 'ARCHIVED' | 'ALL', trash?: 'ACTIVE' | 'TRASHED', cursor?: string, limit?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (query === null || query === undefined) {
+            throw new Error('Required parameter query was null or undefined when calling searchNotes.');
+        }
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'query',
+            <any>query,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'notebookId',
+            <any>notebookId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'labelId',
+            <any>labelId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'noteType',
+            <any>noteType,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'pinned',
+            <any>pinned,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'archive',
+            <any>archive,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'trash',
+            <any>trash,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'cursor',
+            <any>cursor,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'limit',
+            <any>limit,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (csrfHeader) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
+
+        // authentication (sessionCookie) required
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/notes/search`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<NotePage>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Snapshot meaningful editor state when the editor closes
+     * @endpoint post /api/v1/notes/{noteId}/versions/snapshot
+     * @param noteId 
+     * @param versionRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public snapshotNoteVersion(noteId: string, versionRequest: VersionRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
+    public snapshotNoteVersion(noteId: string, versionRequest: VersionRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
+    public snapshotNoteVersion(noteId: string, versionRequest: VersionRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
+    public snapshotNoteVersion(noteId: string, versionRequest: VersionRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (noteId === null || noteId === undefined) {
+            throw new Error('Required parameter noteId was null or undefined when calling snapshotNoteVersion.');
+        }
+        if (versionRequest === null || versionRequest === undefined) {
+            throw new Error('Required parameter versionRequest was null or undefined when calling snapshotNoteVersion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (csrfHeader) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
+
+        // authentication (sessionCookie) required
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/notes/${this.configuration.encodeParam({name: "noteId", value: noteId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/versions/snapshot`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<any>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 body: versionRequest,

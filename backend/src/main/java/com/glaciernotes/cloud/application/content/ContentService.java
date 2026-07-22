@@ -1,5 +1,8 @@
 package com.glaciernotes.cloud.application.content;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.glaciernotes.cloud.domain.IdGenerator;
 import com.glaciernotes.cloud.domain.OwnerId;
 import com.glaciernotes.cloud.domain.TimeProvider;
@@ -20,6 +23,10 @@ import com.glaciernotes.cloud.generated.model.NotePage;
 import com.glaciernotes.cloud.generated.model.NoteSummary;
 import com.glaciernotes.cloud.generated.model.NoteType;
 import com.glaciernotes.cloud.generated.model.NoteUpdate;
+import com.glaciernotes.cloud.generated.model.NoteVersion;
+import com.glaciernotes.cloud.generated.model.NoteVersionPage;
+import com.glaciernotes.cloud.generated.model.NoteVersionReason;
+import com.glaciernotes.cloud.generated.model.NoteVersionSummary;
 import com.glaciernotes.cloud.generated.model.NotebookCreate;
 import com.glaciernotes.cloud.generated.model.NotebookReorder;
 import com.glaciernotes.cloud.generated.model.NotebookUpdate;
@@ -34,11 +41,18 @@ import com.glaciernotes.cloud.persistence.repository.CoreContentRepository;
 import com.glaciernotes.cloud.persistence.repository.CoreContentRepository.CollectionState;
 import com.glaciernotes.cloud.persistence.repository.CoreContentRepository.Cursor;
 import com.glaciernotes.cloud.persistence.repository.CoreContentRepository.NoteQuery;
+import com.glaciernotes.cloud.persistence.repository.CoreContentRepository.SearchCursor;
+import com.glaciernotes.cloud.persistence.repository.CoreContentRepository.SearchHit;
 import com.glaciernotes.cloud.persistence.repository.CoreContentRepository.TrashState;
+import com.glaciernotes.cloud.persistence.repository.CoreContentRepository.VersionCursor;
+import com.glaciernotes.cloud.persistence.repository.CoreContentRepository.VersionRow;
+import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -47,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -64,11 +79,14 @@ public class ContentService {
     private final CoreContentRepository repository;
     private final IdGenerator ids;
     private final TimeProvider clock;
+    private final ObjectMapper objectMapper;
 
-    public ContentService(CoreContentRepository repository, IdGenerator ids, TimeProvider clock) {
+    public ContentService(CoreContentRepository repository, IdGenerator ids, TimeProvider clock,
+                          ObjectMapper objectMapper) {
         this.repository = repository;
         this.ids = ids;
         this.clock = clock;
+        this.objectMapper = objectMapper;
     }
 
     public List<NotebookView> listNotebooks(OwnerId ownerId) {
@@ -201,6 +219,77 @@ public class ContentService {
         return contentNote(ownerId, requireNote(ownerId, noteId, false));
     }
 
+    public NoteVersionPage listNoteVersions(OwnerId ownerId, UUID noteId, String cursor, int limit) {
+        requireNote(ownerId, noteId, false);
+        VersionCursor decoded = decodeVersionCursor(cursor);
+        List<VersionRow> rows = repository.versions(ownerId, noteId, decoded, limit + 1);
+        boolean hasNext = rows.size() > limit;
+        if (hasNext) rows = new ArrayList<>(rows.subList(0, limit));
+        List<NoteVersionSummary> items = rows.stream().map(row -> versionSummary(noteId, row)).toList();
+        PageMetadata page = new PageMetadata().size(items.size()).hasNext(hasNext);
+        if (hasNext) page.nextCursor(encodeVersionCursor(rows.getLast()));
+        return new NoteVersionPage().items(items).page(page);
+    }
+
+    public NoteVersion getNoteVersion(OwnerId ownerId, UUID noteId, UUID versionId) {
+        requireNote(ownerId, noteId, false);
+        return versionModel(noteId, repository.version(ownerId, noteId, versionId)
+            .orElseThrow(ContentFailure::notFound));
+    }
+
+    @Transactional
+    public void snapshotNoteVersion(OwnerId ownerId, UUID noteId, long version) {
+        NoteEntity note = requireNote(ownerId, noteId, true);
+        checkNoteVersion(ownerId, note, version);
+        snapshot(ownerId, note, "EDITOR_CLOSE", clock.now());
+    }
+
+    @Transactional
+    public void recordConflictSnapshot(OwnerId ownerId, UUID noteId) {
+        repository.note(ownerId, noteId, true)
+            .ifPresent(note -> snapshot(ownerId, note, "CONFLICT", clock.now()));
+    }
+
+    @Transactional
+    public ContentNote restoreNoteVersion(OwnerId ownerId, UUID noteId, UUID versionId, long version) {
+        NoteEntity note = requireNote(ownerId, noteId, true);
+        checkNoteVersion(ownerId, note, version);
+        VersionRow row = repository.version(ownerId, noteId, versionId)
+            .orElseThrow(ContentFailure::notFound);
+        SnapshotPayload target = payload(row);
+        Instant now = clock.now();
+        snapshot(ownerId, note, "VERSION_RESTORE", now);
+        List<UUID> images = requireImages(ownerId, target.imageIds(), target.content());
+        Set<UUID> labels = new LinkedHashSet<>();
+        for (UUID labelId : target.labelIds()) {
+            if (repository.label(ownerId, labelId, false).isPresent()) labels.add(labelId);
+        }
+        List<ChecklistItemInput> checklist = target.checklistItems().stream()
+            .map(item -> new ChecklistItemInput(item.text(), item.checked())).toList();
+        note.restoreEditable(target.noteType(), target.title(), target.content(), target.pinned(),
+            target.archived(), target.color(), now);
+        replaceChecklist(ownerId, note, checklist, now);
+        repository.replaceNoteLabels(ownerId, noteId, labels);
+        repository.replaceNoteImages(ownerId, noteId, images, now);
+        repository.flush(ownerId);
+        return contentNote(ownerId, note);
+    }
+
+    @Scheduled(every = "1h", delayed = "5m")
+    @Transactional
+    void cleanNoteHistory() {
+        if (!repository.acquireHistoryCleanupLock()) return;
+        var settings = repository.settings();
+        Instant now = clock.now();
+        var expired = repository.expiredVersions(settings.noteVersionMaximumCount(),
+            now.minus(settings.noteVersionRetentionDays(), ChronoUnit.DAYS), 500);
+        for (var key : expired) {
+            List<UUID> images = repository.versionImages(key.ownerId(), key.id());
+            repository.deleteVersion(key.ownerId(), key.id());
+            repository.markImagesOrphaned(key.ownerId(), images, now);
+        }
+    }
+
     public NotePage listNotes(OwnerId ownerId, UUID notebookId, UUID labelId, NoteType noteType,
                               Boolean pinned, String archive, String trash, String cursor, int limit) {
         if (notebookId != null) requireNotebook(ownerId, notebookId, false);
@@ -217,6 +306,35 @@ public class ContentService {
         List<NoteSummary> items = entities.stream().map(note -> noteSummary(ownerId, note)).toList();
         PageMetadata page = new PageMetadata().size(items.size()).hasNext(hasNext);
         if (hasNext) page.nextCursor(encodeCursor(entities.get(entities.size() - 1)));
+        return new NotePage().items(items).page(page);
+    }
+
+    public NotePage searchNotes(OwnerId ownerId, String query, UUID notebookId, UUID labelId,
+                                NoteType noteType, Boolean pinned, String archive, String trash,
+                                String cursor, int limit) {
+        String normalized = query == null ? "" : query.strip();
+        if (normalized.isEmpty()) {
+            return new NotePage().items(List.of()).page(new PageMetadata().size(0).hasNext(false));
+        }
+        if (notebookId != null) requireNotebook(ownerId, notebookId, false);
+        if (labelId != null) requireLabel(ownerId, labelId, false);
+        CollectionState archiveState = enumValue(CollectionState.class,
+            archive == null ? "ALL" : archive, "archive");
+        TrashState trashState = enumValue(TrashState.class,
+            trash == null ? "ACTIVE" : trash, "trash");
+        if (trashState == TrashState.ALL) throw ContentFailure.invalid("trash", "Search supports ACTIVE or TRASHED trash scope.");
+        String fingerprint = searchFingerprint(normalized, notebookId, labelId, noteType, pinned,
+            archiveState, trashState);
+        SearchCursor decoded = decodeSearchCursor(cursor, fingerprint);
+        List<SearchHit> hits = repository.searchNotes(ownerId, normalized,
+            new NoteQuery(notebookId, labelId,
+                noteType == null ? null : noteType.toString().toLowerCase(Locale.ROOT), pinned,
+                archiveState, trashState), decoded, limit + 1);
+        boolean hasNext = hits.size() > limit;
+        if (hasNext) hits = new ArrayList<>(hits.subList(0, limit));
+        List<NoteSummary> items = hits.stream().map(hit -> noteSummary(ownerId, hit.note())).toList();
+        PageMetadata page = new PageMetadata().size(items.size()).hasNext(hasNext);
+        if (hasNext) page.nextCursor(encodeSearchCursor(hits.getLast(), fingerprint));
         return new NotePage().items(items).page(page);
     }
 
@@ -253,13 +371,18 @@ public class ContentService {
     @Transactional
     public ContentNote updateNote(OwnerId ownerId, UUID noteId, NoteUpdate request) {
         NoteEntity entity = requireNote(ownerId, noteId, true);
-        checkVersion(entity.version(), request.getVersion());
+        checkNoteVersion(ownerId, entity, request.getVersion());
         NoteType type = apiType(entity.type());
         validateBody(type, request.getContent(), request.getChecklistItems());
         Set<UUID> labels = requireLabels(ownerId, request.getLabelIds());
         List<UUID> images = requireImages(ownerId,
             request.getImageIds() == null ? repository.noteImageIds(ownerId, noteId) : request.getImageIds(),
             request.getContent());
+        SnapshotPayload current = snapshotPayload(ownerId, entity);
+        SnapshotPayload target = new SnapshotPayload(1, entity.type(), request.getTitle(), request.getContent(),
+            checklistPayload(request.getChecklistItems()), request.getPinned(), request.getArchived(),
+            storedColor(request.getColor()), sorted(labels), images);
+        if (hash(current).equals(hash(target))) return contentNote(ownerId, entity);
         Instant now = clock.now();
         entity.replace(request.getTitle(), request.getContent(), request.getPinned(), request.getArchived(),
             storedColor(request.getColor()), now);
@@ -267,13 +390,14 @@ public class ContentService {
         repository.replaceNoteLabels(ownerId, noteId, labels);
         repository.replaceNoteImages(ownerId, noteId, images, now);
         repository.flush(ownerId);
+        maybePeriodicSnapshot(ownerId, entity, now);
         return contentNote(ownerId, entity);
     }
 
     @Transactional
     public ContentNote moveNote(OwnerId ownerId, UUID noteId, NoteMove request) {
         NoteEntity note = requireNote(ownerId, noteId, true);
-        checkVersion(note.version(), request.getVersion());
+        checkNoteVersion(ownerId, note, request.getVersion());
         requireNotebook(ownerId, request.getNotebookId(), false);
         note.move(request.getNotebookId(), clock.now());
         repository.flush(ownerId);
@@ -283,7 +407,7 @@ public class ContentService {
     @Transactional
     public ContentNote trashNote(OwnerId ownerId, UUID noteId, long version) {
         NoteEntity note = requireNote(ownerId, noteId, true);
-        checkVersion(note.version(), version);
+        checkNoteVersion(ownerId, note, version);
         if (note.deletedAt() != null) throw ContentFailure.invalidState("The note is already in trash.");
         note.trash(clock.now());
         repository.flush(ownerId);
@@ -293,9 +417,11 @@ public class ContentService {
     @Transactional
     public ContentNote restoreNote(OwnerId ownerId, UUID noteId, long version) {
         NoteEntity note = requireNote(ownerId, noteId, true);
-        checkVersion(note.version(), version);
+        checkNoteVersion(ownerId, note, version);
         if (note.deletedAt() == null) throw ContentFailure.invalidState("The note is not in trash.");
-        note.restore(clock.now());
+        Instant now = clock.now();
+        snapshot(ownerId, note, "TRASH_RESTORE", now);
+        note.restore(now);
         repository.flush(ownerId);
         return contentNote(ownerId, note);
     }
@@ -303,7 +429,7 @@ public class ContentService {
     @Transactional
     public void purgeNote(OwnerId ownerId, UUID noteId, long version) {
         NoteEntity note = requireNote(ownerId, noteId, true);
-        checkVersion(note.version(), version);
+        checkNoteVersion(ownerId, note, version);
         if (note.deletedAt() == null) throw ContentFailure.invalidState("Only trashed notes can be purged.");
         purge(ownerId, note, clock.now());
         repository.flush(ownerId);
@@ -321,7 +447,7 @@ public class ContentService {
     @Transactional
     public ContentNote convertNote(OwnerId ownerId, UUID noteId, NoteConversion request) {
         NoteEntity note = requireNote(ownerId, noteId, true);
-        checkVersion(note.version(), request.getVersion());
+        checkNoteVersion(ownerId, note, request.getVersion());
         NoteType current = apiType(note.type());
         if (current == request.getTargetType()) {
             throw ContentFailure.invalidState("The note already has the requested type.");
@@ -343,6 +469,7 @@ public class ContentService {
             note.convert("text", markdown, now);
         }
         repository.flush(ownerId);
+        maybePeriodicSnapshot(ownerId, note, now);
         return contentNote(ownerId, note);
     }
 
@@ -380,12 +507,15 @@ public class ContentService {
     }
 
     private void purge(OwnerId ownerId, NoteEntity note, Instant now) {
+        List<UUID> imageCandidates = repository.allNoteImages(ownerId, note.id());
         for (ChecklistItemEntity item : repository.checklistItems(ownerId, note.id(), true)) {
             tombstone(ownerId, "CHECKLIST_ITEM", item.id(), item.version(), now);
         }
         repository.replaceNoteImages(ownerId, note.id(), List.of(), now);
         tombstone(ownerId, "NOTE", note.id(), note.version(), now);
         repository.removeNote(ownerId, note);
+        repository.flush(ownerId);
+        repository.markImagesOrphaned(ownerId.value(), imageCandidates, now);
     }
 
     private void tombstone(OwnerId ownerId, String type, UUID entityId, long version, Instant now) {
@@ -512,6 +642,137 @@ public class ContentService {
         return value.toLowerCase(Locale.ROOT);
     }
 
+    private void maybePeriodicSnapshot(OwnerId ownerId, NoteEntity note, Instant now) {
+        Instant last = repository.lastSnapshotAt(ownerId, note.id());
+        Instant baseline = last == null ? note.createdAt() : last;
+        if (!baseline.isAfter(now.minus(5, ChronoUnit.MINUTES))) {
+            snapshot(ownerId, note, "PERIODIC", now);
+        }
+    }
+
+    private boolean snapshot(OwnerId ownerId, NoteEntity note, String reason, Instant now) {
+        SnapshotPayload payload = snapshotPayload(ownerId, note);
+        String json = json(payload);
+        String contentHash = digest(json);
+        if (contentHash.equals(repository.latestSnapshotHash(ownerId, note.id()))) return false;
+        repository.insertVersion(ownerId, ids.nextId(), note.id(), note.version(), reason, now,
+            json, contentHash, payload.imageIds());
+        repository.markSnapshot(ownerId, note.id(), now);
+        return true;
+    }
+
+    private SnapshotPayload snapshotPayload(OwnerId ownerId, NoteEntity note) {
+        return new SnapshotPayload(1, note.type(), note.title(), note.content(),
+            repository.checklistItems(ownerId, note.id(), false).stream()
+                .map(item -> new SnapshotChecklistItem(item.text(), item.checked())).toList(),
+            note.pinned(), note.archived(), note.color(),
+            sorted(repository.noteLabelIds(ownerId, note.id())),
+            repository.noteImageIds(ownerId, note.id()));
+    }
+
+    private static List<SnapshotChecklistItem> checklistPayload(List<ChecklistItemInput> items) {
+        return items.stream().map(item -> new SnapshotChecklistItem(item.getText(), item.getChecked())).toList();
+    }
+
+    private static List<UUID> sorted(Iterable<UUID> values) {
+        List<UUID> result = new ArrayList<>();
+        values.forEach(result::add);
+        result.sort(UUID::compareTo);
+        return result;
+    }
+
+    private String json(SnapshotPayload payload) {
+        try { return objectMapper.writeValueAsString(payload); }
+        catch (JsonProcessingException exception) { throw new IllegalStateException("Could not serialize note history", exception); }
+    }
+
+    private SnapshotPayload payload(VersionRow row) {
+        try { return objectMapper.readValue(row.payload(), SnapshotPayload.class); }
+        catch (JsonProcessingException exception) { throw new IllegalStateException("Could not read note history", exception); }
+    }
+
+    private static String hash(SnapshotPayload payload) {
+        StringBuilder value = new StringBuilder().append(payload.schemaVersion()).append('|')
+            .append(payload.noteType()).append('|').append(payload.title()).append('|')
+            .append(payload.content()).append('|').append(payload.pinned()).append('|')
+            .append(payload.archived()).append('|').append(payload.color()).append('|')
+            .append(payload.labelIds()).append('|').append(payload.imageIds());
+        payload.checklistItems().forEach(item -> value.append('|').append(item.checked()).append(':').append(item.text()));
+        return digest(value.toString());
+    }
+
+    private static String digest(String value) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
+    }
+
+    private NoteVersionSummary versionSummary(UUID noteId, VersionRow row) {
+        SnapshotPayload value = payload(row);
+        return new NoteVersionSummary().id(row.id()).noteId(noteId).sourceVersion(row.sourceVersion())
+            .reason(NoteVersionReason.fromValue(row.reason())).snapshotAt(offset(row.snapshotAt()))
+            .noteType(apiType(value.noteType())).title(value.title());
+    }
+
+    private NoteVersion versionModel(UUID noteId, VersionRow row) {
+        SnapshotPayload value = payload(row);
+        return new NoteVersion().id(row.id()).noteId(noteId).sourceVersion(row.sourceVersion())
+            .reason(NoteVersionReason.fromValue(row.reason())).snapshotAt(offset(row.snapshotAt()))
+            .noteType(apiType(value.noteType())).title(value.title()).content(value.content())
+            .checklistItems(value.checklistItems().stream()
+                .map(item -> new ChecklistItemInput(item.text(), item.checked())).toList())
+            .pinned(value.pinned()).archived(value.archived()).color(apiColor(value.color()))
+            .labelIds(value.labelIds()).imageIds(value.imageIds());
+    }
+
+    private static String searchFingerprint(String query, UUID notebookId, UUID labelId,
+                                            NoteType noteType, Boolean pinned,
+                                            CollectionState archive, TrashState trash) {
+        return digest(String.join("|", query, String.valueOf(notebookId), String.valueOf(labelId),
+            String.valueOf(noteType), String.valueOf(pinned), archive.name(), trash.name()));
+    }
+
+    private static String encodeSearchCursor(SearchHit hit, String fingerprint) {
+        String value = hit.rank() + "|" + hit.note().updatedAt() + "|" + hit.note().id() + "|" + fingerprint;
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static SearchCursor decodeSearchCursor(String cursor, String fingerprint) {
+        if (cursor == null || cursor.isBlank()) return null;
+        try {
+            String[] pieces = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8)
+                .split("\\|", -1);
+            if (pieces.length != 4 || !pieces[3].equals(fingerprint)) throw new IllegalArgumentException();
+            return new SearchCursor(Float.parseFloat(pieces[0]), Instant.parse(pieces[1]), UUID.fromString(pieces[2]));
+        } catch (RuntimeException exception) {
+            throw ContentFailure.invalid("cursor", "The search cursor is invalid for these filters.");
+        }
+    }
+
+    private static String encodeVersionCursor(VersionRow row) {
+        String value = row.snapshotAt() + "|" + row.id();
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static VersionCursor decodeVersionCursor(String cursor) {
+        if (cursor == null || cursor.isBlank()) return null;
+        try {
+            String[] pieces = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8)
+                .split("\\|", -1);
+            if (pieces.length != 2) throw new IllegalArgumentException();
+            return new VersionCursor(Instant.parse(pieces[0]), UUID.fromString(pieces[1]));
+        } catch (RuntimeException exception) {
+            throw ContentFailure.invalid("cursor", "The history cursor is invalid.");
+        }
+    }
+
+    private static void checkNoteVersion(OwnerId ownerId, NoteEntity note, Long supplied) {
+        if (supplied == null || note.version() != supplied) {
+            throw ContentFailure.noteVersion(ownerId, note.id(), note.version(), note.updatedAt());
+        }
+    }
+
     private static void checkVersion(long current, Long supplied) {
         if (supplied == null || current != supplied) throw ContentFailure.version(current);
     }
@@ -565,4 +826,10 @@ public class ContentService {
     private static <T> List<T> safe(List<T> values) {
         return values == null ? List.of() : values;
     }
+
+    private record SnapshotPayload(int schemaVersion, String noteType, String title, String content,
+                                   List<SnapshotChecklistItem> checklistItems, boolean pinned,
+                                   boolean archived, String color, List<UUID> labelIds,
+                                   List<UUID> imageIds) {}
+    private record SnapshotChecklistItem(String text, boolean checked) {}
 }

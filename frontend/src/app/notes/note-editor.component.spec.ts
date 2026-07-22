@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
@@ -33,6 +34,12 @@ describe('NoteEditorComponent', () => {
     saveNote: vi.fn(),
     closeEditor: vi.fn(),
     refresh: vi.fn(),
+    snapshotEditorNote: vi.fn(),
+    overwriteNote: vi.fn(),
+    reloadEditorNote: vi.fn(),
+    listNoteVersions: vi.fn(),
+    getNoteVersion: vi.fn(),
+    restoreNoteVersion: vi.fn(),
   };
 
   beforeEach(async () => {
@@ -50,6 +57,7 @@ describe('NoteEditorComponent', () => {
       title: update.title,
       version: 1,
     }));
+    store.snapshotEditorNote.mockResolvedValue(undefined);
     TestBed.configureTestingModule({ providers: [{ provide: NotesStore, useValue: store }] });
     fixture = TestBed.createComponent(NoteEditorComponent);
     fixture.componentRef.setInput('initialNote', note);
@@ -73,5 +81,39 @@ describe('NoteEditorComponent', () => {
       note,
       expect.objectContaining({ title: 'After', version: 0 }),
     );
+  });
+
+  it('snapshots meaningful saved state when the editor closes', async () => {
+    const title = fixture.nativeElement.querySelector(
+      '[aria-label="Note title"]',
+    ) as HTMLInputElement;
+    title.value = 'After';
+    title.dispatchEvent(new Event('input'));
+    await vi.advanceTimersByTimeAsync(500);
+
+    const close = fixture.nativeElement.querySelector(
+      '[aria-label="Save and close"]',
+    ) as HTMLButtonElement;
+    close.click();
+    await vi.runAllTimersAsync();
+
+    expect(store.snapshotEditorNote).toHaveBeenCalledWith(expect.objectContaining({ version: 1 }));
+    expect(store.closeEditor).toHaveBeenCalled();
+  });
+
+  it('offers copy, reload, and explicit overwrite after a stale save', async () => {
+    store.saveNote.mockRejectedValueOnce(new HttpErrorResponse({ status: 409 }));
+    const title = fixture.nativeElement.querySelector(
+      '[aria-label="Note title"]',
+    ) as HTMLInputElement;
+    title.value = 'Local draft';
+    title.dispatchEvent(new Event('input'));
+    await vi.advanceTimersByTimeAsync(500);
+    fixture.detectChanges();
+
+    const actions = Array.from(
+      fixture.nativeElement.querySelectorAll('.editor__conflict button'),
+    ).map((button) => (button as HTMLButtonElement).textContent?.trim());
+    expect(actions).toEqual(['Copy local draft', 'Reload server', 'Overwrite with draft']);
   });
 });

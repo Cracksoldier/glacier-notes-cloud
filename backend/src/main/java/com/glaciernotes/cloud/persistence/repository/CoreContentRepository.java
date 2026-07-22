@@ -3,6 +3,7 @@ package com.glaciernotes.cloud.persistence.repository;
 import com.glaciernotes.cloud.domain.OwnerId;
 import com.glaciernotes.cloud.persistence.entity.ChecklistItemEntity;
 import com.glaciernotes.cloud.persistence.entity.LabelEntity;
+import com.glaciernotes.cloud.persistence.entity.InstanceSettingsEntity;
 import com.glaciernotes.cloud.persistence.entity.NoteEntity;
 import com.glaciernotes.cloud.persistence.entity.NotebookEntity;
 import com.glaciernotes.cloud.persistence.entity.OwnedEntityId;
@@ -13,6 +14,8 @@ import jakarta.persistence.LockModeType;
 import jakarta.persistence.Query;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -81,6 +84,16 @@ public class CoreContentRepository {
         return Optional.ofNullable(entity);
     }
 
+    public InstanceSettingsEntity settings() {
+        return entityManager.find(InstanceSettingsEntity.class, (short) 1);
+    }
+
+    public boolean acquireHistoryCleanupLock() {
+        Number value = (Number) entityManager.createNativeQuery(
+            "select pg_try_advisory_xact_lock(7198008)::int").getSingleResult();
+        return value.intValue() == 1;
+    }
+
     public void persistNote(OwnerId ownerId, NoteEntity note) {
         requireOwner(ownerId, note.key().ownerId());
         entityManager.persist(note);
@@ -138,6 +151,59 @@ public class CoreContentRepository {
         for (Object id : ids) {
             result.add(entityManager.find(NoteEntity.class,
                 new OwnedEntityId(ownerId.value(), (UUID) id)));
+        }
+        return result;
+    }
+
+    public List<SearchHit> searchNotes(OwnerId ownerId, String queryText, NoteQuery filter,
+                                       SearchCursor cursor, int limit) {
+        StringBuilder sql = new StringBuilder("""
+            with ranked as (
+              select n.id, n.updated_at,
+                     ts_rank_cd(n.search_vector, websearch_to_tsquery('simple', :search)) as rank
+              from notes n
+              where n.owner_id = :owner
+                and n.search_vector @@ websearch_to_tsquery('simple', :search)
+            """);
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("search", queryText);
+        parameters.put("owner", ownerId.value());
+        append(sql, parameters, "notebook", "n.notebook_id", filter.notebookId());
+        append(sql, parameters, "type", "n.note_type", filter.type());
+        append(sql, parameters, "pinned", "n.pinned", filter.pinned());
+        if (filter.labelId() != null) {
+            sql.append(" and exists (select 1 from note_labels nl where nl.owner_id = n.owner_id")
+                .append(" and nl.note_id = n.id and nl.label_id = :label)");
+            parameters.put("label", filter.labelId());
+        }
+        sql.append(switch (filter.archive()) {
+            case ACTIVE -> " and n.archived = false";
+            case ARCHIVED -> " and n.archived = true";
+            case ALL -> "";
+        });
+        sql.append(switch (filter.trash()) {
+            case ACTIVE -> " and n.deleted_at is null";
+            case TRASHED -> " and n.deleted_at is not null";
+            case ALL -> "";
+        });
+        sql.append(") select id, updated_at, rank from ranked where true");
+        if (cursor != null) {
+            sql.append(" and (rank < :cursorRank or (rank = :cursorRank and (updated_at < :cursorUpdated")
+                .append(" or (updated_at = :cursorUpdated and id > :cursorId))))");
+            parameters.put("cursorRank", cursor.rank());
+            parameters.put("cursorUpdated", cursor.updatedAt());
+            parameters.put("cursorId", cursor.id());
+        }
+        sql.append(" order by rank desc, updated_at desc, id asc");
+        Query query = entityManager.createNativeQuery(sql.toString()).setMaxResults(limit);
+        parameters.forEach(query::setParameter);
+        List<?> rows = query.getResultList();
+        List<SearchHit> result = new ArrayList<>(rows.size());
+        for (Object value : rows) {
+            Object[] row = (Object[]) value;
+            UUID id = (UUID) row[0];
+            result.add(new SearchHit(entityManager.find(NoteEntity.class,
+                new OwnedEntityId(ownerId.value(), id)), ((Number) row[2]).floatValue()));
         }
         return result;
     }
@@ -260,6 +326,125 @@ public class CoreContentRepository {
         }
     }
 
+    public Instant lastSnapshotAt(OwnerId ownerId, UUID noteId) {
+        Object value = entityManager.createNativeQuery(
+            "select last_snapshot_at from notes where owner_id = :owner and id = :note")
+            .setParameter("owner", ownerId.value()).setParameter("note", noteId).getSingleResult();
+        if (value == null) return null;
+        if (value instanceof Instant instant) return instant;
+        if (value instanceof Timestamp timestamp) return timestamp.toInstant();
+        return ((OffsetDateTime) value).toInstant();
+    }
+
+    public void markSnapshot(OwnerId ownerId, UUID noteId, Instant at) {
+        entityManager.createNativeQuery(
+            "update notes set last_snapshot_at = :at where owner_id = :owner and id = :note")
+            .setParameter("at", at).setParameter("owner", ownerId.value())
+            .setParameter("note", noteId).executeUpdate();
+    }
+
+    public String latestSnapshotHash(OwnerId ownerId, UUID noteId) {
+        Object value = entityManager.createNativeQuery("select content_hash from note_versions " +
+            "where owner_id = :owner and note_id = :note order by snapshot_at desc, id desc limit 1")
+            .setParameter("owner", ownerId.value()).setParameter("note", noteId)
+            .getResultStream().findFirst().orElse(null);
+        return value == null ? null : value.toString();
+    }
+
+    public void insertVersion(OwnerId ownerId, UUID id, UUID noteId, long sourceVersion,
+                              String reason, Instant at, String payload, String hash,
+                              List<UUID> imageIds) {
+        entityManager.createNativeQuery("""
+            insert into note_versions(owner_id, id, note_id, source_version, snapshot_reason,
+                                      snapshot_at, content_payload, content_hash)
+            values (:owner, :id, :note, :version, :reason, :at, cast(:payload as jsonb), :hash)
+            """).setParameter("owner", ownerId.value()).setParameter("id", id)
+            .setParameter("note", noteId).setParameter("version", sourceVersion)
+            .setParameter("reason", reason).setParameter("at", at)
+            .setParameter("payload", payload).setParameter("hash", hash).executeUpdate();
+        for (UUID imageId : imageIds) {
+            entityManager.createNativeQuery("insert into note_version_image_references" +
+                "(owner_id, note_version_id, image_id) values (:owner, :version, :image)")
+                .setParameter("owner", ownerId.value()).setParameter("version", id)
+                .setParameter("image", imageId).executeUpdate();
+        }
+    }
+
+    public List<VersionRow> versions(OwnerId ownerId, UUID noteId, VersionCursor cursor, int limit) {
+        String sql = "select id, source_version, snapshot_reason, snapshot_at, content_payload::text, content_hash " +
+            "from note_versions where owner_id = :owner and note_id = :note";
+        if (cursor != null) sql += " and (snapshot_at < :at or (snapshot_at = :at and id > :id))";
+        sql += " order by snapshot_at desc, id asc";
+        Query query = entityManager.createNativeQuery(sql).setMaxResults(limit)
+            .setParameter("owner", ownerId.value()).setParameter("note", noteId);
+        if (cursor != null) query.setParameter("at", cursor.snapshotAt()).setParameter("id", cursor.id());
+        return query.getResultList().stream().map(this::versionRow).toList();
+    }
+
+    public Optional<VersionRow> version(OwnerId ownerId, UUID noteId, UUID versionId) {
+        return entityManager.createNativeQuery("select id, source_version, snapshot_reason, snapshot_at, " +
+            "content_payload::text, content_hash from note_versions where owner_id = :owner " +
+            "and note_id = :note and id = :id")
+            .setParameter("owner", ownerId.value()).setParameter("note", noteId)
+            .setParameter("id", versionId).getResultStream().map(this::versionRow).findFirst();
+    }
+
+    public List<VersionKey> expiredVersions(int maximumCount, Instant cutoff, int limit) {
+        return entityManager.createNativeQuery("""
+            select owner_id, id from (
+              select owner_id, id, snapshot_at,
+                     row_number() over (partition by owner_id, note_id order by snapshot_at desc, id asc) as position
+              from note_versions
+            ) ranked where snapshot_at < :cutoff or position > :maximum
+            order by snapshot_at, id limit :limit
+            """).setParameter("cutoff", cutoff).setParameter("maximum", maximumCount)
+            .setParameter("limit", limit).getResultList().stream()
+            .map(value -> { Object[] row = (Object[]) value; return new VersionKey((UUID) row[0], (UUID) row[1]); })
+            .toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<UUID> versionImages(UUID ownerId, UUID versionId) {
+        return entityManager.createNativeQuery("select image_id from note_version_image_references " +
+            "where owner_id = :owner and note_version_id = :version")
+            .setParameter("owner", ownerId).setParameter("version", versionId).getResultList();
+    }
+
+    public void deleteVersion(UUID ownerId, UUID versionId) {
+        entityManager.createNativeQuery("delete from note_versions where owner_id = :owner and id = :id")
+            .setParameter("owner", ownerId).setParameter("id", versionId).executeUpdate();
+    }
+
+    public void markImagesOrphaned(UUID ownerId, List<UUID> imageIds, Instant now) {
+        for (UUID imageId : imageIds) {
+            entityManager.createNativeQuery("update image_assets set orphaned_at = coalesce(orphaned_at, :now), " +
+                "updated_at = :now where owner_id = :owner and id = :image " +
+                "and not exists (select 1 from note_image_references r where r.owner_id = :owner and r.image_id = :image) " +
+                "and not exists (select 1 from note_version_image_references r where r.owner_id = :owner and r.image_id = :image)")
+                .setParameter("now", now).setParameter("owner", ownerId)
+                .setParameter("image", imageId).executeUpdate();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<UUID> allNoteImages(OwnerId ownerId, UUID noteId) {
+        return entityManager.createNativeQuery("""
+            select image_id from note_image_references where owner_id = :owner and note_id = :note
+            union
+            select r.image_id from note_version_image_references r
+              join note_versions v on v.owner_id = r.owner_id and v.id = r.note_version_id
+             where v.owner_id = :owner and v.note_id = :note
+            """).setParameter("owner", ownerId.value()).setParameter("note", noteId).getResultList();
+    }
+
+    private VersionRow versionRow(Object value) {
+        Object[] row = (Object[]) value;
+        Object timestamp = row[3];
+        Instant at = timestamp instanceof Instant instant ? instant : ((OffsetDateTime) timestamp).toInstant();
+        return new VersionRow((UUID) row[0], ((Number) row[1]).longValue(), row[2].toString(),
+            at, row[4].toString(), row[5] == null ? null : row[5].toString());
+    }
+
     public int moveNotebookNotes(OwnerId ownerId, UUID from, UUID to, boolean trash, Instant now) {
         String sql = "update notes set notebook_id = :to, updated_at = :now, version = version + 1" +
             (trash ? ", deleted_at = coalesce(deleted_at, :now)" : "") +
@@ -303,6 +488,12 @@ public class CoreContentRepository {
     public record NoteQuery(UUID notebookId, UUID labelId, String type, Boolean pinned,
                             CollectionState archive, TrashState trash) {}
     public record Cursor(boolean pinned, Instant updatedAt, UUID id) {}
+    public record SearchCursor(float rank, Instant updatedAt, UUID id) {}
+    public record SearchHit(NoteEntity note, float rank) {}
+    public record VersionCursor(Instant snapshotAt, UUID id) {}
+    public record VersionRow(UUID id, long sourceVersion, String reason, Instant snapshotAt,
+                             String payload, String hash) {}
+    public record VersionKey(UUID ownerId, UUID id) {}
     public enum CollectionState { ACTIVE, ARCHIVED, ALL }
     public enum TrashState { ACTIVE, TRASHED, ALL }
 }

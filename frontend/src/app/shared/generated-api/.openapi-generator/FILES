@@ -49,6 +49,10 @@ model/notePage.ts
 model/noteSummary.ts
 model/noteType.ts
 model/noteUpdate.ts
+model/noteVersion.ts
+model/noteVersionPage.ts
+model/noteVersionReason.ts
+model/noteVersionSummary.ts
 model/notebookCreate.ts
 model/notebookOrderEntry.ts
 model/notebookReorder.ts

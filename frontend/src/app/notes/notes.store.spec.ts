@@ -53,6 +53,7 @@ describe('NotesStore', () => {
     listNotebooks: vi.fn(),
     listLabels: vi.fn(),
     listNotes: vi.fn(),
+    searchNotes: vi.fn(),
     createNote: vi.fn(),
     getNote: vi.fn(),
     updateNote: vi.fn(),
@@ -144,5 +145,29 @@ describe('NotesStore', () => {
       }),
     );
     expect(store.editor()).toBeNull();
+  });
+
+  it('keeps ranked search order and continues search cursor pages', async () => {
+    api.listNotes.mockResolvedValue({ items: [], page: { size: 0, hasNext: false } });
+    api.searchNotes
+      .mockResolvedValueOnce({
+        items: [summary('ranked-first')],
+        page: { size: 1, hasNext: true, nextCursor: 'search-next' },
+      })
+      .mockResolvedValueOnce({
+        items: [summary('ranked-second')],
+        page: { size: 1, hasNext: false },
+      });
+    const store = TestBed.inject(NotesStore);
+    const filters = { archive: 'ALL' as const, trash: 'ACTIVE' as const, pinned: true };
+
+    await store.initialize();
+    await store.loadView({ kind: 'notebook', id: notebook.id });
+    await store.search('glacier', filters);
+    await store.loadMore();
+
+    expect(api.searchNotes).toHaveBeenNthCalledWith(1, 'glacier', filters);
+    expect(api.searchNotes).toHaveBeenNthCalledWith(2, 'glacier', filters, 'search-next');
+    expect(store.notes().map((item) => item.id)).toEqual(['ranked-first', 'ranked-second']);
   });
 });

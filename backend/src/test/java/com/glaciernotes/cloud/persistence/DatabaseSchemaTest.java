@@ -86,6 +86,37 @@ class DatabaseSchemaTest {
     }
 
     @Test
+    void searchVectorAndChecklistMaintenanceUseLanguageNeutralPostgresqlFts() throws SQLException {
+        try (var connection = dataSource.getConnection()) {
+            try (var statement = connection.prepareStatement("""
+                select generation_expression from information_schema.columns
+                where table_schema = 'public' and table_name = 'notes' and column_name = 'search_vector'
+                """); var rows = statement.executeQuery()) {
+                assertTrue(rows.next());
+                String expression = rows.getString(1);
+                assertTrue(expression.contains("to_tsvector('simple'"));
+                assertTrue(expression.contains("checklist_search_text"));
+            }
+            try (var statement = connection.prepareStatement("""
+                select count(*) from information_schema.triggers
+                where event_object_schema = 'public' and event_object_table = 'checklist_items'
+                  and trigger_name like 'trg_checklist_search_%'
+                """); var rows = statement.executeQuery()) {
+                assertTrue(rows.next());
+                assertEquals(3, rows.getInt(1));
+            }
+            try (var statement = connection.prepareStatement("""
+                select count(*) from information_schema.columns
+                where table_schema = 'public' and table_name = 'note_versions'
+                  and column_name = 'content_hash'
+                """); var rows = statement.executeQuery()) {
+                assertTrue(rows.next());
+                assertEquals(1, rows.getInt(1));
+            }
+        }
+    }
+
+    @Test
     void ownerSensitiveForeignKeysUseOwnerAwareReferences() throws SQLException {
         var expectedFragments = Set.of(
             "notebooks:foreign key (owner_id) references app_users(id)",

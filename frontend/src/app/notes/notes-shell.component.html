@@ -12,14 +12,121 @@
       <i class="fa-solid fa-snowflake"></i>
       <span>Glacier Notes</span>
     </a>
-    <search
-      class="search-placeholder"
-      title="Cloud search arrives in M8"
-      aria-label="Search arrives in M8"
-    >
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="search" placeholder="Search notes… (M8)" disabled>
-    </search>
+    <div class="search-wrap">
+      <search class="search-placeholder" aria-label="Search notes">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          #searchInput
+          type="search"
+          placeholder="Search notes…"
+          [value]="searchValue()"
+          (input)="updateSearch($any($event.target).value)"
+          (keydown)="searchKeydown($event)"
+        >
+        @if (searchValue()) {
+        <button type="button" aria-label="Clear search" (click)="clearSearch()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        }
+        <button
+          type="button"
+          aria-label="Search filters"
+          [class.active]="searchFiltersOpen()"
+          (click)="searchFiltersOpen.set(!searchFiltersOpen())"
+        >
+          <i class="fa-solid fa-sliders"></i>
+        </button>
+      </search>
+      @if (searchFiltersOpen()) {
+      <section class="search-filters" aria-label="Search filters">
+        <fieldset class="search-scope">
+          <legend class="visually-hidden">Search scope</legend>
+          <button
+            type="button"
+            [class.active]="searchScope() === 'ALL'"
+            (click)="searchScope.set('ALL'); runSearch()"
+          >
+            All notes
+          </button>
+          <button
+            type="button"
+            [class.active]="searchScope() === 'CURRENT'"
+            [disabled]="store.view()?.kind !== 'notebook'"
+            (click)="searchScope.set('CURRENT'); runSearch()"
+          >
+            Current notebook
+          </button>
+        </fieldset>
+        <label
+          >Notebook
+          <select
+            [value]="searchNotebook()"
+            (change)="searchNotebook.set($any($event.target).value); runSearch()"
+          >
+            <option value="">Any</option>
+            @for (notebook of store.notebooks(); track notebook.id) {
+            <option [value]="notebook.id">{{ notebook.name }}</option>
+            }
+          </select>
+        </label>
+        <label
+          >Label
+          <select
+            [value]="searchLabel()"
+            (change)="searchLabel.set($any($event.target).value); runSearch()"
+          >
+            <option value="">Any</option>
+            @for (label of store.labels(); track label.id) {
+            <option [value]="label.id">{{ label.name }}</option>
+            }
+          </select>
+        </label>
+        <label
+          >Type
+          <select
+            [value]="searchType()"
+            (change)="searchType.set($any($event.target).value); runSearch()"
+          >
+            <option value="">Any</option>
+            <option value="TEXT">Text</option>
+            <option value="CHECKLIST">Checklist</option>
+          </select>
+        </label>
+        <label
+          >Pinned
+          <select
+            [value]="searchPinned()"
+            (change)="searchPinned.set($any($event.target).value); runSearch()"
+          >
+            <option value="">Any</option>
+            <option value="true">Pinned</option>
+            <option value="false">Not pinned</option>
+          </select>
+        </label>
+        <label
+          >Archive
+          <select
+            [value]="searchArchive()"
+            (change)="searchArchive.set($any($event.target).value); runSearch()"
+          >
+            <option value="ALL">All</option>
+            <option value="ACTIVE">Active</option>
+            <option value="ARCHIVED">Archived</option>
+          </select>
+        </label>
+        <label
+          >Trash
+          <select
+            [value]="searchTrash()"
+            (change)="searchTrash.set($any($event.target).value); runSearch()"
+          >
+            <option value="ACTIVE">Exclude trash</option>
+            <option value="TRASHED">Trash only</option>
+          </select>
+        </label>
+      </section>
+      }
+    </div>
     <nav class="header-actions" aria-label="Application actions">
       <button
         type="button"
@@ -223,7 +330,7 @@
     <main class="notes-main">
       <div class="view-heading">
         <h1>{{ viewTitle() }}</h1>
-        @if (store.view()?.kind === 'notebook') {
+        @if (store.view()?.kind === 'notebook' && !store.searching()) {
         <div class="new-note-actions">
           <button type="button" (click)="store.createNote(NoteType.Text)">
             <i class="fa-solid fa-file-lines"></i>
@@ -236,7 +343,7 @@
         </div>
         }
       </div>
-      @if (store.view()?.kind === 'trash' && store.notes().length) {
+      @if (store.view()?.kind === 'trash' && store.notes().length && !store.searching()) {
       <div class="trash-bar">
         <span
           ><i class="fa-solid fa-circle-info"></i>
@@ -257,11 +364,15 @@
           [class.fa-folder-open]="store.view()?.kind !== 'notebook' && store.view()?.kind !== 'trash'"
         ></i>
         <h2>
-          {{ store.view()?.kind === 'trash' ? 'Trash is empty' : store.view()?.kind === 'archive' ? 'Nothing archived' : 'No notes yet' }}
+          {{ store.searching() ? 'No matching notes' : store.view()?.kind === 'trash' ? 'Trash is empty' : store.view()?.kind === 'archive' ? 'Nothing archived' : 'No notes yet' }}
         </h2>
         <p>
-          {{ store.view()?.kind === 'notebook' ? 'Create a note to get started.' : 'Notes will appear here when available.' }}
+          {{ store.searching() ? 'Try different words or filters.' : store.view()?.kind === 'notebook' ? 'Create a note to get started.' : 'Notes will appear here when available.' }}
         </p>
+      </div>
+      } @else { @if (store.searching()) {
+      <div class="note-grid">
+        @for (note of store.notes(); track note.id) { <app-note-card [note]="note" /> }
       </div>
       } @else { @if (store.pinned().length) {
       <h2 class="grid-heading"><i class="fa-solid fa-thumbtack"></i> Pinned</h2>
@@ -274,7 +385,7 @@
       <div class="note-grid">
         @for (note of store.others(); track note.id) { <app-note-card [note]="note" /> }
       </div>
-      @if (store.nextCursor()) {
+      } @if (store.nextCursor()) {
       <button
         type="button"
         class="load-more"
@@ -376,7 +487,7 @@ notebook) {
         </tr>
         <tr>
           <td><kbd>Ctrl/Cmd + F</kbd></td>
-          <td>Browser find until search arrives in M8</td>
+          <td>Focus note search</td>
         </tr>
       </tbody>
     </table>

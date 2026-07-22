@@ -39,6 +39,10 @@ public class InstanceSettingsEntity {
     private long perUserStorageQuotaBytes;
     @Column(name = "image_orphan_grace_hours")
     private int imageOrphanGraceHours;
+    @Column(name = "note_version_maximum_count")
+    private int noteVersionMaximumCount;
+    @Column(name = "note_version_retention_days")
+    private int noteVersionRetentionDays;
 
     protected InstanceSettingsEntity() {
     }
@@ -70,6 +74,8 @@ public class InstanceSettingsEntity {
     public long maximumImageBytes() { return maximumImageBytes; }
     public long perUserStorageQuotaBytes() { return perUserStorageQuotaBytes; }
     public int imageOrphanGraceHours() { return imageOrphanGraceHours; }
+    public int noteVersionMaximumCount() { return noteVersionMaximumCount; }
+    public int noteVersionRetentionDays() { return noteVersionRetentionDays; }
 
     public void updateLifecycle(List<String> domains, Integer invitationHours, Integer resetMinutes) {
         if (domains != null) allowedEmailDomains = domains.toArray(String[]::new);
@@ -82,5 +88,10 @@ public class InstanceSettingsEntity {
         if (maximumBytes != null) maximumImageBytes = maximumBytes;
         if (quotaBytes != null) perUserStorageQuotaBytes = quotaBytes;
         if (graceHours != null) imageOrphanGraceHours = graceHours;
+    }
+
+    public void updateHistory(Integer maximumCount, Integer retentionDays) {
+        if (maximumCount != null) noteVersionMaximumCount = maximumCount;
+        if (retentionDays != null) noteVersionRetentionDays = retentionDays;
     }
 }

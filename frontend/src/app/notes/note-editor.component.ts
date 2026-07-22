@@ -19,6 +19,8 @@ import type { ChecklistItemInput } from '../shared/generated-api/model/checklist
 import { ContentColor } from '../shared/generated-api/model/contentColor';
 import type { ContentNote } from '../shared/generated-api/model/contentNote';
 import type { NoteUpdate } from '../shared/generated-api/model/noteUpdate';
+import type { NoteVersion } from '../shared/generated-api/model/noteVersion';
+import type { NoteVersionSummary } from '../shared/generated-api/model/noteVersionSummary';
 import type { StorageUsage } from '../shared/generated-api/model/storageUsage';
 import { MarkdownService } from './markdown.service';
 import { NotesStore } from './notes.store';
@@ -80,6 +82,11 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly preview = signal(false);
   protected readonly saveState = signal<SaveState>('saved');
   protected readonly saveMessage = signal('Saved');
+  protected readonly historyOpen = signal(false);
+  protected readonly historyLoading = signal(false);
+  protected readonly versions = signal<NoteVersionSummary[]>([]);
+  protected readonly selectedVersion = signal<NoteVersion | null>(null);
+  protected readonly historyCursor = signal<string | null>(null);
   protected readonly colors = Object.values(ContentColor);
   protected readonly toolbar: { action: ToolbarAction; label: string; icon?: string }[] = [
     { action: 'bold', label: 'Bold', icon: 'fa-bold' },
@@ -102,6 +109,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private closing = false;
   private itemSequence = 0;
   private conflictDraft: Omit<NoteUpdate, 'version'> | null = null;
+  private meaningfulChanges = false;
 
   private readonly beforeUnload = (event: BeforeUnloadEvent): void => {
     if (this.dirty || this.saving) event.preventDefault();
@@ -124,6 +132,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   protected changed(): void {
+    this.meaningfulChanges = true;
     this.dirty = true;
     this.saveState.set('dirty');
     this.saveMessage.set('Unsaved changes');
@@ -187,8 +196,14 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.closing = true;
     const saved = await this.flush();
     if (saved) {
-      this.store.closeEditor();
-      await this.store.refresh();
+      const note = this.note();
+      try {
+        if (note && this.meaningfulChanges) await this.store.snapshotEditorNote(note);
+        this.store.closeEditor();
+        await this.store.refresh();
+      } catch (error) {
+        this.fail(error);
+      }
     }
     this.closing = false;
   }
@@ -198,7 +213,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     await this.flush();
   }
 
-  protected async keepDraft(): Promise<void> {
+  protected async overwriteDraft(): Promise<void> {
     const note = this.note();
     if (!note || !this.conflictDraft) return;
     this.saveState.set('saving');
@@ -210,6 +225,94 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch (error) {
       this.fail(error);
     }
+  }
+
+  protected async copyLocalDraft(): Promise<void> {
+    const draft = this.conflictDraft ?? this.draftWithoutVersion();
+    const body =
+      this.note()?.noteType === 'CHECKLIST'
+        ? draft.checklistItems
+            .map((item) => `- [${item.checked ? 'x' : ' '}] ${item.text}`)
+            .join('\n')
+        : draft.content;
+    try {
+      await navigator.clipboard.writeText(`${draft.title}${body ? `\n\n${body}` : ''}`);
+      this.saveMessage.set('Local draft copied to clipboard.');
+    } catch {
+      this.saveMessage.set('Clipboard access was denied. Your local draft is still retained.');
+    }
+  }
+
+  protected async openHistory(): Promise<void> {
+    if (!(await this.flush())) return;
+    const note = this.note();
+    if (!note) return;
+    this.historyOpen.set(true);
+    this.historyLoading.set(true);
+    this.selectedVersion.set(null);
+    try {
+      const page = await this.store.listNoteVersions(note.id);
+      this.versions.set(page.items);
+      this.historyCursor.set(page.page.nextCursor ?? null);
+      if (page.items[0]) await this.selectVersion(page.items[0].id);
+    } catch (error) {
+      this.fail(error);
+      this.historyOpen.set(false);
+    } finally {
+      this.historyLoading.set(false);
+    }
+  }
+
+  protected async loadOlderVersions(): Promise<void> {
+    const note = this.note();
+    const cursor = this.historyCursor();
+    if (!note || !cursor || this.historyLoading()) return;
+    this.historyLoading.set(true);
+    try {
+      const page = await this.store.listNoteVersions(note.id, cursor);
+      this.versions.update((items) => [...items, ...page.items]);
+      this.historyCursor.set(page.page.nextCursor ?? null);
+    } catch (error) {
+      this.fail(error);
+    } finally {
+      this.historyLoading.set(false);
+    }
+  }
+
+  protected async selectVersion(versionId: string): Promise<void> {
+    const note = this.note();
+    if (!note) return;
+    this.historyLoading.set(true);
+    try {
+      this.selectedVersion.set(await this.store.getNoteVersion(note.id, versionId));
+    } catch (error) {
+      this.fail(error);
+    } finally {
+      this.historyLoading.set(false);
+    }
+  }
+
+  protected async restoreSelectedVersion(): Promise<void> {
+    const note = this.note();
+    const version = this.selectedVersion();
+    if (!note || !version || !window.confirm('Restore this version as the editable note?')) return;
+    this.historyLoading.set(true);
+    try {
+      this.applyNote(await this.store.restoreNoteVersion(note, version.id));
+      this.historyOpen.set(false);
+      this.meaningfulChanges = true;
+    } catch (error) {
+      this.fail(error);
+    } finally {
+      this.historyLoading.set(false);
+    }
+  }
+
+  protected versionBody(version: NoteVersion): string {
+    if (version.noteType === 'TEXT') return version.content;
+    return version.checklistItems
+      .map((item) => `- [${item.checked ? 'x' : ' '}] ${item.text}`)
+      .join('\n');
   }
 
   protected async loadServerCopy(): Promise<void> {
