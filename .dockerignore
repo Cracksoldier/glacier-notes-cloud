@@ -5,5 +5,7 @@
 **/node_modules
 **/dist
 **/target
+frontend/playwright-report
+frontend/test-results
 deployment/secrets/*.txt
 *.log

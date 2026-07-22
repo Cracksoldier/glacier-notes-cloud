@@ -1,0 +1,405 @@
+<div class="notes-shell">
+  <header class="notes-header">
+    <button
+      type="button"
+      class="mobile-menu"
+      aria-label="Open navigation"
+      (click)="drawerOpen.set(!drawerOpen())"
+    >
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <a class="brand" href="/notes" routerLink="/notes">
+      <i class="fa-solid fa-snowflake"></i>
+      <span>Glacier Notes</span>
+    </a>
+    <search
+      class="search-placeholder"
+      title="Cloud search arrives in M8"
+      aria-label="Search arrives in M8"
+    >
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="search" placeholder="Search notes… (M8)" disabled>
+    </search>
+    <nav class="header-actions" aria-label="Application actions">
+      <button
+        type="button"
+        [attr.aria-label]="theme.dark() ? 'Switch to light theme' : 'Switch to dark theme'"
+        (click)="theme.toggle()"
+      >
+        <i class="fa-solid" [class.fa-sun]="theme.dark()" [class.fa-moon]="!theme.dark()"></i>
+      </button>
+      <button type="button" aria-label="Keyboard shortcuts" (click)="overlay.set('shortcuts')">
+        <i class="fa-solid fa-circle-question"></i>
+      </button>
+      <button type="button" aria-label="Settings" (click)="overlay.set('settings')">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+      <details class="account-menu">
+        <summary aria-label="Account menu"><i class="fa-solid fa-user"></i></summary>
+        <div>
+          <strong>{{ auth.session()?.user?.displayName || auth.session()?.user?.username }}</strong>
+          <a href="/sessions" routerLink="/sessions"><i class="fa-solid fa-laptop"></i> Sessions</a>
+          @if (auth.session()?.user?.role === 'ADMIN') {
+          <a href="/admin" routerLink="/admin"
+            ><i class="fa-solid fa-shield-halved"></i>
+            Administration</a
+          >
+          }
+          <button type="button" (click)="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Sign out
+          </button>
+        </div>
+      </details>
+    </nav>
+  </header>
+
+  <div class="notes-body">
+    @if (drawerOpen()) {
+    <button
+      type="button"
+      class="drawer-backdrop"
+      aria-label="Close navigation"
+      (click)="closeDrawer()"
+    ></button>
+    }
+    <aside class="sidebar" [class.sidebar--open]="drawerOpen()">
+      <section>
+        <h2>Notebooks</h2>
+        <ul>
+          @for (notebook of store.notebooks(); track notebook.id; let first = $first; let last =
+          $last) {
+          <li class="sidebar-row">
+            @if (notebookEditing() === notebook.id) {
+            <input
+              #notebookName
+              class="sidebar-input"
+              aria-label="Notebook name"
+              [value]="notebook.name"
+              (keydown.enter)="notebookName.blur()"
+              (keydown.escape)="notebookEditing.set(null)"
+              (blur)="renameNotebook(notebook, notebookName.value)"
+            >
+            } @else {
+            <button
+              type="button"
+              class="sidebar-item"
+              [class.active]="notebookActive(notebook.id)"
+              (click)="navigateTo(['/notes/notebooks', notebook.id])"
+            >
+              <i class="fa-solid fa-book"></i><span>{{ notebook.name }}</span
+              ><small>{{ notebook.noteCount }}</small>
+            </button>
+            <span class="row-actions">
+              <button
+                type="button"
+                title="Move up"
+                [disabled]="first"
+                (click)="store.reorderNotebook(notebook, -1)"
+              >
+                <i class="fa-solid fa-chevron-up"></i>
+              </button>
+              <button
+                type="button"
+                title="Move down"
+                [disabled]="last"
+                (click)="store.reorderNotebook(notebook, 1)"
+              >
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
+              <button type="button" title="Rename" (click)="notebookEditing.set(notebook.id)">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              @if (!notebook.defaultNotebook) {
+              <button type="button" title="Delete" (click)="notebookDelete.set(notebook)">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+              }
+            </span>
+            }
+          </li>
+          }
+          <li>
+            @if (notebookCreating()) {
+            <input
+              #newNotebook
+              class="sidebar-input"
+              aria-label="New notebook name"
+              placeholder="Notebook name"
+              (keydown.enter)="newNotebook.blur()"
+              (keydown.escape)="notebookCreating.set(false)"
+              (blur)="createNotebook(newNotebook.value)"
+            >
+            } @else {
+            <button type="button" class="sidebar-item muted" (click)="notebookCreating.set(true)">
+              <i class="fa-solid fa-plus"></i>
+              New notebook
+            </button>
+            }
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Labels</h2>
+        <ul>
+          @for (label of store.labels(); track label.id) {
+          <li class="sidebar-row">
+            @if (labelEditing() === label.id) {
+            <input
+              #labelName
+              class="sidebar-input"
+              aria-label="Label name"
+              [value]="label.name"
+              (keydown.enter)="labelName.blur()"
+              (keydown.escape)="labelEditing.set(null)"
+              (blur)="renameLabel(label, labelName.value)"
+            >
+            } @else {
+            <button
+              type="button"
+              class="sidebar-item"
+              [class.active]="labelActive(label.id)"
+              (click)="navigateTo(['/notes/labels', label.id])"
+            >
+              <i class="fa-solid fa-tag"></i><span>{{ label.name }}</span>
+            </button>
+            <span class="row-actions">
+              <button type="button" title="Rename" (click)="labelEditing.set(label.id)">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button type="button" title="Delete" (click)="deleteLabel(label)">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </span>
+            }
+          </li>
+          }
+          <li>
+            @if (labelCreating()) {
+            <input
+              #newLabel
+              class="sidebar-input"
+              aria-label="New label name"
+              placeholder="Label name"
+              (keydown.enter)="newLabel.blur()"
+              (keydown.escape)="labelCreating.set(false)"
+              (blur)="createLabel(newLabel.value)"
+            >
+            } @else {
+            <button type="button" class="sidebar-item muted" (click)="labelCreating.set(true)">
+              <i class="fa-solid fa-plus"></i>
+              New label
+            </button>
+            }
+          </li>
+        </ul>
+      </section>
+
+      <section class="sidebar-footer">
+        <a
+          class="sidebar-item"
+          [class.active]="store.view()?.kind === 'archive'"
+          href="/notes/archive"
+          routerLink="/notes/archive"
+          ><i class="fa-solid fa-box-archive"></i>
+          Archive</a
+        >
+        <a
+          class="sidebar-item"
+          [class.active]="store.view()?.kind === 'trash'"
+          href="/notes/trash"
+          routerLink="/notes/trash"
+          ><i class="fa-solid fa-trash-can"></i>
+          Trash</a
+        >
+        <button type="button" class="sidebar-item" (click)="overlay.set('transfer')">
+          <i class="fa-solid fa-file-export"></i>
+          Import / Export <small>M9</small>
+        </button>
+      </section>
+    </aside>
+
+    <main class="notes-main">
+      <div class="view-heading">
+        <h1>{{ viewTitle() }}</h1>
+        @if (store.view()?.kind === 'notebook') {
+        <div class="new-note-actions">
+          <button type="button" (click)="store.createNote(NoteType.Text)">
+            <i class="fa-solid fa-file-lines"></i>
+            Text note
+          </button>
+          <button type="button" (click)="store.createNote(NoteType.Checklist)">
+            <i class="fa-solid fa-list-check"></i>
+            Checklist
+          </button>
+        </div>
+        }
+      </div>
+      @if (store.view()?.kind === 'trash' && store.notes().length) {
+      <div class="trash-bar">
+        <span
+          ><i class="fa-solid fa-circle-info"></i>
+          Trashed notes are retained according to instance policy.</span
+        ><button type="button" (click)="emptyTrash()">Empty trash</button>
+      </div>
+      } @if (store.loading()) {
+      <div class="empty-state" aria-busy="true">
+        <i class="fa-solid fa-snowflake fa-spin"></i>
+        <p>Loading notes…</p>
+      </div>
+      } @else if (!store.notes().length) {
+      <div class="empty-state">
+        <i
+          class="fa-regular"
+          [class.fa-note-sticky]="store.view()?.kind === 'notebook'"
+          [class.fa-trash-can]="store.view()?.kind === 'trash'"
+          [class.fa-folder-open]="store.view()?.kind !== 'notebook' && store.view()?.kind !== 'trash'"
+        ></i>
+        <h2>
+          {{ store.view()?.kind === 'trash' ? 'Trash is empty' : store.view()?.kind === 'archive' ? 'Nothing archived' : 'No notes yet' }}
+        </h2>
+        <p>
+          {{ store.view()?.kind === 'notebook' ? 'Create a note to get started.' : 'Notes will appear here when available.' }}
+        </p>
+      </div>
+      } @else { @if (store.pinned().length) {
+      <h2 class="grid-heading"><i class="fa-solid fa-thumbtack"></i> Pinned</h2>
+      <div class="note-grid">
+        @for (note of store.pinned(); track note.id) { <app-note-card [note]="note" /> }
+      </div>
+      @if (store.others().length) {
+      <h2 class="grid-heading grid-heading--others">Others</h2>
+      } }
+      <div class="note-grid">
+        @for (note of store.others(); track note.id) { <app-note-card [note]="note" /> }
+      </div>
+      @if (store.nextCursor()) {
+      <button
+        type="button"
+        class="load-more"
+        [disabled]="store.loadingMore()"
+        (click)="store.loadMore()"
+      >
+        {{ store.loadingMore() ? 'Loading…' : 'Load more notes' }}
+      </button>
+      } }
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<div class="notice-stack" aria-live="polite">
+  @for (notice of problems.notices(); track notice.id) {
+  <div role="alert">
+    {{ notice.message }}
+    <button type="button" aria-label="Dismiss" (click)="problems.dismiss(notice.id)">×</button>
+  </div>
+  }
+</div>
+@if (store.editor(); as note) { <app-note-editor [initialNote]="note" /> } @if (notebookDelete(); as
+notebook) {
+<div class="modal-backdrop" (click)="notebookDelete.set(null)">
+  <section
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-notebook-title"
+    (click)="$event.stopPropagation()"
+  >
+    <h2 id="delete-notebook-title">Delete “{{ notebook.name }}”?</h2>
+    <p>This notebook contains {{ notebook.noteCount }} notes.</p>
+    <label
+      ><input
+        type="radio"
+        name="deleteStrategy"
+        [checked]="notebookDeleteStrategy() === 'MOVE_TO_DEFAULT'"
+        (change)="notebookDeleteStrategy.set('MOVE_TO_DEFAULT')"
+      >
+      Move notes to the default notebook</label
+    >
+    <label
+      ><input
+        type="radio"
+        name="deleteStrategy"
+        [checked]="notebookDeleteStrategy() === 'TRASH_NOTES'"
+        (change)="notebookDeleteStrategy.set('TRASH_NOTES')"
+      >
+      Move notes to trash</label
+    >
+    <footer>
+      <button type="button" (click)="notebookDelete.set(null)">Cancel</button
+      ><button type="button" class="danger" (click)="confirmNotebookDelete()">
+        Delete notebook
+      </button>
+    </footer>
+  </section>
+</div>
+} @if (overlay(); as visibleOverlay) {
+<div class="modal-backdrop" (click)="overlay.set(null)">
+  <section class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    @if (visibleOverlay === 'shortcuts') {
+    <h2>Keyboard shortcuts</h2>
+    <table>
+      <tbody>
+        <tr>
+          <td><kbd>Ctrl/Cmd + N</kbd></td>
+          <td>New text note</td>
+        </tr>
+        <tr>
+          <td><kbd>Ctrl/Cmd + Shift + N</kbd></td>
+          <td>New checklist</td>
+        </tr>
+        <tr>
+          <td><kbd>Ctrl/Cmd + Enter</kbd></td>
+          <td>Save and close editor</td>
+        </tr>
+        <tr>
+          <td><kbd>Esc</kbd></td>
+          <td>Close editor or dialog</td>
+        </tr>
+        <tr>
+          <td><kbd>Ctrl/Cmd + B / I</kbd></td>
+          <td>Bold / italic</td>
+        </tr>
+        <tr>
+          <td><kbd>Ctrl/Cmd + E</kbd></td>
+          <td>Import / export</td>
+        </tr>
+        <tr>
+          <td><kbd>Ctrl/Cmd + ,</kbd></td>
+          <td>Settings</td>
+        </tr>
+        <tr>
+          <td><kbd>Ctrl/Cmd + /</kbd></td>
+          <td>Shortcut help</td>
+        </tr>
+        <tr>
+          <td><kbd>Ctrl/Cmd + F</kbd></td>
+          <td>Browser find until search arrives in M8</td>
+        </tr>
+      </tbody>
+    </table>
+    } @else if (visibleOverlay === 'settings') {
+    <h2>Settings</h2>
+    <p class="setting-row">
+      <span>Theme</span
+      ><button type="button" (click)="theme.toggle()">
+        Use {{ theme.dark() ? 'light' : 'dark' }} theme
+      </button>
+    </p>
+    <p class="future-note">
+      <i class="fa-solid fa-snowflake"></i>
+      Account preferences, language, and synchronized settings arrive in M10.
+    </p>
+    } @else {
+    <h2>Import / Export</h2>
+    <p class="future-note">
+      <i class="fa-solid fa-file-export"></i>
+      Portable Glacier import and export arrive in M9.
+    </p>
+    }
+    <footer><button type="button" (click)="overlay.set(null)">Close</button></footer>
+  </section>
+</div>
+}

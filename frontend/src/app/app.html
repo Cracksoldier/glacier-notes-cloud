@@ -2,9 +2,9 @@
 <app-setup (initialized)="setupCompleted()" />
 } @case ('ready') {
 <div class="application">
-  @if (auth.session(); as session) {
+  @if (auth.session(); as session) { @if (!notesActive()) {
   <header>
-    <a class="wordmark" href="/" routerLink="/">Glacier Notes</a>
+    <a class="wordmark" href="/notes" routerLink="/notes">Glacier Notes</a>
     <nav aria-label="Account navigation">
       <a href="/sessions" routerLink="/sessions">Sessions</a>
       @if (session.user.role === 'ADMIN') {
@@ -13,7 +13,7 @@
       <button type="button" (click)="logout()">Sign out</button>
     </nav>
   </header>
-  }
+  } }
   <router-outlet />
 </div>
 } @case ('error') {

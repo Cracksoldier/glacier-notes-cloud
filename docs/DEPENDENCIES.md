@@ -15,9 +15,12 @@ Maven Wrapper, and npm lockfile.
 | TypeScript | 6.0.x locked | Apache-2.0 |
 | Vitest | 4.1.10 | MIT |
 | Biome | 2.5.4 | MIT OR Apache-2.0 |
+| Font Awesome Free | 7.3.1 | CC-BY-4.0 AND MIT AND OFL-1.1 |
+| DOMPurify | 3.4.12 | MPL-2.0 OR Apache-2.0 |
+| Marked | 18.0.6 | MIT |
+| Playwright | 1.55.0 | Apache-2.0 |
 
 Review the complete resolved trees with `./mvnw -pl backend dependency:tree` and `npm ls --all`
 from `frontend`. CI also runs npm audit. The remaining npm advisory, if still reported, is a
 low-severity Windows-only Vite development-server issue in a transitive esbuild version; production
 artifacts do not contain the development server.
-

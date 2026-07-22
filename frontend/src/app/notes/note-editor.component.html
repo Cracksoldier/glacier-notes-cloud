@@ -1,0 +1,194 @@
+<dialog
+  #dialog
+  class="editor"
+  (cancel)="onCancel($event)"
+  (click)="onBackdrop($event)"
+  (keydown)="onKeydown($event)"
+>
+  @if (note(); as current) {
+  <section class="editor__body note-color-{{ color().toLowerCase() }}" aria-label="Note editor">
+    <header class="editor__header">
+      <input
+        class="editor__title"
+        aria-label="Note title"
+        placeholder="Title"
+        [value]="title()"
+        (input)="setTitle($any($event.target).value)"
+      >
+      <button
+        type="button"
+        class="icon-button"
+        title="Save and close"
+        aria-label="Save and close"
+        (click)="close()"
+      >
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </header>
+    @if (current.noteType === 'TEXT') {
+    <div class="editor__toolbar" role="toolbar" aria-label="Markdown toolbar">
+      <div class="editor__formatting">
+        @for (button of toolbar; track button.action) {
+        <button
+          type="button"
+          [title]="button.label"
+          [attr.aria-label]="button.label"
+          (click)="toolbarAction(button.action)"
+        >
+          @if (button.icon) { <i class="fa-solid {{ button.icon }}"></i> } @else {
+          <strong>{{ button.action.toUpperCase() }}</strong>
+          }
+        </button>
+        }
+      </div>
+      <button
+        type="button"
+        class="preview-toggle"
+        [class.active]="preview()"
+        (click)="preview.set(!preview())"
+      >
+        <i class="fa-solid" [class.fa-eye]="!preview()" [class.fa-pen]="preview()"></i>
+        {{ preview() ? 'Edit' : 'Preview' }}
+      </button>
+    </div>
+    @if (preview()) {
+    <div
+      class="editor__content editor__preview markdown-body"
+      [innerHTML]="markdown.render(content())"
+    ></div>
+    } @else {
+    <textarea
+      #textarea
+      class="editor__content"
+      aria-label="Note content"
+      placeholder="Take a note…"
+      [value]="content()"
+      (input)="setContent($any($event.target).value)"
+    ></textarea>
+    } } @else {
+    <fieldset class="checklist">
+      <legend class="visually-hidden">Checklist items</legend>
+      @for (item of items(); track item.key; let index = $index; let first = $first; let last =
+      $last) {
+      <div class="checklist__row" [class.done]="item.checked">
+        <span class="checklist__reorder">
+          <button type="button" title="Move up" [disabled]="first" (click)="moveItem(index, -1)">
+            <i class="fa-solid fa-chevron-up"></i>
+          </button>
+          <button type="button" title="Move down" [disabled]="last" (click)="moveItem(index, 1)">
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+        </span>
+        <input
+          type="checkbox"
+          [checked]="item.checked"
+          [attr.aria-label]="'Toggle ' + (item.text || 'item')"
+          (change)="toggleItem(index)"
+        >
+        <input
+          class="checklist__text"
+          aria-label="Checklist item"
+          placeholder="List item"
+          [value]="item.text"
+          (input)="updateItem(index, $any($event.target).value)"
+        >
+        <button
+          type="button"
+          class="checklist__remove"
+          title="Remove item"
+          aria-label="Remove item"
+          (click)="removeItem(index)"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      }
+      <button type="button" class="checklist__add" (click)="addItem()">
+        <i class="fa-solid fa-plus"></i>
+        Add item
+      </button>
+    </fieldset>
+    } @if (saveState() === 'conflict') {
+    <div class="editor__conflict" role="alert">
+      <div>
+        <strong>Another session changed this note.</strong><br>Your local draft has been retained.
+      </div>
+      <button type="button" (click)="keepDraft()">Keep my draft</button>
+      <button type="button" (click)="loadServerCopy()">Load server copy</button>
+    </div>
+    }
+
+    <footer class="editor__footer">
+      <div class="editor__options">
+        <button type="button" (click)="convert()">
+          <i
+            class="fa-solid"
+            [class.fa-list-check]="current.noteType === 'TEXT'"
+            [class.fa-file-lines]="current.noteType === 'CHECKLIST'"
+          ></i>
+          Convert
+        </button>
+        <button type="button" disabled title="Image assets arrive in M7">
+          <i class="fa-solid fa-image"></i>
+          Images (M7)
+        </button>
+        <details>
+          <summary><i class="fa-solid fa-palette"></i> Color</summary>
+          <div class="editor-menu editor-menu--colors">
+            @for (entry of colors; track entry) {
+            <button
+              type="button"
+              class="color-dot note-color-{{ entry.toLowerCase() }}"
+              [title]="entry"
+              [attr.aria-label]="entry"
+              (click)="color.set(entry); changed()"
+            ></button>
+            }
+          </div>
+        </details>
+        <details>
+          <summary><i class="fa-solid fa-tag"></i> Labels</summary>
+          <div class="editor-menu">
+            @for (label of store.labels(); track label.id) {
+            <label
+              ><input
+                type="checkbox"
+                [checked]="labelIds().includes(label.id)"
+                (change)="toggleLabel(label.id)"
+              > {{ label.name }}</label
+            >
+            } @empty { <span>No labels yet</span> }
+          </div>
+        </details>
+        <select
+          aria-label="Move to notebook"
+          [value]="current.notebookId"
+          (change)="moveTo($any($event.target).value)"
+        >
+          @for (notebook of store.notebooks(); track notebook.id) {
+          <option [value]="notebook.id">{{ notebook.name }}</option>
+          }
+        </select>
+        <button type="button" [class.active]="pinned()" (click)="pinned.set(!pinned()); changed()">
+          <i class="fa-solid fa-thumbtack"></i> {{ pinned() ? 'Pinned' : 'Pin' }}
+        </button>
+        <button type="button" (click)="archived.set(!archived()); changed()">
+          <i class="fa-solid fa-box-archive"></i> {{ archived() ? 'Unarchive' : 'Archive' }}
+        </button>
+        <button type="button" class="danger" (click)="trash()">
+          <i class="fa-solid fa-trash-can"></i>
+          Trash
+        </button>
+      </div>
+      <div class="save-state save-state--{{ saveState() }}" role="status" aria-live="polite">
+        @if (saveState() === 'saving') { <i class="fa-solid fa-circle-notch fa-spin"></i> } @else if
+        (saveState() === 'saved') { <i class="fa-solid fa-check"></i> } @else {
+        <i class="fa-solid fa-circle-exclamation"></i>
+        }
+        {{ saveMessage() }}
+        @if (saveState() === 'error') { <button type="button" (click)="retry()">Retry</button> }
+      </div>
+    </footer>
+  </section>
+  }
+</dialog>

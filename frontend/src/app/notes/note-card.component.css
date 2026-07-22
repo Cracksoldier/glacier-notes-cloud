@@ -1,0 +1,169 @@
+:host {
+  display: block;
+  break-inside: avoid;
+  margin-bottom: 12px;
+}
+.note-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 14px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--note-current, var(--note-default));
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  outline: none;
+}
+.note-card:hover,
+.note-card:focus-visible {
+  border-color: var(--color-accent-muted);
+  box-shadow: 0 4px 14px var(--color-shadow);
+}
+.note-card--trashed {
+  cursor: default;
+  opacity: 0.8;
+}
+.note-card__pin {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  color: var(--color-accent);
+  font-size: 11px;
+}
+.note-card__badge {
+  align-self: flex-start;
+  margin-bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--color-surface-elevated);
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+h3 {
+  margin: 0 20px 6px 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.note-card__preview {
+  max-height: 280px;
+  overflow: hidden;
+  font-size: 13px;
+}
+.note-card__checklist {
+  display: grid;
+  gap: 5px;
+}
+.note-card__checklist label {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  font-size: 13px;
+}
+.note-card__checklist input {
+  accent-color: var(--color-accent);
+}
+.note-card__checklist .done span {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+.muted {
+  margin: 4px 0;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.note-card__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+.note-card__labels button {
+  padding: 2px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-elevated);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.note-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  min-height: 32px;
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.note-card:hover .note-card__actions,
+.note-card:focus-within .note-card__actions {
+  opacity: 1;
+}
+.note-card__actions > button,
+.menu-anchor > button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.note-card__actions button:hover,
+.note-card__actions button.active {
+  background: var(--color-surface-elevated);
+  color: var(--color-accent);
+}
+.menu-anchor {
+  position: relative;
+}
+.card-menu {
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  bottom: 34px;
+  display: grid;
+  width: 170px;
+  max-height: 230px;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-elevated);
+  box-shadow: 0 8px 24px var(--color-shadow);
+}
+.card-menu strong {
+  padding: 5px 7px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.card-menu button {
+  padding: 7px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+.card-menu--colors {
+  display: flex;
+  width: auto;
+}
+.card-menu .color-dot {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+}
+@media (hover: none) {
+  .note-card__actions {
+    opacity: 1;
+  }
+}

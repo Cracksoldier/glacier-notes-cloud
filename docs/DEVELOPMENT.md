@@ -39,6 +39,21 @@ npm run build:production
 npm run test:ci
 ```
 
+M6 browser tests run against the production-like Compose deployment. After creating a local user,
+provide its credentials explicitly and run Chromium in desktop and tablet viewports:
+
+```bash
+docker compose up --build --wait
+cd frontend
+npx playwright install chromium
+GLACIER_E2E_USERNAME=your-user \
+GLACIER_E2E_PASSWORD=your-password \
+npm run test:e2e
+```
+
+The browser suite creates uniquely named test notebooks, labels, and notes. Use a disposable local
+account or database when running it outside CI.
+
 ## Local applications
 
 With a Docker-compatible daemon running, Quarkus Dev Services supplies PostgreSQL:

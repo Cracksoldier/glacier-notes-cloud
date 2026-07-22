@@ -12,7 +12,8 @@ implementation and repository verification gates pass.
 | M3 | Complete | Session authentication, CSRF protection, login throttling, and security headers |
 | M4 | Complete | Invitations, user lifecycle administration, password resets, settings, and email delivery |
 | M5 | Complete | Owner-scoped notebooks, notes, checklists, labels, archive, trash, conversion, and pagination APIs |
-| M6–M13 | Pending | Not yet implemented |
+| M6 | Complete | Desktop-aligned Angular notes UI, secure Markdown, checklists, autosave, conflicts, themes, shortcuts, and responsive browser tests |
+| M7–M13 | Pending | Not yet implemented |
 
 ## M5 Verification
 
@@ -28,4 +29,19 @@ cd frontend
 npm run check
 npm run build:production
 npm run test:ci
+~~~
+
+## M6 Verification
+
+M6 uses the generated M5 client through a cloud data-access layer. It includes routed notebook,
+label, archive, and trash views; cursor pagination; a desktop-aligned responsive shell; debounced
+optimistic autosave; retained drafts and explicit conflict handling; sanitized Markdown; and
+Playwright coverage against the supported Compose deployment.
+
+The standard frontend gates run component tests. With a disposable initialized Compose instance,
+also run:
+
+~~~bash
+cd frontend
+GLACIER_E2E_USERNAME=your-user GLACIER_E2E_PASSWORD=your-password npm run test:e2e
 ~~~

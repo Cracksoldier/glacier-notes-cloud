@@ -1,0 +1,272 @@
+.editor {
+  width: 720px;
+  max-width: 94vw;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 12px 40px var(--color-shadow);
+}
+.editor::backdrop {
+  background: rgb(4 10 18 / 66%);
+}
+.editor__body {
+  display: flex;
+  flex-direction: column;
+  max-height: 88vh;
+  padding: 16px 18px 10px;
+  background: var(--note-current, var(--note-default));
+}
+.editor__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.editor__title {
+  flex: 1;
+  padding: 4px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 600;
+}
+.icon-button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.icon-button:hover {
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+}
+.editor__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+.editor__formatting {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.editor__formatting button,
+.preview-toggle {
+  min-width: 30px;
+  padding: 6px 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.editor__formatting button:hover,
+.preview-toggle:hover,
+.preview-toggle.active {
+  background: var(--color-surface-elevated);
+  color: var(--color-accent);
+}
+.editor__content {
+  flex: 1;
+  min-height: 280px;
+  padding: 10px 0;
+  overflow: auto;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  line-height: 1.5;
+}
+.checklist {
+  flex: 1;
+  min-height: 280px;
+  margin: 0;
+  padding: 8px 0;
+  overflow: auto;
+  border: 0;
+}
+.checklist__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.checklist__row > input[type="checkbox"] {
+  accent-color: var(--color-accent);
+}
+.checklist__reorder {
+  display: flex;
+  flex-direction: column;
+}
+.checklist__reorder button,
+.checklist__remove {
+  padding: 1px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 9px;
+}
+.checklist__reorder button:disabled {
+  opacity: 0.2;
+}
+.checklist__text {
+  flex: 1;
+  padding: 7px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+}
+.checklist__text:focus {
+  border-color: var(--color-border);
+}
+.checklist__row.done .checklist__text {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+.checklist__add {
+  margin: 5px 0 0 43px;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.editor__conflict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--color-warning);
+  border-radius: 8px;
+  background: var(--color-surface);
+  font-size: 12px;
+}
+.editor__conflict div {
+  flex: 1;
+}
+.editor__conflict button {
+  padding: 6px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.editor__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 9px;
+  border-top: 1px solid var(--color-border);
+}
+.editor__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.editor__options > button,
+.editor__options select,
+summary {
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.editor__options > button:hover:not(:disabled),
+summary:hover,
+.editor__options .active {
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+}
+.editor__options button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.editor__options .danger:hover {
+  color: var(--color-danger-text);
+}
+details {
+  position: relative;
+}
+summary {
+  list-style: none;
+}
+.editor-menu {
+  position: absolute;
+  z-index: 5;
+  bottom: 30px;
+  display: grid;
+  min-width: 170px;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-elevated);
+  box-shadow: 0 8px 24px var(--color-shadow);
+}
+.editor-menu--colors {
+  grid-template-columns: repeat(4, 26px);
+  min-width: auto;
+}
+.color-dot {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.save-state {
+  display: flex;
+  align-items: center;
+  align-self: flex-end;
+  gap: 6px;
+  min-height: 24px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.save-state--error,
+.save-state--conflict {
+  color: var(--color-danger-text);
+}
+.save-state button {
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+@media (max-width: 700px) {
+  .editor {
+    max-width: 100vw;
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  .editor__body {
+    min-height: 100vh;
+    max-height: 100vh;
+  }
+  .editor__content,
+  .checklist {
+    min-height: 180px;
+  }
+}

@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 
 import { AuthStore } from './core/auth.store';
 import { SetupComponent } from './setup/setup.component';
@@ -19,8 +20,13 @@ export class App {
   protected readonly auth = inject(AuthStore);
 
   protected readonly applicationState = signal<ApplicationState>('loading');
+  protected readonly notesActive = signal(false);
 
   constructor() {
+    this.notesActive.set(this.router.url.startsWith('/notes'));
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => this.notesActive.set(event.urlAfterRedirects.startsWith('/notes')));
     this.loadSetupStatus();
   }
 
@@ -55,7 +61,7 @@ export class App {
         this.auth.restore().subscribe((authenticated) => {
           this.applicationState.set('ready');
           if (authenticated && this.router.url === '/login') {
-            void this.router.navigate(['/']);
+            void this.router.navigate(['/notes']);
           } else if (!authenticated && !this.isPublicRoute()) {
             void this.router.navigate(['/login']);
           }

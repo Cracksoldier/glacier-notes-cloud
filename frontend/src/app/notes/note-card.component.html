@@ -1,0 +1,128 @@
+<article
+  class="note-card note-color-{{ note().color.toLowerCase() }}"
+  [class.note-card--trashed]="trashed()"
+  (click)="open()"
+>
+  @if (note().pinned && !trashed()) {
+  <i class="note-card__pin fa-solid fa-thumbtack" title="Pinned" aria-hidden="true"></i>
+  } @if (note().archived) {
+  <span class="note-card__badge"><i class="fa-solid fa-box-archive"></i> Archived</span>
+  } @if (note().title) {
+  <h3>{{ note().title }}</h3>
+  } @if (note().noteType === 'CHECKLIST') {
+  <div class="note-card__checklist">
+    @for (item of note().checklistPreview; track item.id) {
+    <label [class.done]="item.checked" (click)="$event.stopPropagation()">
+      <input
+        type="checkbox"
+        [checked]="item.checked"
+        [disabled]="trashed()"
+        (click)="$event.stopPropagation()"
+        (change)="store.toggleChecklistItem(note(), item.id)"
+      >
+      <span class="visually-hidden">{{ item.text }}</span>
+      <span aria-hidden="true" [innerHTML]="markdown.renderInline(item.text)"></span>
+    </label>
+    } @if (note().checklistPreview.length === 0 && !note().title) {
+    <p class="muted">Empty note</p>
+    }
+  </div>
+  } @else if (note().preview) {
+  <div
+    class="note-card__preview markdown-body"
+    [innerHTML]="preview()"
+    (click)="onPreviewClick($event)"
+  ></div>
+  } @else if (!note().title) {
+  <p class="muted">Empty note</p>
+  } @if (labels().length) {
+  <div class="note-card__labels">
+    @for (label of labels(); track label.id) {
+    <button type="button" (click)="openLabel($event, label.id)">{{ label.name }}</button>
+    }
+  </div>
+  }
+
+  <div class="note-card__actions" (click)="$event.stopPropagation()">
+    @if (!trashed()) {
+    <button type="button" title="Open note" aria-label="Open note" (click)="open()">
+      <i class="fa-solid fa-pen"></i>
+    </button>
+    } @if (trashed()) {
+    <button type="button" title="Restore" aria-label="Restore" (click)="store.restoreNote(note())">
+      <i class="fa-solid fa-trash-arrow-up"></i>
+    </button>
+    <button
+      type="button"
+      title="Delete forever"
+      aria-label="Delete forever"
+      (click)="purge($event)"
+    >
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    } @else {
+    <button
+      type="button"
+      title="{{ note().pinned ? 'Unpin' : 'Pin' }}"
+      aria-label="{{ note().pinned ? 'Unpin' : 'Pin' }}"
+      [class.active]="note().pinned"
+      (click)="store.togglePin(note())"
+    >
+      <i class="fa-solid fa-thumbtack"></i>
+    </button>
+    <button
+      type="button"
+      title="{{ note().archived ? 'Unarchive' : 'Archive' }}"
+      aria-label="{{ note().archived ? 'Unarchive' : 'Archive' }}"
+      (click)="store.setArchived(note(), !note().archived)"
+    >
+      <i
+        class="fa-solid"
+        [class.fa-box-archive]="!note().archived"
+        [class.fa-box-open]="note().archived"
+      ></i>
+    </button>
+    <span class="menu-anchor">
+      <button type="button" title="Color" aria-label="Color" (click)="toggleMenu($event, 'color')">
+        <i class="fa-solid fa-palette"></i>
+      </button>
+      @if (menu() === 'color') {
+      <span class="card-menu card-menu--colors" role="menu" aria-label="Note color">
+        @for (color of colors; track color) {
+        <button
+          type="button"
+          class="color-dot note-color-{{ color.toLowerCase() }}"
+          [attr.aria-label]="color"
+          [title]="color"
+          (click)="chooseColor($event, color)"
+        ></button>
+        }
+      </span>
+      }
+    </span>
+    <span class="menu-anchor">
+      <button type="button" title="Move" aria-label="Move" (click)="toggleMenu($event, 'move')">
+        <i class="fa-solid fa-folder-open"></i>
+      </button>
+      @if (menu() === 'move') {
+      <span class="card-menu" role="menu" aria-label="Move to notebook">
+        <strong>Move to</strong>
+        @for (notebook of store.notebooks(); track notebook.id) {
+        <button type="button" (click)="chooseNotebook($event, notebook.id)">
+          {{ notebook.name }}
+        </button>
+        }
+      </span>
+      }
+    </span>
+    <button
+      type="button"
+      title="Move to trash"
+      aria-label="Move to trash"
+      (click)="store.trashNote(note())"
+    >
+      <i class="fa-solid fa-trash-can"></i>
+    </button>
+    }
+  </div>
+</article>

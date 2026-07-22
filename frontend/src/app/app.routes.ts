@@ -10,11 +10,24 @@ import { ForgotPasswordComponent } from './auth/forgot-password.component';
 import { LoginComponent } from './auth/login.component';
 import { ResetPasswordComponent } from './auth/reset-password.component';
 import { adminGuard, anonymousGuard, authGuard } from './core/auth.guards';
-import { HomeComponent } from './home/home.component';
+import { NotesShellComponent } from './notes/notes-shell.component';
+import { NotesViewMarkerComponent } from './notes/notes-view-marker.component';
 import { SessionsComponent } from './sessions/sessions.component';
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent, canActivate: [authGuard] },
+  { path: '', pathMatch: 'full', redirectTo: 'notes' },
+  {
+    path: 'notes',
+    component: NotesShellComponent,
+    canActivate: [authGuard],
+    children: [
+      { path: '', component: NotesViewMarkerComponent },
+      { path: 'notebooks/:notebookId', component: NotesViewMarkerComponent },
+      { path: 'labels/:labelId', component: NotesViewMarkerComponent },
+      { path: 'archive', component: NotesViewMarkerComponent },
+      { path: 'trash', component: NotesViewMarkerComponent },
+    ],
+  },
   { path: 'login', component: LoginComponent, canActivate: [anonymousGuard] },
   {
     path: 'accept-invitation',
@@ -37,5 +50,5 @@ export const routes: Routes = [
       { path: 'status', component: AdminStatusComponent },
     ],
   },
-  { path: '**', redirectTo: '' },
+  { path: '**', redirectTo: 'notes' },
 ];
