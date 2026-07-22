@@ -20,6 +20,42 @@
   <button type="button" (click)="revokeSessions()">Revoke sessions</button>
   <button type="button" (click)="resetPassword()">Generate reset link</button>
 </div>
+<section class="card blind-import">
+  <h2>Blind portable import</h2>
+  <p>
+    Import a <code>.glacier.json</code> file into this account. Only structural counts and errors
+    are shown; note content, images, and embedded filenames are never previewed.
+  </p>
+  <label class="file-button"
+    >Choose import file
+    <input
+      type="file"
+      accept=".json,.glacier.json,application/json"
+      [disabled]="importBusy()"
+      (change)="inspectImport($any($event.target).files?.item(0))"
+    >
+  </label>
+  @if (importJob(); as job) {
+  <p role="status">Status: {{ job.state }}</p>
+  @if (job.counts; as counts) {
+  <p>
+    {{ counts.notebooks }}
+    notebooks · {{ counts.notes }} notes · {{ counts.labels }} labels · {{ counts.images }} images
+  </p>
+  } @if (job.state === 'READY' && job.hasConflicts) {
+  <div class="actions">
+    <button type="button" (click)="applyImport(ImportStrategy.AddAsCopies)">Add as copies</button>
+    <button type="button" (click)="applyImport(ImportStrategy.ReplaceById)">Replace by ID</button>
+    <button type="button" (click)="cancelImport()">Cancel</button>
+  </div>
+  } @if (job.errors?.length) {
+  <ul role="alert">
+    @for (item of job.errors; track $index) {
+    <li>{{ item }}</li>
+    }
+  </ul>
+  } }
+</section>
 @if (reset(); as link) {
 <label>One-time reset URL<input readonly [value]="link.resetUrl"></label>
 <button type="button" (click)="copy(link.resetUrl)">Copy reset link</button>

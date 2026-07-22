@@ -48,6 +48,11 @@ services:
       GLACIER_SMTP_SENDER_ADDRESS: ${GLACIER_SMTP_SENDER_ADDRESS:-noreply@localhost}
       GLACIER_IMAGE_BACKEND: ${GLACIER_IMAGE_BACKEND:-FILESYSTEM}
       GLACIER_IMAGE_FILESYSTEM_ROOT: /var/lib/glacier-notes/images
+      GLACIER_TRANSFER_TEMPORARY_ROOT: /var/lib/glacier-notes/transfers
+      GLACIER_TRANSFER_UPLOAD_ROOT: /var/lib/glacier-notes/transfers/uploads
+      GLACIER_TRANSFER_MAXIMUM_UPLOAD_BYTES: ${GLACIER_TRANSFER_MAXIMUM_UPLOAD_BYTES:-1610612736}
+      GLACIER_TRANSFER_MAXIMUM_DECODED_IMAGE_BYTES: ${GLACIER_TRANSFER_MAXIMUM_DECODED_IMAGE_BYTES:-1073741824}
+      GLACIER_TRANSFER_RETENTION_HOURS: ${GLACIER_TRANSFER_RETENTION_HOURS:-24}
       GLACIER_S3_ENDPOINT: ${GLACIER_S3_ENDPOINT:-}
       GLACIER_S3_REGION: ${GLACIER_S3_REGION:-us-east-1}
       GLACIER_S3_BUCKET: ${GLACIER_S3_BUCKET:-glacier-notes}
@@ -67,6 +72,7 @@ services:
     volumes:
       - image_data:/var/lib/glacier-notes/images
       - backup_data:/var/lib/glacier-notes/backups
+      - transfer_data:/var/lib/glacier-notes/transfers
       - type: bind
         source: ${GLACIER_SMTP_PASSWORD_FILE:-/dev/null}
         target: /run/secrets/smtp_password
@@ -96,3 +102,4 @@ volumes:
   postgres_data:
   image_data:
   backup_data:
+  transfer_data:

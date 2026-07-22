@@ -1,0 +1,125 @@
+<div class="transfer-backdrop" (click)="close()">
+  <section
+    class="transfer"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="transfer-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header>
+      <h2 id="transfer-title">Import / Export</h2>
+      <button type="button" class="icon-button" aria-label="Close" (click)="close()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </header>
+    @if (step() === 'menu') {
+    <section class="transfer-section">
+      <h3>Export</h3>
+      <label
+        ><input type="radio" name="scope" [value]="ExportScope.All" [(ngModel)]="exportScope">
+        Everything</label
+      >
+      <label
+        ><input type="radio" name="scope" [value]="ExportScope.Notebook" [(ngModel)]="exportScope">
+        Single notebook</label
+      >
+      @if (exportScope === ExportScope.Notebook) {
+      <select aria-label="Notebook to export" [(ngModel)]="exportNotebook">
+        <option value="">Choose a notebook</option>
+        @for (notebook of notebooks(); track notebook.id) {
+        <option [value]="notebook.id">{{ notebook.name }}</option>
+        }
+      </select>
+      }
+      <label
+        ><input type="radio" name="scope" [value]="ExportScope.Note" [(ngModel)]="exportScope">
+        Single visible note</label
+      >
+      @if (exportScope === ExportScope.Note) {
+      <select aria-label="Note to export" [(ngModel)]="exportNote">
+        <option value="">Choose a note</option>
+        @for (note of notes(); track note.id) {
+        <option [value]="note.id">{{ note.title || 'Untitled note' }}</option>
+        }
+      </select>
+      }
+      <button type="button" class="primary" (click)="exportData()">
+        <i class="fa-solid fa-download"></i>
+        Export
+      </button>
+      @if (exported()) { <span class="success" role="status">Export ready.</span> }
+    </section>
+    <section class="transfer-section">
+      <h3>Import</h3>
+      <p>
+        Choose a Glacier Notes <code>.glacier.json</code> file. It is validated before anything
+        changes.
+      </p>
+      <label class="file-button"
+        ><i class="fa-solid fa-file-import"></i>
+        Choose import file
+        <input
+          type="file"
+          accept=".json,.glacier.json,application/json"
+          (change)="inspect($any($event.target).files?.item(0))"
+        >
+      </label>
+    </section>
+    } @else if (step() === 'working') {
+    <div class="transfer-status" role="status">
+      <i class="fa-solid fa-snowflake fa-spin"></i>
+      <h3>{{ action() }}</h3>
+      <p>Large libraries can take several minutes.</p>
+    </div>
+    <footer><button type="button" (click)="cancel()">Cancel</button></footer>
+    } @else if (step() === 'conflict') {
+    <h3>Import conflicts</h3>
+    <p>Some IDs already exist in this account. Choose how to apply the inspected file.</p>
+    @if (job()?.counts; as counts) {
+    <p class="counts">
+      {{ counts.notebooks }}
+      notebooks · {{ counts.notes }} notes · {{ counts.labels }} labels · {{ counts.images }} images
+    </p>
+    }
+    <button
+      type="button"
+      class="choice"
+      (click)="apply(ImportApplyRequestStrategyEnum.AddAsCopies)"
+    >
+      <strong>Add as copies</strong
+      ><span>Give every imported item a new ID. Existing content is untouched.</span>
+    </button>
+    <button
+      type="button"
+      class="choice"
+      (click)="apply(ImportApplyRequestStrategyEnum.ReplaceById)"
+    >
+      <strong>Replace existing by ID</strong
+      ><span>Overwrite matching items in this account and add new ones.</span>
+    </button>
+    <footer><button type="button" (click)="cancel()">Cancel import</button></footer>
+    } @else if (step() === 'done') {
+    <div class="transfer-status">
+      <i class="fa-solid fa-circle-check success"></i>
+      <h3>Import complete</h3>
+      @if (job()?.counts; as counts) {
+      <p>
+        {{ counts.notebooks }}
+        notebooks, {{ counts.notes }} notes, {{ counts.labels }} labels, and
+        {{ counts.images }}
+        images imported.
+      </p>
+      }
+    </div>
+    <footer><button type="button" class="primary" (click)="close()">Done</button></footer>
+    } @else {
+    <h3>Transfer failed</h3>
+    <ul class="errors">
+      @for (error of errors(); track $index) {
+      <li>{{ error }}</li>
+      }
+    </ul>
+    <footer><button type="button" (click)="step.set('menu')">Back</button></footer>
+    }
+  </section>
+</div>

@@ -18,6 +18,7 @@ tags:
   - name: Images
   - name: Current User
   - name: Labels
+  - name: Transfers
 paths:
   /api/v1/ping:
     get:
@@ -300,6 +301,123 @@ paths:
           $ref: '#/components/responses/ProblemResponse'
         default:
           $ref: '#/components/responses/ProblemResponse'
+  /api/v1/exports:
+    post:
+      tags: [Transfers]
+      summary: Queue an owned portable export
+      operationId: createExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExportRequest' }
+      responses:
+        '202':
+          description: Export queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransferJob' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/exports/{jobId}:
+    parameters:
+      - $ref: '#/components/parameters/TransferJobId'
+    get:
+      tags: [Transfers]
+      summary: Get owned export status
+      operationId: getExport
+      responses:
+        '200':
+          description: Export status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransferJob' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    delete:
+      tags: [Transfers]
+      summary: Cancel an owned export
+      operationId: cancelExport
+      responses:
+        '204': { description: Export canceled }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/exports/{jobId}/download:
+    get:
+      tags: [Transfers]
+      summary: Download a completed owned export
+      operationId: downloadExport
+      parameters:
+        - $ref: '#/components/parameters/TransferJobId'
+      responses:
+        '200':
+          description: Portable Glacier Notes export
+          headers:
+            Content-Disposition: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { type: string, format: binary }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/imports:
+    post:
+      tags: [Transfers]
+      summary: Upload and queue inspection of an owned portable import
+      operationId: createImport
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '202':
+          description: Import inspection queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransferJob' }
+        '413': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/imports/{jobId}:
+    parameters:
+      - $ref: '#/components/parameters/TransferJobId'
+    get:
+      tags: [Transfers]
+      summary: Get owned import status
+      operationId: getImport
+      responses:
+        '200':
+          description: Import status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransferJob' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    delete:
+      tags: [Transfers]
+      summary: Cancel an owned import
+      operationId: cancelImport
+      responses:
+        '204': { description: Import canceled }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/imports/{jobId}/apply:
+    post:
+      tags: [Transfers]
+      summary: Apply an inspected owned import
+      operationId: applyImport
+      parameters:
+        - $ref: '#/components/parameters/TransferJobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ImportApplyRequest' }
+      responses:
+        '202':
+          description: Import apply queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransferJob' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/status:
     get:
       tags: [Administration]
@@ -318,6 +436,70 @@ paths:
           $ref: '#/components/responses/ProblemResponse'
         default:
           $ref: '#/components/responses/ProblemResponse'
+  /api/v1/admin/users/{userId}/imports:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    post:
+      tags: [Administration]
+      summary: Upload and blindly inspect a portable import for a target user
+      operationId: createAdminImport
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '202':
+          description: Import inspection queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransferJob' }
+        '413': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/imports/{jobId}:
+    parameters:
+      - $ref: '#/components/parameters/TransferJobId'
+    get:
+      tags: [Administration]
+      summary: Get blind administrative import status
+      operationId: getAdminImport
+      responses:
+        '200':
+          description: Sanitized import status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransferJob' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    delete:
+      tags: [Administration]
+      summary: Cancel a blind administrative import
+      operationId: cancelAdminImport
+      responses:
+        '204': { description: Import canceled }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/imports/{jobId}/apply:
+    post:
+      tags: [Administration]
+      summary: Apply an inspected blind administrative import
+      operationId: applyAdminImport
+      parameters:
+        - $ref: '#/components/parameters/TransferJobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ImportApplyRequest' }
+      responses:
+        '202':
+          description: Import apply queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TransferJob' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/users:
     get:
       tags: [Administration]
@@ -1142,6 +1324,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    TransferJobId:
+      name: jobId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
   headers:
     CorrelationId:
       description: Request correlation identifier.
@@ -1175,6 +1362,45 @@ components:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
   schemas:
+    ExportRequest:
+      type: object
+      required: [scope]
+      properties:
+        scope: { type: string, enum: [ALL, NOTEBOOK, NOTE] }
+        resourceId: { type: string, format: uuid }
+    ImportApplyRequest:
+      type: object
+      required: [strategy]
+      properties:
+        strategy: { type: string, enum: [PRESERVE, ADD_AS_COPIES, REPLACE_BY_ID] }
+    TransferCounts:
+      type: object
+      required: [notebooks, notes, labels, images, checklistItems]
+      properties:
+        notebooks: { type: integer, format: int64, minimum: 0 }
+        notes: { type: integer, format: int64, minimum: 0 }
+        labels: { type: integer, format: int64, minimum: 0 }
+        images: { type: integer, format: int64, minimum: 0 }
+        checklistItems: { type: integer, format: int64, minimum: 0 }
+    TransferJob:
+      type: object
+      required: [id, kind, state, createdAt, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [EXPORT, IMPORT] }
+        state: { type: string, enum: [QUEUED, RUNNING, READY, SUCCEEDED, FAILED, CANCELED, EXPIRED] }
+        phase: { type: string, enum: [GENERATE, INSPECT, APPLY] }
+        counts: { $ref: '#/components/schemas/TransferCounts' }
+        hasConflicts: { type: boolean }
+        quotaImpactBytes: { type: integer, format: int64, minimum: 0 }
+        errors:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 512 }
+        downloadUrl: { type: string, format: uri-reference }
+        createdAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
     PingResponse:
       type: object
       required: [service, status, apiVersion, serverTime]
@@ -1424,7 +1650,7 @@ components:
         expiresAt: { type: string, format: date-time }
     AdminSettings:
       type: object
-      required: [allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours, noteVersionMaximumCount, noteVersionRetentionDays]
+      required: [allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours, noteVersionMaximumCount, noteVersionRetentionDays, userExportsEnabled]
       properties:
         allowedEmailDomains:
           type: array
@@ -1439,6 +1665,7 @@ components:
         imageOrphanGraceHours: { type: integer, minimum: 1, maximum: 720 }
         noteVersionMaximumCount: { type: integer, minimum: 1, maximum: 500 }
         noteVersionRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
+        userExportsEnabled: { type: boolean }
     AdminSettingsUpdate:
       type: object
       properties:
@@ -1457,6 +1684,7 @@ components:
         imageOrphanGraceHours: { type: integer, minimum: 1, maximum: 720 }
         noteVersionMaximumCount: { type: integer, minimum: 1, maximum: 500 }
         noteVersionRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
+        userExportsEnabled: { type: boolean }
     ImageMetadata:
       type: object
       required: [id, mimeType, byteSize, width, height, thumbnailMimeType, thumbnailByteSize, thumbnailWidth, thumbnailHeight, contentUrl, thumbnailUrl, createdAt]
@@ -1483,7 +1711,7 @@ components:
         imageCount: { type: integer, format: int64, minimum: 0 }
     ContentColor:
       type: string
-      enum: [DEFAULT, RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, GRAY]
+      enum: [DEFAULT, RED, ORANGE, YELLOW, GREEN, TEAL, BLUE, PURPLE, PINK, GRAY]
     NoteType:
       type: string
       enum: [TEXT, CHECKLIST]

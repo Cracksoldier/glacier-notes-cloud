@@ -20,6 +20,8 @@ public interface GlacierConfiguration {
 
     Images images();
 
+    Transfer transfer();
+
     interface Bootstrap {
         Optional<String> token();
 
@@ -90,5 +92,20 @@ public interface GlacierConfiguration {
             Optional<Path> secretKeyFile();
             Optional<String> serverSideEncryption();
         }
+    }
+
+    interface Transfer {
+        @WithDefault("/var/lib/glacier-notes/transfers") Path temporaryRoot();
+        @WithDefault("1610612736") long maximumUploadBytes();
+        @WithDefault("1073741824") long maximumDecodedImageBytes();
+        @WithDefault("10485760") long maximumImageBytes();
+        @WithDefault("10000") int maximumNotebooks();
+        @WithDefault("100000") int maximumNotes();
+        @WithDefault("10000") int maximumLabels();
+        @WithDefault("100000") int maximumImages();
+        @WithDefault("1000000") int maximumChecklistItems();
+        @WithDefault("32") int maximumJsonDepth();
+        @WithDefault("16777216") int maximumStringLength();
+        @WithDefault("24") int retentionHours();
     }
 }

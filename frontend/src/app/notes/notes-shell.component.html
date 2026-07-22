@@ -446,7 +446,14 @@ notebook) {
     </footer>
   </section>
 </div>
-} @if (overlay(); as visibleOverlay) {
+} @if (overlay() === 'transfer') {
+<app-transfer-dialog
+  [notebooks]="store.notebooks()"
+  [notes]="store.notes()"
+  (closed)="overlay.set(null)"
+  (imported)="store.refresh()"
+/>
+} @else if (overlay(); as visibleOverlay) {
 <div class="modal-backdrop" (click)="overlay.set(null)">
   <section class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
     @if (visibleOverlay === 'shortcuts') {
@@ -491,7 +498,7 @@ notebook) {
         </tr>
       </tbody>
     </table>
-    } @else if (visibleOverlay === 'settings') {
+    } @else {
     <h2>Settings</h2>
     <p class="setting-row">
       <span>Theme</span
@@ -502,12 +509,6 @@ notebook) {
     <p class="future-note">
       <i class="fa-solid fa-snowflake"></i>
       Account preferences, language, and synchronized settings arrive in M10.
-    </p>
-    } @else {
-    <h2>Import / Export</h2>
-    <p class="future-note">
-      <i class="fa-solid fa-file-export"></i>
-      Portable Glacier import and export arrive in M9.
     </p>
     }
     <footer><button type="button" (click)="overlay.set(null)">Close</button></footer>

@@ -18,4 +18,6 @@ export * from './setup.service';
 import { SetupService } from './setup.service';
 export * from './system.service';
 import { SystemService } from './system.service';
-export const APIS = [AdministrationService, AuthenticationService, CurrentUserService, ImagesService, LabelsService, NotebooksService, NotesService, SessionsService, SetupService, SystemService];
+export * from './transfers.service';
+import { TransfersService } from './transfers.service';
+export const APIS = [AdministrationService, AuthenticationService, CurrentUserService, ImagesService, LabelsService, NotebooksService, NotesService, SessionsService, SetupService, SystemService, TransfersService];

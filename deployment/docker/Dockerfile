@@ -21,7 +21,7 @@ FROM eclipse-temurin:21-jre-alpine AS runtime
 
 RUN addgroup -S -g 10001 glacier \
     && adduser -S -D -H -u 10001 -G glacier glacier \
-    && mkdir -p /opt/glacier /var/lib/glacier-notes/images /var/lib/glacier-notes/backups \
+    && mkdir -p /opt/glacier /var/lib/glacier-notes/images /var/lib/glacier-notes/backups /var/lib/glacier-notes/transfers/uploads \
     && chown -R glacier:glacier /opt/glacier /var/lib/glacier-notes
 
 WORKDIR /opt/glacier
@@ -32,7 +32,7 @@ RUN chmod 0555 /usr/local/bin/glacier-entrypoint
 
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -Djava.io.tmpdir=/tmp"
 EXPOSE 8080 9000
-VOLUME ["/var/lib/glacier-notes/images", "/var/lib/glacier-notes/backups"]
+VOLUME ["/var/lib/glacier-notes/images", "/var/lib/glacier-notes/backups", "/var/lib/glacier-notes/transfers"]
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=6 \
   CMD wget -qO- http://127.0.0.1:9000/q/health/ready >/dev/null || exit 1
 

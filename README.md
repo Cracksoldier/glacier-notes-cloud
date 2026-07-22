@@ -85,6 +85,15 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for local startup, database, gene
 and editor instructions. Implemented roadmap scope is tracked in
 [docs/MILESTONE_STATUS.md](docs/MILESTONE_STATUS.md).
 
+## Portable import and export
+
+Signed-in users can open **Import / Export** from the notes toolbar. Exports can contain the whole
+account, one notebook, or one note and download as `.glacier.json`. Imports are inspected before
+apply; ID conflicts can either be added as deterministic copies or replaced only within the current
+account. Administrators may disable user exports and can perform a blind import from a user's admin
+page without previewing note content. See [docs/PORTABLE_TRANSFERS.md](docs/PORTABLE_TRANSFERS.md)
+for format limits, job states, cleanup, and compatibility guidance.
+
 ## Production-like local environment
 
 Use Docker Compose when testing the compiled, same-origin application rather than live development

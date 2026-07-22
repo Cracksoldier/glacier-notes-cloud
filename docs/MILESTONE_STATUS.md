@@ -15,7 +15,8 @@ implementation and repository verification gates pass.
 | M6 | Complete | Desktop-aligned Angular notes UI, secure Markdown, checklists, autosave, conflicts, themes, shortcuts, and responsive browser tests |
 | M7 | Complete | Secure image processing, owner-scoped references, quotas, thumbnails, garbage collection, and filesystem/PostgreSQL/S3 storage |
 | M8 | Complete | Ranked owner-scoped PostgreSQL search, conflict-safe editing, retained note versions, restore, and cleanup policies |
-| M9–M13 | Pending | Not yet implemented |
+| M9 | Complete | Portable full/notebook/note transfer, desktop compatibility, conflict strategies, bounded jobs, and blind administrative import |
+| M10–M13 | Pending | Not yet implemented |
 
 ## M5 Verification
 
@@ -76,3 +77,17 @@ retaining referenced images. Hourly cleanup enforces the administrator-configura
 The standard backend and frontend gates above cover search isolation and ranking, checklist index
 maintenance, two-session conflicts, snapshot deduplication and restore, cleanup boundaries, editor
 conflict actions, and search pagination.
+
+## M9 Verification
+
+M9 adds asynchronous full, notebook, and note exports; streamed `.glacier.json` generation with
+base64 images; bounded import inspection; quota estimates; preserve, add-as-copies, and replace-by-ID
+strategies; cancellation and expiry cleanup; and administrator-controlled user exports. Blind
+administrative imports expose counts and structural errors only, assign content to the selected
+user, and write an audit event when applied.
+
+Backend integration tests cover ownership isolation, all export scopes, desktop fixture imports,
+round trips, image references, conflict strategies, disabled exports, and the blind-admin boundary.
+The frontend production build type-checks the transfer dialog and administration controls. The
+standard gates above plus both Compose validation commands verify the milestone; the optional
+Playwright suite includes the browser import/export flow.

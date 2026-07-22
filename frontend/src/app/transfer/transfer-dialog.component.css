@@ -1,0 +1,107 @@
+.transfer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 55%);
+}
+.transfer {
+  width: min(42rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 35%);
+}
+.transfer > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.transfer h2,
+.transfer h3,
+.transfer p {
+  margin-top: 0;
+}
+.transfer-section {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.transfer-section label {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+.transfer select {
+  width: 100%;
+  padding: 0.65rem;
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface-raised);
+}
+.transfer button,
+.file-button {
+  padding: 0.65rem 0.9rem;
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: var(--surface-raised);
+  cursor: pointer;
+}
+.transfer button.primary,
+.file-button {
+  width: fit-content;
+  color: white;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.file-button input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+.transfer-status {
+  padding: 2.5rem 1.25rem;
+  text-align: center;
+}
+.transfer-status > i {
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+.choice {
+  display: grid;
+  width: calc(100% - 2.5rem);
+  margin: 1rem 1.25rem;
+  text-align: left;
+}
+.choice span {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.counts,
+.errors {
+  margin: 1rem 1.25rem;
+}
+.errors {
+  color: var(--danger);
+}
+.success {
+  color: var(--success, #3ea86b);
+}
+.transfer footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+}

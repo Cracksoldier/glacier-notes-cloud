@@ -1,5 +1,4 @@
 # Expected compatibility results
 
-M9 will add deterministic desktop/cloud import and export results here. M1 already preserves the
-owner-scoped UUID and relationship structure required by those fixtures.
-
+`schema-v1-counts.json` contains the deterministic inspection results for the desktop fixtures.
+Round-trip tests additionally assert preserved UUIDs and rewritten references for copy imports.

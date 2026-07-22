@@ -336,6 +336,7 @@ public class LifecycleService {
             update.getMaximumImageBytes(), update.getPerUserStorageQuotaBytes(), update.getImageOrphanGraceHours()
         );
         entity.updateHistory(update.getNoteVersionMaximumCount(), update.getNoteVersionRetentionDays());
+        entity.updateTransfers(update.getUserExportsEnabled());
         audit("INSTANCE_SETTINGS_CHANGED", actor, null, "INSTANCE_SETTINGS", null, correlationId,
             Map.of("area", "user-lifecycle"));
         return settingsModel(entity);
@@ -490,7 +491,8 @@ public class LifecycleService {
             .perUserStorageQuotaBytes(value.perUserStorageQuotaBytes())
             .imageOrphanGraceHours(value.imageOrphanGraceHours())
             .noteVersionMaximumCount(value.noteVersionMaximumCount())
-            .noteVersionRetentionDays(value.noteVersionRetentionDays());
+            .noteVersionRetentionDays(value.noteVersionRetentionDays())
+            .userExportsEnabled(value.userExportsEnabled());
     }
 
     private InstanceSettingsEntity settings() {

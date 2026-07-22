@@ -63,8 +63,10 @@ summary:focus-visible {
   --note-orange: #4f3a26;
   --note-yellow: #4a4426;
   --note-green: #28422f;
+  --note-teal: #1e4247;
   --note-blue: #243c5c;
   --note-purple: #3a2e52;
+  --note-pink: #4c2a41;
   --note-gray: #303947;
 }
 
@@ -85,8 +87,10 @@ summary:focus-visible {
   --note-orange: #fbe7cf;
   --note-yellow: #faf3c8;
   --note-green: #d9ecd9;
+  --note-teal: #d2ecef;
   --note-blue: #d6e4f7;
   --note-purple: #e5dcf5;
+  --note-pink: #f6dcec;
   --note-gray: #e3e7ec;
 }
 
@@ -105,11 +109,17 @@ summary:focus-visible {
 .note-color-green {
   --note-current: var(--note-green);
 }
+.note-color-teal {
+  --note-current: var(--note-teal);
+}
 .note-color-blue {
   --note-current: var(--note-blue);
 }
 .note-color-purple {
   --note-current: var(--note-purple);
+}
+.note-color-pink {
+  --note-current: var(--note-pink);
 }
 .note-color-gray {
   --note-current: var(--note-gray);

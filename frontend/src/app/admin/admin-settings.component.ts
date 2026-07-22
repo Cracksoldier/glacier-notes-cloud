@@ -22,6 +22,7 @@ export class AdminSettingsComponent {
   orphanGraceHours = 24;
   noteVersionMaximumCount = 20;
   noteVersionRetentionDays = 30;
+  userExportsEnabled = true;
   imageTypes = new Set<string>(['image/png', 'image/jpeg', 'image/webp']);
 
   constructor() {
@@ -34,6 +35,7 @@ export class AdminSettingsComponent {
       this.orphanGraceHours = value.imageOrphanGraceHours;
       this.noteVersionMaximumCount = value.noteVersionMaximumCount;
       this.noteVersionRetentionDays = value.noteVersionRetentionDays;
+      this.userExportsEnabled = value.userExportsEnabled;
       this.imageTypes = new Set(value.allowedImageTypes);
     });
   }
@@ -56,6 +58,7 @@ export class AdminSettingsComponent {
         imageOrphanGraceHours: this.orphanGraceHours,
         noteVersionMaximumCount: this.noteVersionMaximumCount,
         noteVersionRetentionDays: this.noteVersionRetentionDays,
+        userExportsEnabled: this.userExportsEnabled,
       })
       .subscribe({
         next: (value) => {

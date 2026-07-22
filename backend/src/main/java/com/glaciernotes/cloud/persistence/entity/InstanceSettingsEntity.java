@@ -43,6 +43,8 @@ public class InstanceSettingsEntity {
     private int noteVersionMaximumCount;
     @Column(name = "note_version_retention_days")
     private int noteVersionRetentionDays;
+    @Column(name = "user_exports_enabled")
+    private boolean userExportsEnabled;
 
     protected InstanceSettingsEntity() {
     }
@@ -76,6 +78,7 @@ public class InstanceSettingsEntity {
     public int imageOrphanGraceHours() { return imageOrphanGraceHours; }
     public int noteVersionMaximumCount() { return noteVersionMaximumCount; }
     public int noteVersionRetentionDays() { return noteVersionRetentionDays; }
+    public boolean userExportsEnabled() { return userExportsEnabled; }
 
     public void updateLifecycle(List<String> domains, Integer invitationHours, Integer resetMinutes) {
         if (domains != null) allowedEmailDomains = domains.toArray(String[]::new);
@@ -93,5 +96,9 @@ public class InstanceSettingsEntity {
     public void updateHistory(Integer maximumCount, Integer retentionDays) {
         if (maximumCount != null) noteVersionMaximumCount = maximumCount;
         if (retentionDays != null) noteVersionRetentionDays = retentionDays;
+    }
+
+    public void updateTransfers(Boolean exportsEnabled) {
+        if (exportsEnabled != null) userExportsEnabled = exportsEnabled;
     }
 }

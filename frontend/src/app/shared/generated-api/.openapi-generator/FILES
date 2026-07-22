@@ -13,6 +13,7 @@ api/notes.service.ts
 api/sessions.service.ts
 api/setup.service.ts
 api/system.service.ts
+api/transfers.service.ts
 configuration.ts
 encoder.ts
 git_push.sh
@@ -29,7 +30,9 @@ model/checklistItemView.ts
 model/contentColor.ts
 model/contentNote.ts
 model/emptyTrashResult.ts
+model/exportRequest.ts
 model/imageMetadata.ts
+model/importApplyRequest.ts
 model/initialAdministratorRequest.ts
 model/invitationAcceptanceRequest.ts
 model/invitationCreateRequest.ts
@@ -70,6 +73,8 @@ model/setupCompletion.ts
 model/setupStatus.ts
 model/storageUsage.ts
 model/tokenRequest.ts
+model/transferCounts.ts
+model/transferJob.ts
 model/validationError.ts
 model/versionRequest.ts
 ng-package.json

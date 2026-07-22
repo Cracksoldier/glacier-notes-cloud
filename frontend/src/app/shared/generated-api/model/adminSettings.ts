@@ -19,6 +19,7 @@ export interface AdminSettings {
     imageOrphanGraceHours: number;
     noteVersionMaximumCount: number;
     noteVersionRetentionDays: number;
+    userExportsEnabled: boolean;
 }
 export enum AdminSettingsAllowedImageTypesEnum {
     ImagePng = 'image/png',

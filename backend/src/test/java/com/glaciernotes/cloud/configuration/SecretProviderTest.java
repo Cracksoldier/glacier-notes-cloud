@@ -135,6 +135,9 @@ class SecretProviderTest {
 
             @Override
             public Images images() { return null; }
+
+            @Override
+            public Transfer transfer() { return null; }
         };
     }
 }

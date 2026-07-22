@@ -21,9 +21,13 @@ export enum ContentColor {
 
     Green = 'GREEN',
 
+    Teal = 'TEAL',
+
     Blue = 'BLUE',
 
     Purple = 'PURPLE',
+
+    Pink = 'PINK',
 
     Gray = 'GRAY'
 }

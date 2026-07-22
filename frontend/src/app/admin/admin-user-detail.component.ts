@@ -1,12 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-
+import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '../core/auth.store';
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
 import type { AdminUser } from '../shared/generated-api/model/adminUser';
 import { AdminUserUpdateRoleEnum } from '../shared/generated-api/model/adminUserUpdate';
+import { ImportApplyRequestStrategyEnum } from '../shared/generated-api/model/importApplyRequest';
 import type { ResetLink } from '../shared/generated-api/model/resetLink';
+import type { TransferJob } from '../shared/generated-api/model/transferJob';
 
 @Component({
   selector: 'app-admin-user-detail',
@@ -23,6 +25,9 @@ export class AdminUserDetailComponent {
   readonly reset = signal<ResetLink | null>(null);
   readonly message = signal('');
   readonly error = signal('');
+  readonly importJob = signal<TransferJob | null>(null);
+  readonly importBusy = signal(false);
+  readonly ImportStrategy = ImportApplyRequestStrategyEnum;
   username = '';
   email = '';
   displayName = '';
@@ -86,6 +91,61 @@ export class AdminUserDetailComponent {
       next: (value) => this.reset.set(value),
       error: (failure) => this.fail(failure),
     });
+  }
+
+  async inspectImport(file: File | null): Promise<void> {
+    if (!file) return;
+    this.importBusy.set(true);
+    this.error.set('');
+    try {
+      const created = await firstValueFrom(this.api.createAdminImport(this.id, file));
+      const inspected = await this.poll(created);
+      this.importJob.set(inspected);
+      if (inspected.state === 'READY' && !inspected.hasConflicts) {
+        await this.applyImport(ImportApplyRequestStrategyEnum.Preserve);
+      }
+    } catch (failure) {
+      this.fail(failure as { error?: { detail?: string } });
+    } finally {
+      this.importBusy.set(false);
+    }
+  }
+
+  async applyImport(strategy: ImportApplyRequestStrategyEnum): Promise<void> {
+    const current = this.importJob();
+    if (!current) return;
+    this.importBusy.set(true);
+    try {
+      const queued = await firstValueFrom(this.api.applyAdminImport(current.id, { strategy }));
+      const completed = await this.poll(queued);
+      this.importJob.set(completed);
+      if (completed.state === 'SUCCEEDED') {
+        this.message.set('Blind import completed and was recorded in the audit log.');
+        this.load();
+      }
+    } catch (failure) {
+      this.fail(failure as { error?: { detail?: string } });
+    } finally {
+      this.importBusy.set(false);
+    }
+  }
+
+  async cancelImport(): Promise<void> {
+    const current = this.importJob();
+    if (current) await firstValueFrom(this.api.cancelAdminImport(current.id));
+    this.importJob.set(null);
+    this.importBusy.set(false);
+  }
+
+  private async poll(initial: TransferJob): Promise<TransferJob> {
+    let current = initial;
+    this.importJob.set(current);
+    while (['QUEUED', 'RUNNING'].includes(current.state)) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      current = await firstValueFrom(this.api.getAdminImport(current.id));
+      this.importJob.set(current);
+    }
+    return current;
   }
 
   copy(value: string): void {

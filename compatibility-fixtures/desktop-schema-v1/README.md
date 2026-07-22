@@ -8,6 +8,6 @@ text/checklist type, title, Markdown content, checklist, image IDs, pin/archive/
 and timestamps. Cloud ownership and optimistic versions are deliberately not inserted into the
 desktop export payload.
 
-Executable import/export fixtures are added in M9. This directory records the M0/M1 compatibility
-contract so database identifiers do not require redesign first.
-
+`full.glacier.json`, `notebook.glacier.json`, and `note.glacier.json` are schema-v1 envelopes
+produced from the desktop transfer model. They exercise default-notebook metadata, checklist IDs,
+labels, image data, Markdown image references, and each supported export scope.

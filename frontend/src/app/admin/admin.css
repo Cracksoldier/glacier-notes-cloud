@@ -57,6 +57,20 @@ textarea {
   margin: 1.5rem 0;
 }
 
+.blind-import {
+  margin-top: 1.5rem;
+}
+.file-button {
+  width: fit-content;
+  cursor: pointer;
+}
+.file-button input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
 .list {
   display: grid;
   gap: 0.65rem;

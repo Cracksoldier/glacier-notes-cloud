@@ -17,6 +17,7 @@ import { ThemeService } from '../core/theme.service';
 import type { LabelView } from '../shared/generated-api/model/labelView';
 import type { NotebookView } from '../shared/generated-api/model/notebookView';
 import { NoteType } from '../shared/generated-api/model/noteType';
+import { TransferDialogComponent } from '../transfer/transfer-dialog.component';
 import { NoteCardComponent } from './note-card.component';
 import { NoteEditorComponent } from './note-editor.component';
 import { NotesStore } from './notes.store';
@@ -24,7 +25,13 @@ import type { NotesView, SearchFilters } from './notes-data-access';
 
 @Component({
   selector: 'app-notes-shell',
-  imports: [RouterLink, RouterOutlet, NoteCardComponent, NoteEditorComponent],
+  imports: [
+    RouterLink,
+    RouterOutlet,
+    NoteCardComponent,
+    NoteEditorComponent,
+    TransferDialogComponent,
+  ],
   templateUrl: './notes-shell.component.html',
   styleUrl: './notes-shell.component.css',
 })

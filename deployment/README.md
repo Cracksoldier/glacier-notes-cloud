@@ -62,6 +62,9 @@ use `SameSite=Lax` and `Path=/`.
 | `GLACIER_S3_PATH_STYLE` | Force path-style addressing for MinIO and compatible providers |
 | `GLACIER_S3_ACCESS_KEY_FILE`, `GLACIER_S3_SECRET_KEY_FILE` | Read-only credential files for S3 storage |
 | `GLACIER_S3_SERVER_SIDE_ENCRYPTION` | Optional `AES256` or `aws:kms` object encryption setting |
+| `GLACIER_TRANSFER_MAXIMUM_UPLOAD_BYTES` | Maximum portable import upload; default 1.5 GiB |
+| `GLACIER_TRANSFER_MAXIMUM_DECODED_IMAGE_BYTES` | Maximum combined decoded image data per import; default 1 GiB |
+| `GLACIER_TRANSFER_RETENTION_HOURS` | Lifetime of staged imports and downloadable exports; default 24 hours |
 
 Image uploads accept PNG, JPEG, and WebP and are normalized before storage. The administration UI
 controls the stored-image limit, per-user quota, accepted types, and orphan grace period. The raw
@@ -97,6 +100,10 @@ For a reverse proxy, keep the application and management ports on loopback or a 
 network, terminate TLS at the proxy, and forward only port 8080. Enable and restrict Quarkus forwarded
 header processing with `QUARKUS_HTTP_PROXY_PROXY_ADDRESS_FORWARDING=true` only when the proxy
 addresses are trusted. Never publish port 9000 publicly.
+
+The `transfer_data` volume contains short-lived uploads and generated exports. It is not a backup:
+jobs expire automatically, and successful imports remove their upload. Restrict the volume like user
+content because files may contain complete note libraries.
 
 Back up the `postgres_data`, `image_data`, and `backup_data` volumes together. Restores must preserve
 database and filesystem data from the same point in time.

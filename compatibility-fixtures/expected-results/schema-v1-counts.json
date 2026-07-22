@@ -1,0 +1,5 @@
+{
+  "full.glacier.json": { "notebooks": 2, "notes": 2, "labels": 2, "images": 1, "checklistItems": 1 },
+  "notebook.glacier.json": { "notebooks": 1, "notes": 1, "labels": 1, "images": 0, "checklistItems": 1 },
+  "note.glacier.json": { "notebooks": 1, "notes": 1, "labels": 1, "images": 1, "checklistItems": 0 }
+}

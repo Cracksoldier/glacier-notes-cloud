@@ -82,6 +82,10 @@
       [(ngModel)]="noteVersionRetentionDays"
     ></label
   >
+  <label
+    ><input name="userExportsEnabled" type="checkbox" [(ngModel)]="userExportsEnabled">
+    Allow users to export portable data</label
+  >
   <button type="submit">Save settings</button>
 </form>
 @if (message()) {
