@@ -24,6 +24,8 @@ public class InstanceStateEntity {
     private Instant updatedAt;
     @Version
     private long version;
+    @Column(name = "image_storage_backend")
+    private String imageStorageBackend;
 
     protected InstanceStateEntity() {
     }
@@ -34,6 +36,12 @@ public class InstanceStateEntity {
 
     public Instant initializedAt() {
         return initializedAt;
+    }
+
+    public String imageStorageBackend() { return imageStorageBackend; }
+    public void selectImageStorageBackend(String backend, Instant now) {
+        imageStorageBackend = backend;
+        updatedAt = now;
     }
 
     public void initialize(UUID administratorId, Instant now) {

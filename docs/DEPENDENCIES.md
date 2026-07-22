@@ -10,6 +10,8 @@ Maven Wrapper, and npm lockfile.
 | OpenAPI Generator | 7.24.0 | Apache-2.0 |
 | PostgreSQL JDBC | Quarkus BOM | BSD-2-Clause |
 | Flyway Community | Quarkus BOM | Apache-2.0 |
+| TwelveMonkeys ImageIO WebP | 3.13.1 | BSD-3-Clause |
+| AWS SDK for Java S3 | 2.41.32 | Apache-2.0 |
 | Angular | 22.0.7 | MIT |
 | RxJS | 7.8.x locked | Apache-2.0 |
 | TypeScript | 6.0.x locked | Apache-2.0 |

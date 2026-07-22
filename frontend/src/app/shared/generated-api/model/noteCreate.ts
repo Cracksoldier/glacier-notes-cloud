@@ -23,6 +23,7 @@ export interface NoteCreate {
     archived?: boolean;
     color?: ContentColor;
     labelIds?: Array<string>;
+    imageIds?: Array<string>;
 }
 
 

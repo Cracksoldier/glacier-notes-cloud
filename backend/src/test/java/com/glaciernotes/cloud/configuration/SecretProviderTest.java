@@ -132,6 +132,9 @@ class SecretProviderTest {
                     @Override public Optional<String> senderAddress() { return Optional.empty(); }
                 };
             }
+
+            @Override
+            public Images images() { return null; }
         };
     }
 }

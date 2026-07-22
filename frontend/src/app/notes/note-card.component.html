@@ -9,6 +9,13 @@
   <span class="note-card__badge"><i class="fa-solid fa-box-archive"></i> Archived</span>
   } @if (note().title) {
   <h3>{{ note().title }}</h3>
+  } @if (firstImage(); as imageId) {
+  <div class="note-card__image">
+    <img [src]="imageUrl(imageId)" alt="" loading="lazy">
+    @if (note().imageIds.length > 1) {
+    <span>+{{ note().imageIds.length - 1 }}</span>
+    }
+  </div>
   } @if (note().noteType === 'CHECKLIST') {
   <div class="note-card__checklist">
     @for (item of note().checklistPreview; track item.id) {

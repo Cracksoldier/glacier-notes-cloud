@@ -46,6 +46,14 @@ services:
       GLACIER_SMTP_PASSWORD_FILE: /run/secrets/smtp_password
       GLACIER_SMTP_SENDER_NAME: ${GLACIER_SMTP_SENDER_NAME:-Glacier Notes}
       GLACIER_SMTP_SENDER_ADDRESS: ${GLACIER_SMTP_SENDER_ADDRESS:-noreply@localhost}
+      GLACIER_IMAGE_BACKEND: ${GLACIER_IMAGE_BACKEND:-FILESYSTEM}
+      GLACIER_IMAGE_FILESYSTEM_ROOT: /var/lib/glacier-notes/images
+      GLACIER_S3_ENDPOINT: ${GLACIER_S3_ENDPOINT:-}
+      GLACIER_S3_REGION: ${GLACIER_S3_REGION:-us-east-1}
+      GLACIER_S3_BUCKET: ${GLACIER_S3_BUCKET:-glacier-notes}
+      GLACIER_S3_PATH_STYLE: ${GLACIER_S3_PATH_STYLE:-true}
+      GLACIER_S3_ACCESS_KEY_FILE: /run/secrets/s3_access_key
+      GLACIER_S3_SECRET_KEY_FILE: /run/secrets/s3_secret_key
     secrets:
       - database_password
       - bootstrap_token
@@ -55,13 +63,21 @@ services:
       - "${GLACIER_MANAGEMENT_BIND:-127.0.0.1}:${GLACIER_MANAGEMENT_PORT:-9000}:9000"
     read_only: true
     tmpfs:
-      - /tmp:size=128m,mode=1777
+      - /tmp:size=256m,mode=1777
     volumes:
       - image_data:/var/lib/glacier-notes/images
       - backup_data:/var/lib/glacier-notes/backups
       - type: bind
         source: ${GLACIER_SMTP_PASSWORD_FILE:-/dev/null}
         target: /run/secrets/smtp_password
+        read_only: true
+      - type: bind
+        source: ${GLACIER_S3_ACCESS_KEY_FILE:-/dev/null}
+        target: /run/secrets/s3_access_key
+        read_only: true
+      - type: bind
+        source: ${GLACIER_S3_SECRET_KEY_FILE:-/dev/null}
+        target: /run/secrets/s3_secret_key
         read_only: true
     cap_drop:
       - ALL

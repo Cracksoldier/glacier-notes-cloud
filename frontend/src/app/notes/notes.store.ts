@@ -189,6 +189,7 @@ export class NotesStore {
         archived: false,
         color: ContentColor.Default,
         labelIds: [],
+        imageIds: [],
       });
       await this.loadView(this.view() ?? { kind: 'notebook', id: notebookId });
       this.editor.set(note);
@@ -354,6 +355,7 @@ export class NotesStore {
       archived: note.archived,
       color: note.color,
       labelIds: note.labelIds,
+      imageIds: note.imageIds,
       version: note.version,
     };
   }
@@ -388,6 +390,7 @@ export class NotesStore {
               archived: note.archived,
               color: note.color,
               labelIds: note.labelIds,
+              imageIds: note.imageIds,
               deletedAt: note.deletedAt,
               createdAt: note.createdAt,
               updatedAt: note.updatedAt,

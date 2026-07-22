@@ -1,3 +1,4 @@
+import { HttpEventType } from '@angular/common/http';
 import {
   AfterViewInit,
   Component,
@@ -9,12 +10,16 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { lastValueFrom, tap } from 'rxjs';
 
 import { ProblemService } from '../core/problem.service';
+import { CurrentUserService } from '../shared/generated-api/api/currentUser.service';
+import { ImagesService } from '../shared/generated-api/api/images.service';
 import type { ChecklistItemInput } from '../shared/generated-api/model/checklistItemInput';
 import { ContentColor } from '../shared/generated-api/model/contentColor';
 import type { ContentNote } from '../shared/generated-api/model/contentNote';
 import type { NoteUpdate } from '../shared/generated-api/model/noteUpdate';
+import type { StorageUsage } from '../shared/generated-api/model/storageUsage';
 import { MarkdownService } from './markdown.service';
 import { NotesStore } from './notes.store';
 
@@ -38,6 +43,12 @@ interface DraftItem {
   checked: boolean;
 }
 
+interface UploadState {
+  name: string;
+  progress: number;
+  error?: string;
+}
+
 const SAVE_DELAY = 500;
 
 @Component({
@@ -51,6 +62,8 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly store = inject(NotesStore);
   protected readonly markdown = inject(MarkdownService);
   protected readonly problems = inject(ProblemService);
+  private readonly imagesApi = inject(ImagesService);
+  private readonly currentUserApi = inject(CurrentUserService);
 
   protected readonly note = signal<ContentNote | null>(null);
   protected readonly title = signal('');
@@ -60,6 +73,10 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly archived = signal(false);
   protected readonly color = signal<ContentColor>(ContentColor.Default);
   protected readonly labelIds = signal<string[]>([]);
+  protected readonly imageIds = signal<string[]>([]);
+  protected readonly uploads = signal<UploadState[]>([]);
+  protected readonly usage = signal<StorageUsage | null>(null);
+  protected readonly lightbox = signal<string | null>(null);
   protected readonly preview = signal(false);
   protected readonly saveState = signal<SaveState>('saved');
   protected readonly saveMessage = signal('Saved');
@@ -93,6 +110,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.applyNote(this.initialNote());
     window.addEventListener('beforeunload', this.beforeUnload);
+    this.refreshUsage();
   }
 
   ngAfterViewInit(): void {
@@ -238,6 +256,92 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  protected imageUrl(id: string, thumbnail = false): string {
+    return `/api/v1/images/${id}${thumbnail ? '/thumbnail' : ''}`;
+  }
+
+  protected chooseImages(input: HTMLInputElement): void {
+    if (input.files) void this.uploadFiles(Array.from(input.files));
+    input.value = '';
+  }
+
+  protected onDrop(event: DragEvent): void {
+    event.preventDefault();
+    const files = Array.from(event.dataTransfer?.files ?? []).filter((file) =>
+      ['image/png', 'image/jpeg', 'image/webp'].includes(file.type),
+    );
+    if (files.length) void this.uploadFiles(files);
+  }
+
+  protected onPaste(event: ClipboardEvent): void {
+    const files = Array.from(event.clipboardData?.files ?? []).filter((file) =>
+      ['image/png', 'image/jpeg', 'image/webp'].includes(file.type),
+    );
+    if (files.length) {
+      event.preventDefault();
+      void this.uploadFiles(files);
+    }
+  }
+
+  protected removeImage(id: string): void {
+    this.imageIds.update((ids) => ids.filter((value) => value !== id));
+    const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    this.content.update((value) =>
+      value.replace(new RegExp(`!?\\[[^\\]]*\\]\\(glacier-img://${escaped}\\)\\s*`, 'gi'), ''),
+    );
+    this.changed();
+  }
+
+  private async uploadFiles(files: File[]): Promise<void> {
+    for (const file of files) {
+      const index = this.uploads().length;
+      this.uploads.update((items) => [...items, { name: file.name, progress: 0 }]);
+      try {
+        const event = await lastValueFrom(
+          this.imagesApi.uploadImage(file, 'events', true).pipe(
+            tap((value) => {
+              if (value.type === HttpEventType.UploadProgress && value.total) {
+                const total = value.total;
+                this.uploads.update((items) =>
+                  items.map((item, itemIndex) =>
+                    itemIndex === index
+                      ? { ...item, progress: Math.round((100 * value.loaded) / total) }
+                      : item,
+                  ),
+                );
+              }
+            }),
+          ),
+        );
+        if (event.type === HttpEventType.Response && event.body) {
+          const id = event.body.id;
+          this.imageIds.update((ids) => [...ids, id]);
+          if (this.note()?.noteType === 'TEXT') {
+            this.content.update(
+              (value) =>
+                `${value}${value.endsWith('\n') || !value ? '' : '\n'}![${file.name}](glacier-img://${id})\n`,
+            );
+          }
+          this.uploads.update((items) => items.filter((_, itemIndex) => itemIndex !== index));
+          this.changed();
+        }
+      } catch (error) {
+        this.uploads.update((items) =>
+          items.map((item, itemIndex) =>
+            itemIndex === index ? { ...item, error: this.problems.message(error) } : item,
+          ),
+        );
+      }
+    }
+    this.refreshUsage();
+  }
+
+  private refreshUsage(): void {
+    this.currentUserApi
+      .getCurrentUserStorage()
+      .subscribe({ next: (value) => this.usage.set(value), error: () => this.usage.set(null) });
+  }
+
   protected toolbarAction(action: ToolbarAction): void {
     const textarea = this.textareaRef()?.nativeElement;
     if (!textarea) return;
@@ -291,6 +395,10 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   protected onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
+      if (this.lightbox()) {
+        this.lightbox.set(null);
+        return;
+      }
       void this.close();
       return;
     }
@@ -369,6 +477,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       archived: this.archived(),
       color: this.color(),
       labelIds: this.labelIds(),
+      imageIds: this.imageIds(),
     };
   }
 
@@ -389,6 +498,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.archived.set(note.archived);
     this.color.set(note.color);
     this.labelIds.set(note.labelIds);
+    this.imageIds.set(note.imageIds);
     this.dirty = false;
     this.saveState.set('saved');
     this.saveMessage.set('Saved');

@@ -15,6 +15,8 @@
     <openapi.generator.version>7.24.0</openapi.generator.version>
     <surefire.version>3.5.4</surefire.version>
     <password4j.version>1.8.4</password4j.version>
+    <twelvemonkeys.version>3.13.1</twelvemonkeys.version>
+    <aws.sdk.version>2.41.32</aws.sdk.version>
   </properties>
 
   <dependencyManagement>
@@ -23,6 +25,13 @@
         <groupId>io.quarkus.platform</groupId>
         <artifactId>quarkus-bom</artifactId>
         <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${aws.sdk.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -72,7 +81,25 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-scheduler</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-webp</artifactId>
+      <version>${twelvemonkeys.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

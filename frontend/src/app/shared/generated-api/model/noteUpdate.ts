@@ -19,6 +19,7 @@ export interface NoteUpdate {
     archived: boolean;
     color: ContentColor;
     labelIds: Array<string>;
+    imageIds?: Array<string>;
     version: number;
 }
 

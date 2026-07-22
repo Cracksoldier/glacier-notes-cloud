@@ -5,6 +5,8 @@ api.module.ts
 api/administration.service.ts
 api/api.ts
 api/authentication.service.ts
+api/currentUser.service.ts
+api/images.service.ts
 api/labels.service.ts
 api/notebooks.service.ts
 api/notes.service.ts
@@ -27,6 +29,7 @@ model/checklistItemView.ts
 model/contentColor.ts
 model/contentNote.ts
 model/emptyTrashResult.ts
+model/imageMetadata.ts
 model/initialAdministratorRequest.ts
 model/invitationAcceptanceRequest.ts
 model/invitationCreateRequest.ts
@@ -61,6 +64,7 @@ model/sessionContext.ts
 model/sessionSummary.ts
 model/setupCompletion.ts
 model/setupStatus.ts
+model/storageUsage.ts
 model/tokenRequest.ts
 model/validationError.ts
 model/versionRequest.ts

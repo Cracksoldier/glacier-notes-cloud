@@ -23,6 +23,11 @@ export class NoteCardComponent {
   );
   protected readonly colors = Object.values(ContentColor);
   protected readonly trashed = computed(() => Boolean(this.note().deletedAt));
+  protected readonly firstImage = computed(() => this.note().imageIds[0] ?? null);
+
+  protected imageUrl(id: string): string {
+    return `/api/v1/images/${id}/thumbnail`;
+  }
 
   protected open(): void {
     if (!this.trashed()) void this.store.openNote(this.note().id);

@@ -13,5 +13,16 @@ export interface AdminSettingsUpdate {
     allowedEmailDomains?: Array<string>;
     invitationExpirationHours?: number;
     passwordResetExpirationMinutes?: number;
+    allowedImageTypes?: Set<AdminSettingsUpdateAllowedImageTypesEnum>;
+    maximumImageBytes?: number;
+    perUserStorageQuotaBytes?: number;
+    imageOrphanGraceHours?: number;
 }
+export enum AdminSettingsUpdateAllowedImageTypesEnum {
+    ImagePng = 'image/png',
+    ImageJpeg = 'image/jpeg',
+    ImageWebp = 'image/webp'
+};
+
+
 

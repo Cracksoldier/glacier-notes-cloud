@@ -13,7 +13,8 @@ implementation and repository verification gates pass.
 | M4 | Complete | Invitations, user lifecycle administration, password resets, settings, and email delivery |
 | M5 | Complete | Owner-scoped notebooks, notes, checklists, labels, archive, trash, conversion, and pagination APIs |
 | M6 | Complete | Desktop-aligned Angular notes UI, secure Markdown, checklists, autosave, conflicts, themes, shortcuts, and responsive browser tests |
-| M7–M13 | Pending | Not yet implemented |
+| M7 | Complete | Secure image processing, owner-scoped references, quotas, thumbnails, garbage collection, and filesystem/PostgreSQL/S3 storage |
+| M8–M13 | Pending | Not yet implemented |
 
 ## M5 Verification
 
@@ -44,4 +45,20 @@ also run:
 ~~~bash
 cd frontend
 GLACIER_E2E_USERNAME=your-user GLACIER_E2E_PASSWORD=your-password npm run test:e2e
+~~~
+
+## M7 Verification
+
+M7 adds signature-based PNG, JPEG, and WebP processing; normalized full-size and thumbnail assets;
+owner-scoped streaming APIs; note references; per-user quotas; delayed orphan cleanup; and immutable
+filesystem, PostgreSQL, or private S3-compatible storage selection. The note editor supports file
+selection, drop, clipboard paste, progress, galleries, cards, and full-size viewing. Backend
+integration tests run the same image flow against all three storage implementations, including a
+disposable MinIO instance for S3 compatibility.
+
+The standard backend and frontend gates above verify M7. Validate both deployment definitions with:
+
+~~~bash
+docker compose config --quiet
+docker compose -f compose.yaml -f compose.minio.yaml config --quiet
 ~~~

@@ -58,6 +58,7 @@ import java.util.regex.Pattern;
 @ApplicationScoped
 public class ContentService {
     private static final Pattern CHECKBOX = Pattern.compile("^\\s*[-*+]\\s+\\[([ xX])]\\s*(.*)$");
+    private static final Pattern IMAGE_REFERENCE = Pattern.compile("glacier-img://([0-9a-fA-F-]{36})");
     private static final int PREVIEW_LENGTH = 240;
 
     private final CoreContentRepository repository;
@@ -233,6 +234,7 @@ public class ContentService {
         String content = request.getContent() == null ? "" : request.getContent();
         validateBody(request.getNoteType(), content, items);
         Set<UUID> labels = requireLabels(ownerId, safe(request.getLabelIds()));
+        List<UUID> images = requireImages(ownerId, safe(request.getImageIds()), content);
         Instant now = clock.now();
         NoteEntity entity = new NoteEntity(new Note(
             ownerId, noteId, notebookId, storedType(request.getNoteType()),
@@ -243,6 +245,7 @@ public class ContentService {
         repository.persistNote(ownerId, entity);
         replaceChecklist(ownerId, entity, items, now);
         repository.replaceNoteLabels(ownerId, noteId, labels);
+        repository.replaceNoteImages(ownerId, noteId, images, now);
         repository.flush(ownerId);
         return contentNote(ownerId, entity);
     }
@@ -254,11 +257,15 @@ public class ContentService {
         NoteType type = apiType(entity.type());
         validateBody(type, request.getContent(), request.getChecklistItems());
         Set<UUID> labels = requireLabels(ownerId, request.getLabelIds());
+        List<UUID> images = requireImages(ownerId,
+            request.getImageIds() == null ? repository.noteImageIds(ownerId, noteId) : request.getImageIds(),
+            request.getContent());
         Instant now = clock.now();
         entity.replace(request.getTitle(), request.getContent(), request.getPinned(), request.getArchived(),
             storedColor(request.getColor()), now);
         replaceChecklist(ownerId, entity, request.getChecklistItems(), now);
         repository.replaceNoteLabels(ownerId, noteId, labels);
+        repository.replaceNoteImages(ownerId, noteId, images, now);
         repository.flush(ownerId);
         return contentNote(ownerId, entity);
     }
@@ -376,6 +383,7 @@ public class ContentService {
         for (ChecklistItemEntity item : repository.checklistItems(ownerId, note.id(), true)) {
             tombstone(ownerId, "CHECKLIST_ITEM", item.id(), item.version(), now);
         }
+        repository.replaceNoteImages(ownerId, note.id(), List.of(), now);
         tombstone(ownerId, "NOTE", note.id(), note.version(), now);
         repository.removeNote(ownerId, note);
     }
@@ -407,6 +415,20 @@ public class ContentService {
         return distinct;
     }
 
+    private List<UUID> requireImages(OwnerId ownerId, List<UUID> explicit, String content) {
+        LinkedHashSet<UUID> ordered = new LinkedHashSet<>(explicit);
+        var matcher = IMAGE_REFERENCE.matcher(content == null ? "" : content);
+        while (matcher.find()) {
+            try { ordered.add(UUID.fromString(matcher.group(1))); }
+            catch (IllegalArgumentException ignored) { /* malformed references remain plain text */ }
+        }
+        if (ordered.size() > 500) throw ContentFailure.invalid("imageIds", "A note may reference at most 500 images.");
+        for (UUID imageId : ordered) {
+            if (!repository.ownedImageExists(ownerId, imageId)) throw ContentFailure.invalid("imageIds", "An image does not exist or is not owned by this user.");
+        }
+        return List.copyOf(ordered);
+    }
+
     private NotebookView notebookView(OwnerId ownerId, NotebookEntity entity) {
         return new NotebookView().id(entity.key().id()).name(entity.name()).color(apiColor(entity.color()))
             .defaultNotebook(entity.defaultNotebook()).sortOrder(entity.sortOrder())
@@ -427,6 +449,7 @@ public class ContentService {
             .noteType(apiType(entity.type())).title(entity.title()).content(entity.content())
             .checklistItems(items).pinned(entity.pinned()).archived(entity.archived())
             .color(apiColor(entity.color())).labelIds(repository.noteLabelIds(ownerId, entity.id()))
+            .imageIds(repository.noteImageIds(ownerId, entity.id()))
             .deletedAt(offset(entity.deletedAt())).createdAt(offset(entity.createdAt()))
             .updatedAt(offset(entity.updatedAt())).version(entity.version());
     }
@@ -438,6 +461,7 @@ public class ContentService {
             .noteType(apiType(entity.type())).title(entity.title()).preview(preview(entity.content()))
             .checklistPreview(checklist).pinned(entity.pinned()).archived(entity.archived())
             .color(apiColor(entity.color())).labelIds(repository.noteLabelIds(ownerId, entity.id()))
+            .imageIds(repository.noteImageIds(ownerId, entity.id()))
             .deletedAt(offset(entity.deletedAt())).createdAt(offset(entity.createdAt()))
             .updatedAt(offset(entity.updatedAt())).version(entity.version());
     }

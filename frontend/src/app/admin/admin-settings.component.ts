@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
+import { AdminSettingsUpdateAllowedImageTypesEnum } from '../shared/generated-api/model/adminSettingsUpdate';
 
 @Component({
   selector: 'app-admin-settings',
@@ -16,12 +17,20 @@ export class AdminSettingsComponent {
   domains = '';
   invitationHours = 168;
   resetMinutes = 60;
+  maximumImageMb = 10;
+  quotaMb = 1024;
+  orphanGraceHours = 24;
+  imageTypes = new Set<string>(['image/png', 'image/jpeg', 'image/webp']);
 
   constructor() {
     this.api.getAdminSettings().subscribe((value) => {
       this.domains = value.allowedEmailDomains.join('\n');
       this.invitationHours = value.invitationExpirationHours;
       this.resetMinutes = value.passwordResetExpirationMinutes;
+      this.maximumImageMb = value.maximumImageBytes / 1048576;
+      this.quotaMb = value.perUserStorageQuotaBytes / 1048576;
+      this.orphanGraceHours = value.imageOrphanGraceHours;
+      this.imageTypes = new Set(value.allowedImageTypes);
     });
   }
 
@@ -35,13 +44,26 @@ export class AdminSettingsComponent {
         allowedEmailDomains,
         invitationExpirationHours: this.invitationHours,
         passwordResetExpirationMinutes: this.resetMinutes,
+        allowedImageTypes: new Set([
+          ...this.imageTypes,
+        ] as AdminSettingsUpdateAllowedImageTypesEnum[]),
+        maximumImageBytes: Math.round(this.maximumImageMb * 1048576),
+        perUserStorageQuotaBytes: Math.round(this.quotaMb * 1048576),
+        imageOrphanGraceHours: this.orphanGraceHours,
       })
       .subscribe({
         next: (value) => {
           this.domains = value.allowedEmailDomains.join('\n');
-          this.message.set('Access settings saved.');
+          this.message.set('Instance settings saved.');
         },
         error: (failure) => this.error.set(failure.error?.detail ?? 'Settings could not be saved.'),
       });
+  }
+
+  toggleImageType(type: string, checked: boolean): void {
+    const next = new Set(this.imageTypes);
+    if (checked) next.add(type);
+    else if (next.size > 1) next.delete(type);
+    this.imageTypes = next;
   }
 }

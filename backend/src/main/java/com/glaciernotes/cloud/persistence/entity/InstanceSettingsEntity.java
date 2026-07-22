@@ -31,6 +31,14 @@ public class InstanceSettingsEntity {
     private int passwordResetExpirationMinutes;
     @Column(name = "allowed_email_domains", columnDefinition = "text[]")
     private String[] allowedEmailDomains;
+    @Column(name = "allowed_upload_types", columnDefinition = "text[]")
+    private String[] allowedUploadTypes;
+    @Column(name = "maximum_image_bytes")
+    private long maximumImageBytes;
+    @Column(name = "per_user_storage_quota_bytes")
+    private long perUserStorageQuotaBytes;
+    @Column(name = "image_orphan_grace_hours")
+    private int imageOrphanGraceHours;
 
     protected InstanceSettingsEntity() {
     }
@@ -58,10 +66,21 @@ public class InstanceSettingsEntity {
     public int invitationExpirationHours() { return invitationExpirationHours; }
     public int passwordResetExpirationMinutes() { return passwordResetExpirationMinutes; }
     public List<String> allowedEmailDomains() { return List.of(allowedEmailDomains); }
+    public List<String> allowedUploadTypes() { return List.of(allowedUploadTypes); }
+    public long maximumImageBytes() { return maximumImageBytes; }
+    public long perUserStorageQuotaBytes() { return perUserStorageQuotaBytes; }
+    public int imageOrphanGraceHours() { return imageOrphanGraceHours; }
 
     public void updateLifecycle(List<String> domains, Integer invitationHours, Integer resetMinutes) {
         if (domains != null) allowedEmailDomains = domains.toArray(String[]::new);
         if (invitationHours != null) invitationExpirationHours = invitationHours;
         if (resetMinutes != null) passwordResetExpirationMinutes = resetMinutes;
+    }
+
+    public void updateImages(List<String> types, Long maximumBytes, Long quotaBytes, Integer graceHours) {
+        if (types != null) allowedUploadTypes = types.toArray(String[]::new);
+        if (maximumBytes != null) maximumImageBytes = maximumBytes;
+        if (quotaBytes != null) perUserStorageQuotaBytes = quotaBytes;
+        if (graceHours != null) imageOrphanGraceHours = graceHours;
     }
 }

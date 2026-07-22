@@ -6,7 +6,13 @@
   (keydown)="onKeydown($event)"
 >
   @if (note(); as current) {
-  <section class="editor__body note-color-{{ color().toLowerCase() }}" aria-label="Note editor">
+  <section
+    class="editor__body note-color-{{ color().toLowerCase() }}"
+    aria-label="Note editor"
+    (drop)="onDrop($event)"
+    (dragover)="$event.preventDefault()"
+    (paste)="onPaste($event)"
+  >
     <header class="editor__header">
       <input
         class="editor__title"
@@ -25,7 +31,32 @@
         <i class="fa-solid fa-xmark"></i>
       </button>
     </header>
-    @if (current.noteType === 'TEXT') {
+    @if (imageIds().length) {
+    <section class="image-gallery" aria-label="Attached images">
+      @for (imageId of imageIds(); track imageId) {
+      <figure>
+        <button type="button" class="image-gallery__preview" (click)="lightbox.set(imageId)">
+          <img [src]="imageUrl(imageId, true)" alt="Note attachment" loading="lazy">
+        </button>
+        <button
+          type="button"
+          class="image-gallery__remove"
+          aria-label="Remove image"
+          (click)="removeImage(imageId)"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </figure>
+      }
+    </section>
+    } @for (upload of uploads(); track $index) {
+    <div class="image-upload" [class.image-upload--error]="upload.error" role="status">
+      <span>{{ upload.name }}</span>
+      @if (upload.error) { <span>{{ upload.error }}</span> } @else {
+      <progress max="100" [value]="upload.progress"></progress><span>{{ upload.progress }}%</span>
+      }
+    </div>
+    } @if (current.noteType === 'TEXT') {
     <div class="editor__toolbar" role="toolbar" aria-label="Markdown toolbar">
       <div class="editor__formatting">
         @for (button of toolbar; track button.action) {
@@ -128,9 +159,17 @@
           ></i>
           Convert
         </button>
-        <button type="button" disabled title="Image assets arrive in M7">
+        <input
+          #imagePicker
+          class="visually-hidden"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          multiple
+          (change)="chooseImages(imagePicker)"
+        >
+        <button type="button" (click)="imagePicker.click()">
           <i class="fa-solid fa-image"></i>
-          Images (M7)
+          Images
         </button>
         <details>
           <summary><i class="fa-solid fa-palette"></i> Color</summary>
@@ -181,14 +220,40 @@
         </button>
       </div>
       <div class="save-state save-state--{{ saveState() }}" role="status" aria-live="polite">
-        @if (saveState() === 'saving') { <i class="fa-solid fa-circle-notch fa-spin"></i> } @else if
-        (saveState() === 'saved') { <i class="fa-solid fa-check"></i> } @else {
+        @if (usage(); as storage) {
+        <span
+          >{{ (storage.usedBytes / 1048576).toFixed(1) }}
+          / {{ (storage.quotaBytes / 1048576).toFixed(0) }} MB</span
+        >
+        } @if (saveState() === 'saving') {
+        <i class="fa-solid fa-circle-notch fa-spin"></i>
+        } @if (saveState() === 'saved') {
+        <i class="fa-solid fa-check"></i>
+        } @if (saveState() !== 'saving' && saveState() !== 'saved') {
         <i class="fa-solid fa-circle-exclamation"></i>
         }
         {{ saveMessage() }}
         @if (saveState() === 'error') { <button type="button" (click)="retry()">Retry</button> }
       </div>
     </footer>
+    @if (lightbox(); as imageId) {
+    <div
+      class="image-lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image preview"
+      (click)="lightbox.set(null)"
+    >
+      <button type="button" aria-label="Close image preview" (click)="lightbox.set(null)">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <img
+        [src]="imageUrl(imageId)"
+        alt="Full-size note attachment"
+        (click)="$event.stopPropagation()"
+      >
+    </div>
+    }
   </section>
   }
 </dialog>

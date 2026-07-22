@@ -330,6 +330,11 @@ public class LifecycleService {
             ? null : normalizeDomains(update.getAllowedEmailDomains());
         var entity = entityManager.find(InstanceSettingsEntity.class, (short) 1, LockModeType.PESSIMISTIC_WRITE);
         entity.updateLifecycle(domains, update.getInvitationExpirationHours(), update.getPasswordResetExpirationMinutes());
+        entity.updateImages(
+            update.getAllowedImageTypes() == null || update.getAllowedImageTypes().isEmpty()
+                ? null : update.getAllowedImageTypes().stream().map(Object::toString).toList(),
+            update.getMaximumImageBytes(), update.getPerUserStorageQuotaBytes(), update.getImageOrphanGraceHours()
+        );
         audit("INSTANCE_SETTINGS_CHANGED", actor, null, "INSTANCE_SETTINGS", null, correlationId,
             Map.of("area", "user-lifecycle"));
         return settingsModel(entity);
@@ -478,7 +483,11 @@ public class LifecycleService {
     private AdminSettings settingsModel(InstanceSettingsEntity value) {
         return new AdminSettings().allowedEmailDomains(value.allowedEmailDomains())
             .invitationExpirationHours(value.invitationExpirationHours())
-            .passwordResetExpirationMinutes(value.passwordResetExpirationMinutes());
+            .passwordResetExpirationMinutes(value.passwordResetExpirationMinutes())
+            .allowedImageTypes(value.allowedUploadTypes().stream().map(AdminSettings.AllowedImageTypesEnum::fromValue).toList())
+            .maximumImageBytes(value.maximumImageBytes())
+            .perUserStorageQuotaBytes(value.perUserStorageQuotaBytes())
+            .imageOrphanGraceHours(value.imageOrphanGraceHours());
     }
 
     private InstanceSettingsEntity settings() {

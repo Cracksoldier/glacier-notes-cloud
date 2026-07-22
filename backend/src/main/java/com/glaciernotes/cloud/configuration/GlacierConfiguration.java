@@ -18,6 +18,8 @@ public interface GlacierConfiguration {
 
     Smtp smtp();
 
+    Images images();
+
     interface Bootstrap {
         Optional<String> token();
 
@@ -67,5 +69,26 @@ public interface GlacierConfiguration {
         Optional<String> senderName();
 
         Optional<String> senderAddress();
+    }
+
+    interface Images {
+        @WithDefault("FILESYSTEM") String backend();
+        @WithDefault("/var/lib/glacier-notes/images") Path filesystemRoot();
+        @WithDefault("41943040") long maximumUploadBytes();
+        @WithDefault("40000000") long maximumPixels();
+        @WithDefault("2560") int maximumEdge();
+        @WithDefault("480") int thumbnailEdge();
+        @WithDefault("10") int processingTimeoutSeconds();
+        S3 s3();
+
+        interface S3 {
+            Optional<String> endpoint();
+            @WithDefault("us-east-1") String region();
+            @WithDefault("glacier-notes") String bucket();
+            @WithDefault("true") boolean pathStyle();
+            Optional<Path> accessKeyFile();
+            Optional<Path> secretKeyFile();
+            Optional<String> serverSideEncryption();
+        }
     }
 }

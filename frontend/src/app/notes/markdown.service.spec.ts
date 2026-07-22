@@ -48,4 +48,15 @@ describe('MarkdownService', () => {
     expect(html).toContain('<strong>bold</strong>');
     expect(html).not.toContain('<h1>');
   });
+
+  it('renders only owned Glacier image references', () => {
+    const id = '80e10c3b-aaba-4f1c-a427-7564b1d5eaaf';
+    const html = sanitizer.sanitize(
+      SecurityContext.HTML,
+      service.render(`![attachment](glacier-img://${id}) ![external](https://example.com/x.png)`),
+    );
+
+    expect(html).toContain(`/api/v1/images/${id}`);
+    expect(html).not.toContain('example.com/x.png');
+  });
 });

@@ -37,6 +37,7 @@ Ensure Docker is running, then start Quarkus from the repository root:
 ~~~bash
 export GLACIER_BOOTSTRAP_TOKEN=local-bootstrap-token-development-only-2026
 export GLACIER_SECURITY_SESSION_SECRET=local-session-secret-development-only-2026
+export GLACIER_IMAGE_FILESYSTEM_ROOT=/tmp/glacier-notes-dev-images
 ./mvnw -pl backend quarkus:dev
 ~~~
 

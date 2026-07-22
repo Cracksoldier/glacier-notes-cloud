@@ -14,6 +14,8 @@ export interface AdminStatus {
     status: AdminStatusStatusEnum;
     apiVersion: AdminStatusApiVersionEnum;
     database: AdminStatusDatabaseEnum;
+    imageStorageBackend: AdminStatusImageStorageBackendEnum;
+    imageStorage: AdminStatusImageStorageEnum;
 }
 export enum AdminStatusServiceEnum {
     GlacierNotesCloud = 'glacier-notes-cloud'
@@ -26,6 +28,15 @@ export enum AdminStatusApiVersionEnum {
 };
 export enum AdminStatusDatabaseEnum {
     Up = 'up'
+};
+export enum AdminStatusImageStorageBackendEnum {
+    Filesystem = 'FILESYSTEM',
+    Postgresql = 'POSTGRESQL',
+    S3 = 'S3'
+};
+export enum AdminStatusImageStorageEnum {
+    Up = 'up',
+    Down = 'down'
 };
 
 

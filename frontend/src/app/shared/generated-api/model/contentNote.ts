@@ -23,6 +23,7 @@ export interface ContentNote {
     archived: boolean;
     color: ContentColor;
     labelIds: Array<string>;
+    imageIds: Array<string>;
     deletedAt?: string;
     createdAt: string;
     updatedAt: string;

@@ -56,6 +56,35 @@ use `SameSite=Lax` and `Path=/`.
 | `GLACIER_SMTP_START_TLS`, `GLACIER_SMTP_TLS` | STARTTLS mode and implicit TLS switch |
 | `GLACIER_SMTP_USERNAME`, `GLACIER_SMTP_PASSWORD_FILE` | SMTP login name and host path to its password file |
 | `GLACIER_SMTP_SENDER_NAME`, `GLACIER_SMTP_SENDER_ADDRESS` | Display name and envelope sender used by lifecycle email |
+| `GLACIER_IMAGE_BACKEND` | `FILESYSTEM` (default), `POSTGRESQL`, or `S3`; immutable after the first upload |
+| `GLACIER_IMAGE_FILESYSTEM_ROOT` | Filesystem object root; Compose uses the persistent `image_data` volume |
+| `GLACIER_S3_ENDPOINT`, `GLACIER_S3_REGION`, `GLACIER_S3_BUCKET` | Private S3-compatible endpoint and bucket configuration |
+| `GLACIER_S3_PATH_STYLE` | Force path-style addressing for MinIO and compatible providers |
+| `GLACIER_S3_ACCESS_KEY_FILE`, `GLACIER_S3_SECRET_KEY_FILE` | Read-only credential files for S3 storage |
+| `GLACIER_S3_SERVER_SIDE_ENCRYPTION` | Optional `AES256` or `aws:kms` object encryption setting |
+
+Image uploads accept PNG, JPEG, and WebP and are normalized before storage. The administration UI
+controls the stored-image limit, per-user quota, accepted types, and orphan grace period. The raw
+processing envelope remains 40 MB and 40 megapixels. S3 objects must be private; Glacier streams
+authorized objects and does not use public or presigned URLs.
+
+The selected backend is recorded in PostgreSQL. Once an image exists, changing
+`GLACIER_IMAGE_BACKEND` intentionally prevents startup because M7 does not provide backend
+migration. Back up image objects and PostgreSQL metadata from the same point in time.
+
+For disposable local S3-compatible testing, start the MinIO overlay before any image has been
+uploaded to another backend:
+
+```bash
+openssl rand -hex 16 > deployment/secrets/s3-access-key.txt
+openssl rand -base64 36 > deployment/secrets/s3-secret-key.txt
+chmod 600 deployment/secrets/s3-*.txt
+docker compose -f compose.yaml -f compose.minio.yaml up --build -d
+```
+
+The overlay creates a private bucket and exposes the MinIO API on `127.0.0.1:9002` and console on
+`127.0.0.1:9003`. Credentials are read only from the mounted secret files. Set
+`GLACIER_S3_ACCESS_KEY_FILE` and `GLACIER_S3_SECRET_KEY_FILE` in `.env` to use different host paths.
 
 SMTP is optional. With SMTP disabled, administrators receive copyable invitation and password-reset
 links in the dashboard; user-requested password resets remain neutral no-ops. To enable delivery,

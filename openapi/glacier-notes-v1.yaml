@@ -15,6 +15,8 @@ tags:
   - name: Administration
   - name: Notebooks
   - name: Notes
+  - name: Images
+  - name: Current User
   - name: Labels
 paths:
   /api/v1/ping:
@@ -678,6 +680,106 @@ paths:
         '409': { $ref: '#/components/responses/ProblemResponse' }
         '422': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/images:
+    post:
+      tags: [Images]
+      summary: Upload and normalize an owned image
+      operationId: uploadImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Normalized image metadata
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImageMetadata' }
+        '413': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/images/{imageId}:
+    parameters:
+      - name: imageId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Images]
+      summary: Stream an owned normalized image
+      operationId: downloadImage
+      responses:
+        '200':
+          description: Normalized image bytes
+          content:
+            image/png: { schema: { type: string, format: binary } }
+            image/jpeg: { schema: { type: string, format: binary } }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    delete:
+      tags: [Images]
+      summary: Delete an unreferenced owned image immediately
+      operationId: deleteImage
+      responses:
+        '204': { description: Image deleted }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/images/{imageId}/thumbnail:
+    get:
+      tags: [Images]
+      summary: Stream an owned image thumbnail
+      operationId: downloadImageThumbnail
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Thumbnail bytes
+          content:
+            image/png: { schema: { type: string, format: binary } }
+            image/jpeg: { schema: { type: string, format: binary } }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/images/{imageId}/metadata:
+    get:
+      tags: [Images]
+      summary: Get owned image metadata
+      operationId: getImageMetadata
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Image metadata
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImageMetadata' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/storage:
+    get:
+      tags: [Current User]
+      summary: Get current user's image-storage usage
+      operationId: getCurrentUserStorage
+      responses:
+        '200':
+          description: Current storage usage and quota
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StorageUsage' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/notes/trash:
     delete:
       tags: [Notes]
@@ -1090,7 +1192,7 @@ components:
           $ref: '#/components/schemas/SessionSummary'
     AdminStatus:
       type: object
-      required: [service, status, apiVersion, database]
+      required: [service, status, apiVersion, database, imageStorageBackend, imageStorage]
       properties:
         service:
           type: string
@@ -1104,6 +1206,12 @@ components:
         database:
           type: string
           enum: [up]
+        imageStorageBackend:
+          type: string
+          enum: [FILESYSTEM, POSTGRESQL, S3]
+        imageStorage:
+          type: string
+          enum: [up, down]
     TokenRequest:
       type: object
       required: [token]
@@ -1214,13 +1322,19 @@ components:
         expiresAt: { type: string, format: date-time }
     AdminSettings:
       type: object
-      required: [allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes]
+      required: [allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours]
       properties:
         allowedEmailDomains:
           type: array
           items: { type: string, maxLength: 253 }
         invitationExpirationHours: { type: integer, minimum: 1, maximum: 720 }
         passwordResetExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
+        allowedImageTypes:
+          type: array
+          items: { type: string, enum: [image/png, image/jpeg, image/webp] }
+        maximumImageBytes: { type: integer, format: int64, minimum: 1048576, maximum: 52428800 }
+        perUserStorageQuotaBytes: { type: integer, format: int64, minimum: 10485760, maximum: 1099511627776 }
+        imageOrphanGraceHours: { type: integer, minimum: 1, maximum: 720 }
     AdminSettingsUpdate:
       type: object
       properties:
@@ -1230,6 +1344,37 @@ components:
           items: { type: string, maxLength: 253 }
         invitationExpirationHours: { type: integer, minimum: 1, maximum: 720 }
         passwordResetExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
+        allowedImageTypes:
+          type: array
+          uniqueItems: true
+          items: { type: string, enum: [image/png, image/jpeg, image/webp] }
+        maximumImageBytes: { type: integer, format: int64, minimum: 1048576, maximum: 52428800 }
+        perUserStorageQuotaBytes: { type: integer, format: int64, minimum: 10485760, maximum: 1099511627776 }
+        imageOrphanGraceHours: { type: integer, minimum: 1, maximum: 720 }
+    ImageMetadata:
+      type: object
+      required: [id, mimeType, byteSize, width, height, thumbnailMimeType, thumbnailByteSize, thumbnailWidth, thumbnailHeight, contentUrl, thumbnailUrl, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        mimeType: { type: string, enum: [image/png, image/jpeg] }
+        byteSize: { type: integer, format: int64, minimum: 0 }
+        width: { type: integer, minimum: 1 }
+        height: { type: integer, minimum: 1 }
+        thumbnailMimeType: { type: string, enum: [image/png, image/jpeg] }
+        thumbnailByteSize: { type: integer, format: int64, minimum: 0 }
+        thumbnailWidth: { type: integer, minimum: 1 }
+        thumbnailHeight: { type: integer, minimum: 1 }
+        contentUrl: { type: string, format: uri-reference }
+        thumbnailUrl: { type: string, format: uri-reference }
+        createdAt: { type: string, format: date-time }
+    StorageUsage:
+      type: object
+      required: [usedBytes, quotaBytes, remainingBytes, imageCount]
+      properties:
+        usedBytes: { type: integer, format: int64, minimum: 0 }
+        quotaBytes: { type: integer, format: int64, minimum: 0 }
+        remainingBytes: { type: integer, format: int64, minimum: 0 }
+        imageCount: { type: integer, format: int64, minimum: 0 }
     ContentColor:
       type: string
       enum: [DEFAULT, RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, GRAY]
@@ -1340,6 +1485,11 @@ components:
           type: array
           maxItems: 500
           items: { type: string, format: uuid }
+        imageIds:
+          type: array
+          maxItems: 500
+          default: []
+          items: { type: string, format: uuid }
       example:
         id: 80e10c3b-aaba-4f1c-a427-7564b1d5eaaf
         notebookId: 6bc170c2-94c2-4400-a558-b00ffc449fb3
@@ -1370,10 +1520,14 @@ components:
           type: array
           maxItems: 500
           items: { type: string, format: uuid }
+        imageIds:
+          type: array
+          maxItems: 500
+          items: { type: string, format: uuid }
         version: { type: integer, format: int64, minimum: 0 }
     ContentNote:
       type: object
-      required: [id, notebookId, noteType, title, content, checklistItems, pinned, archived, color, labelIds, createdAt, updatedAt, version]
+      required: [id, notebookId, noteType, title, content, checklistItems, pinned, archived, color, labelIds, imageIds, createdAt, updatedAt, version]
       properties:
         id: { type: string, format: uuid }
         notebookId: { type: string, format: uuid }
@@ -1389,13 +1543,16 @@ components:
         labelIds:
           type: array
           items: { type: string, format: uuid }
+        imageIds:
+          type: array
+          items: { type: string, format: uuid }
         deletedAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
         version: { type: integer, format: int64, minimum: 0 }
     NoteSummary:
       type: object
-      required: [id, notebookId, noteType, title, preview, checklistPreview, pinned, archived, color, labelIds, createdAt, updatedAt, version]
+      required: [id, notebookId, noteType, title, preview, checklistPreview, pinned, archived, color, labelIds, imageIds, createdAt, updatedAt, version]
       properties:
         id: { type: string, format: uuid }
         notebookId: { type: string, format: uuid }
@@ -1410,6 +1567,9 @@ components:
         archived: { type: boolean }
         color: { $ref: '#/components/schemas/ContentColor' }
         labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        imageIds:
           type: array
           items: { type: string, format: uuid }
         deletedAt: { type: string, format: date-time }

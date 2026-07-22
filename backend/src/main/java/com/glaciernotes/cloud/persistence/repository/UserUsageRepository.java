@@ -15,7 +15,7 @@ public class UserUsageRepository {
     public UserUsage summarize(OwnerId ownerId) {
         var counts = (Object[]) entityManager.createNativeQuery("""
             select
-              coalesce((select sum(byte_size) from image_assets where owner_id = ?1), 0),
+              coalesce((select sum(byte_size + coalesce(thumbnail_byte_size, 0)) from image_assets where owner_id = ?1), 0),
               (select count(*) from notes where owner_id = ?1),
               (select count(*) from notebooks where owner_id = ?1),
               (select count(*) from image_assets where owner_id = ?1)

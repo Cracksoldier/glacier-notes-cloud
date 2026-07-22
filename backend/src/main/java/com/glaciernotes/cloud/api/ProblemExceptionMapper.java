@@ -4,6 +4,7 @@ import com.glaciernotes.cloud.application.setup.SetupFailure;
 import com.glaciernotes.cloud.application.auth.AuthenticationFailure;
 import com.glaciernotes.cloud.application.lifecycle.LifecycleFailure;
 import com.glaciernotes.cloud.application.content.ContentFailure;
+import com.glaciernotes.cloud.application.image.ImageFailure;
 import com.glaciernotes.cloud.generated.model.ProblemDetails;
 import com.glaciernotes.cloud.generated.model.ValidationError;
 import jakarta.validation.ConstraintViolationException;
@@ -78,6 +79,18 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
         }
         if (exception instanceof ContentFailure contentFailure) {
             return describeContentFailure(contentFailure);
+        }
+        if (exception instanceof ImageFailure imageFailure) {
+            int status = switch (imageFailure.reason()) {
+                case INVALID -> 422;
+                case TOO_LARGE -> 413;
+                case NOT_FOUND -> 404;
+                case CONFLICT -> 409;
+                case UNAVAILABLE -> 503;
+            };
+            return new Description(status, status == 413 ? "Image Too Large" : status == 422 ? "Invalid Image" :
+                status == 404 ? "Not Found" : status == 409 ? "Image Still Referenced" : "Image Storage Unavailable",
+                imageFailure.code(), imageFailure.getMessage(), List.of(), 0);
         }
         if (exception instanceof ConstraintViolationException violations) {
             var validationErrors = violations.getConstraintViolations().stream()

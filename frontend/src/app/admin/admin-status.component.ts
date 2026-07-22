@@ -15,6 +15,8 @@ import type { AdminStatus } from '../shared/generated-api/model/adminStatus';
             <div><dt>Service</dt><dd>{{ value.service }}</dd></div>
             <div><dt>API</dt><dd>{{ value.apiVersion }}</dd></div>
             <div><dt>Database</dt><dd>{{ value.database }}</dd></div>
+            <div><dt>Image backend</dt><dd>{{ value.imageStorageBackend }}</dd></div>
+            <div><dt>Image storage</dt><dd>{{ value.imageStorage }}</dd></div>
           </dl>
         } @else {
           <p role="status">Loading administrative status…</p>

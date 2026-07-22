@@ -220,6 +220,46 @@ public class CoreContentRepository {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public List<UUID> noteImageIds(OwnerId ownerId, UUID noteId) {
+        return entityManager.createNativeQuery("select image_id from note_image_references " +
+            "where owner_id = :owner and note_id = :note order by sort_order, image_id")
+            .setParameter("owner", ownerId.value()).setParameter("note", noteId).getResultList();
+    }
+
+    public boolean ownedImageExists(OwnerId ownerId, UUID imageId) {
+        return ((Number) entityManager.createNativeQuery(
+            "select count(*) from image_assets where owner_id = :owner and id = :image")
+            .setParameter("owner", ownerId.value()).setParameter("image", imageId).getSingleResult()).longValue() > 0;
+    }
+
+    public void replaceNoteImages(OwnerId ownerId, UUID noteId, List<UUID> imageIds, Instant now) {
+        @SuppressWarnings("unchecked") List<UUID> previous = entityManager.createNativeQuery(
+            "select image_id from note_image_references where owner_id = :owner and note_id = :note")
+            .setParameter("owner", ownerId.value()).setParameter("note", noteId).getResultList();
+        entityManager.createNativeQuery("delete from note_image_references where owner_id = :owner and note_id = :note")
+            .setParameter("owner", ownerId.value()).setParameter("note", noteId).executeUpdate();
+        for (int index = 0; index < imageIds.size(); index++) {
+            UUID imageId = imageIds.get(index);
+            entityManager.createNativeQuery("insert into note_image_references(owner_id, note_id, image_id, sort_order) " +
+                "values (:owner, :note, :image, :sort)")
+                .setParameter("owner", ownerId.value()).setParameter("note", noteId)
+                .setParameter("image", imageId).setParameter("sort", index).executeUpdate();
+            entityManager.createNativeQuery("update image_assets set orphaned_at = null, updated_at = :now " +
+                "where owner_id = :owner and id = :image")
+                .setParameter("now", now).setParameter("owner", ownerId.value()).setParameter("image", imageId).executeUpdate();
+        }
+        for (UUID removed : previous) {
+            if (!imageIds.contains(removed)) {
+                entityManager.createNativeQuery("update image_assets set orphaned_at = coalesce(orphaned_at, :now), updated_at = :now " +
+                    "where owner_id = :owner and id = :image " +
+                    "and not exists (select 1 from note_image_references r where r.owner_id = :owner and r.image_id = :image) " +
+                    "and not exists (select 1 from note_version_image_references r where r.owner_id = :owner and r.image_id = :image)")
+                    .setParameter("now", now).setParameter("owner", ownerId.value()).setParameter("image", removed).executeUpdate();
+            }
+        }
+    }
+
     public int moveNotebookNotes(OwnerId ownerId, UUID from, UUID to, boolean trash, Instant now) {
         String sql = "update notes set notebook_id = :to, updated_at = :now, version = version + 1" +
             (trash ? ", deleted_at = coalesce(deleted_at, :now)" : "") +

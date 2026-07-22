@@ -1,4 +1,4 @@
-<h1>Access settings</h1>
+<h1>Instance settings</h1>
 <p>
   Leave domains empty to allow invitations to any valid email address. Enter one exact domain per
   line.
@@ -23,6 +23,45 @@
       min="5"
       max="1440"
       [(ngModel)]="resetMinutes"
+    ></label
+  >
+  <fieldset>
+    <legend>Accepted image uploads</legend>
+    @for (type of ['image/png', 'image/jpeg', 'image/webp']; track type) {
+    <label
+      ><input
+        type="checkbox"
+        [checked]="imageTypes.has(type)"
+        (change)="toggleImageType(type, $any($event.target).checked)"
+      > {{ type }}</label
+    >
+    }
+  </fieldset>
+  <label
+    >Maximum normalized image (MB)<input
+      name="maximumImageMb"
+      type="number"
+      min="1"
+      max="50"
+      [(ngModel)]="maximumImageMb"
+    ></label
+  >
+  <label
+    >Per-user image quota (MB)<input
+      name="quotaMb"
+      type="number"
+      min="10"
+      max="1048576"
+      [(ngModel)]="quotaMb"
+    ></label
+  >
+  <label
+    >Unreferenced image grace period (hours)<input
+      name="orphanGraceHours"
+      type="number"
+      min="1"
+      max="720"
+      [(ngModel)]="orphanGraceHours"
     ></label
   >
   <button type="submit">Save settings</button>

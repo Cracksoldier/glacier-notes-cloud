@@ -3,6 +3,7 @@ package com.glaciernotes.cloud.api;
 import com.glaciernotes.cloud.generated.api.AdministrationApi;
 import com.glaciernotes.cloud.generated.model.AdminStatus;
 import com.glaciernotes.cloud.application.lifecycle.LifecycleService;
+import com.glaciernotes.cloud.application.port.BinaryAssetStorage;
 import com.glaciernotes.cloud.generated.model.*;
 import com.glaciernotes.cloud.security.CookieManager;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -21,14 +22,17 @@ public class AdministrationResource implements AdministrationApi {
     private final LifecycleService lifecycle;
     private final SecurityIdentity identity;
     private final CookieManager cookies;
+    private final BinaryAssetStorage imageStorage;
 
     @Context
     HttpServerResponse response;
 
-    public AdministrationResource(LifecycleService lifecycle, SecurityIdentity identity, CookieManager cookies) {
+    public AdministrationResource(LifecycleService lifecycle, SecurityIdentity identity, CookieManager cookies,
+                                  BinaryAssetStorage imageStorage) {
         this.lifecycle = lifecycle;
         this.identity = identity;
         this.cookies = cookies;
+        this.imageStorage = imageStorage;
     }
 
     @Override
@@ -37,7 +41,9 @@ public class AdministrationResource implements AdministrationApi {
             .service(AdminStatus.ServiceEnum.GLACIER_NOTES_CLOUD)
             .status(AdminStatus.StatusEnum.OK)
             .apiVersion(AdminStatus.ApiVersionEnum.V1)
-            .database(AdminStatus.DatabaseEnum.UP);
+            .database(AdminStatus.DatabaseEnum.UP)
+            .imageStorageBackend(AdminStatus.ImageStorageBackendEnum.fromValue(imageStorage.backend()))
+            .imageStorage(imageStorage.healthy() ? AdminStatus.ImageStorageEnum.UP : AdminStatus.ImageStorageEnum.DOWN);
     }
 
     @Override

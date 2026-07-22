@@ -5,6 +5,13 @@ import { Marked, Renderer } from 'marked';
 
 const renderer = new Renderer();
 renderer.html = ({ text }) => escapeHtml(text);
+renderer.image = ({ href, text, title }) => {
+  const match = /^glacier-img:\/\/([0-9a-fA-F-]{36})$/.exec(href);
+  if (!match) return escapeHtml(text || '');
+  const caption = escapeHtml(text || 'Image');
+  const titleAttribute = title ? ` title="${escapeHtml(title)}"` : '';
+  return `<img src="/api/v1/images/${match[1]}" alt="${caption}"${titleAttribute} loading="lazy">`;
+};
 
 const marked = new Marked({ breaks: true, gfm: true, renderer });
 
@@ -15,8 +22,9 @@ export class MarkdownService {
   render(value: string): SafeHtml {
     const html = marked.parse(value, { async: false }) as string;
     const clean = DOMPurify.sanitize(html, {
-      FORBID_TAGS: ['style', 'form', 'input', 'button', 'img'],
+      FORBID_TAGS: ['style', 'form', 'input', 'button'],
       FORBID_ATTR: ['style'],
+      ALLOWED_URI_REGEXP: /^(?:\/api\/v1\/images\/[0-9a-fA-F-]{36}|https?:|mailto:)/,
     });
     return this.angularSanitizer.bypassSecurityTrustHtml(this.secureLinks(clean));
   }
@@ -36,6 +44,9 @@ export class MarkdownService {
     for (const link of template.content.querySelectorAll('a')) {
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
+    }
+    for (const image of template.content.querySelectorAll('img')) {
+      image.loading = 'lazy';
     }
     return template.innerHTML;
   }
