@@ -61,3 +61,5 @@ dated runs; do not replace an earlier failure with a later success.
 | R5 | M6 | `bf7e3f0..e31f9e2` | Completed | 5 | [Summary](m6/R5-M6-summary.md), [raw JSONL](m6/R5-M6.jsonl), [test results](m6/test-results.md) |
 | R6 | M7 | `e31f9e2..ec36449` | Completed | 15 | [Summary](m7/R6-M7-summary.md), [raw JSONL](m7/R6-M7.jsonl), [test results](m7/test-results.md) |
 | R7 | M8 | `ec36449..2cf76f3` | Completed | 6 | [Summary](m8/R7-M8-summary.md), [raw JSONL](m8/R7-M8.jsonl), [test results](m8/test-results.md) |
+| R8 | M9 | `2cf76f3..0f02251` | Completed | 14 | [Summary](m9/R8-M9-summary.md), [raw JSONL](m9/R8-M9.jsonl), [test results](m9/test-results.md) |
+| R9 | M10 | `0f02251..ea3cce3` | Completed | 8 | [Summary](m10/R9-M10-summary.md), [raw JSONL](m10/R9-M10.jsonl), [test results](m10/test-results.md) |
