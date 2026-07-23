@@ -57,3 +57,4 @@ dated runs; do not replace an earlier failure with a later success.
 | R1 | M2 | `9933582..b13b862` | Completed | 10 | [Summary](m2/R1-M2-summary.md), [raw JSONL](m2/R1-M2.jsonl), [test results](m2/test-results.md) |
 | R2 | M3 | `b13b862..f83da35` | Completed | 9 | [Summary](m3/R2-M3-summary.md), [raw JSONL](m3/R2-M3.jsonl), [test results](m3/test-results.md) |
 | R3 | M4 | `f83da35..08d3f76` | Completed | 13 | [Summary](m4/R3-M4-summary.md), [raw JSONL](m4/R3-M4.jsonl), [test results](m4/test-results.md) |
+| R4 | M5 | `08d3f76..bf7e3f0` | Completed | 3 | [Summary](m5/R4-M5-summary.md), [raw JSONL](m5/R4-M5.jsonl), [test results](m5/test-results.md) |
