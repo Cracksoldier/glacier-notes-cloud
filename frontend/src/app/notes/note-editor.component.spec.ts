@@ -81,6 +81,10 @@ describe('NoteEditorComponent', () => {
       note,
       expect.objectContaining({ title: 'After', version: 0 }),
     );
+    fixture.detectChanges();
+    expect(
+      (fixture.nativeElement.querySelector('.save-state__message') as HTMLElement).textContent,
+    ).toBe('Saved');
   });
 
   it('snapshots meaningful saved state when the editor closes', async () => {

@@ -26,17 +26,26 @@ test('search, history, and two-tab conflict recovery work together', async ({ co
   await page.getByLabel('Note content').fill(`Searchable ${marker}`);
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Save and close' }).click();
+  await expect(page.locator('app-note-editor')).not.toBeVisible();
 
   await page.getByPlaceholder('Search notes…').fill(marker);
-  await expect(page.getByText(originalTitle, { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Open note' }).click();
+  await expect(page.getByRole('heading', { name: `Search: ${marker}` })).toBeVisible();
+  const searchResult = page
+    .getByRole('article')
+    .filter({ has: page.getByText(originalTitle, { exact: true }) });
+  await expect(searchResult).toBeVisible();
+  await searchResult.getByRole('button', { name: 'Open note' }).click();
 
   const secondTab = await context.newPage();
   await secondTab.goto(page.url());
   await expect(secondTab.locator('app-notes-shell')).toBeVisible();
   await secondTab.getByPlaceholder('Search notes…').fill(marker);
-  await expect(secondTab.getByText(originalTitle, { exact: true })).toBeVisible();
-  await secondTab.getByRole('button', { name: 'Open note' }).click();
+  await expect(secondTab.getByRole('heading', { name: `Search: ${marker}` })).toBeVisible();
+  const secondSearchResult = secondTab
+    .getByRole('article')
+    .filter({ has: secondTab.getByText(originalTitle, { exact: true }) });
+  await expect(secondSearchResult).toBeVisible();
+  await secondSearchResult.getByRole('button', { name: 'Open note' }).click();
 
   await page.getByLabel('Note title').fill(serverTitle);
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();

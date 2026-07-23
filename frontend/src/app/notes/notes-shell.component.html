@@ -325,7 +325,7 @@
           ><i class="fa-solid fa-trash-can"></i>
           {{ i18n.t('trash') }}</a
         >
-        <button type="button" class="sidebar-item" (click)="overlay.set('transfer')">
+        <button type="button" class="sidebar-item" (click)="overlay.set('transfer'); closeDrawer()">
           <i class="fa-solid fa-file-export"></i>
           Import / Export <small>M9</small>
         </button>

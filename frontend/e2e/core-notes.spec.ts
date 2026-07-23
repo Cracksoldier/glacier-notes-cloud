@@ -80,8 +80,12 @@ test('a user completes the non-image core note workflow', async ({ page }, testI
   await trashedCard.getByRole('button', { name: 'Restore' }).click();
   await expect(trashedCard).not.toBeVisible();
 
-  await page.getByRole('button', { name: 'Switch to light theme' }).click();
-  await expect(page.locator('html')).toHaveClass(/theme-light/);
+  const themeToggle = page.getByRole('button', { name: /Switch to (light|dark) theme/ });
+  const themeAction = await themeToggle.getAttribute('aria-label');
+  await themeToggle.click();
+  await expect(page.locator('html')).toHaveClass(
+    themeAction === 'Switch to light theme' ? /theme-light/ : /theme-dark/,
+  );
 
   if (tablet) {
     await openNavigation();

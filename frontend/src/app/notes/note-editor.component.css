@@ -398,8 +398,10 @@ summary {
   bottom: 30px;
   display: grid;
   min-width: 170px;
+  max-height: min(320px, calc(100vh - 120px));
   gap: 5px;
   padding: 10px;
+  overflow-y: auto;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface-elevated);

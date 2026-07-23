@@ -241,7 +241,7 @@
         } @if (saveState() !== 'saving' && saveState() !== 'saved') {
         <i class="fa-solid fa-circle-exclamation"></i>
         }
-        {{ saveMessage() }}
+        <span class="save-state__message">{{ saveMessage() }}</span>
         @if (saveState() === 'error') { <button type="button" (click)="retry()">Retry</button> }
       </div>
     </footer>
