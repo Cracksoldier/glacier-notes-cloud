@@ -7,15 +7,22 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { SmtpStatus } from './smtpStatus';
 
 
 export interface AdminStatus { 
     service: AdminStatusServiceEnum;
     status: AdminStatusStatusEnum;
     apiVersion: AdminStatusApiVersionEnum;
+    applicationVersion: string;
+    buildIdentifier: string;
     database: AdminStatusDatabaseEnum;
     imageStorageBackend: AdminStatusImageStorageBackendEnum;
     imageStorage: AdminStatusImageStorageEnum;
+    smtp: SmtpStatus;
+    backupEnabled: boolean;
+    metricsEnabled: boolean;
+    jobsHealthy: boolean;
 }
 export enum AdminStatusServiceEnum {
     GlacierNotesCloud = 'glacier-notes-cloud'
@@ -27,7 +34,8 @@ export enum AdminStatusApiVersionEnum {
     V1 = 'v1'
 };
 export enum AdminStatusDatabaseEnum {
-    Up = 'up'
+    Up = 'up',
+    Down = 'down'
 };
 export enum AdminStatusImageStorageBackendEnum {
     Filesystem = 'FILESYSTEM',

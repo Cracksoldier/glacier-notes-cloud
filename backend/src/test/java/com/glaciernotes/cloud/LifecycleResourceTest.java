@@ -17,6 +17,8 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
@@ -39,6 +41,10 @@ class LifecycleResourceTest {
     void reset() throws SQLException {
         try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
             statement.executeUpdate("delete from external_storage_operations");
+            statement.executeUpdate("delete from backup_jobs");
+            statement.executeUpdate("delete from instance_logo");
+            statement.executeUpdate("delete from scheduled_job_runs");
+            statement.executeUpdate("delete from job_locks");
             statement.executeUpdate("delete from audit_events");
             statement.executeUpdate("delete from endpoint_rate_limits");
             statement.executeUpdate("delete from login_rate_limits");
@@ -61,6 +67,73 @@ class LifecycleResourceTest {
                 where singleton_key = 1
                 """);
         }
+    }
+
+    @Test
+    void administrativeOperationsExposeSafeSettingsAuditAndGatedBackups() throws SQLException {
+        var admin = login("admin", PASSWORD);
+        adminRequest(admin).get("/api/v1/admin/settings").then().statusCode(200)
+            .body("instanceName", equalTo("Glacier Notes"))
+            .body("auditRetentionDays", equalTo(365))
+            .body("restartRequiredSettings", hasSize(4));
+
+        adminRequest(admin).header("X-Correlation-ID", "m11-settings-correlation")
+            .body("""
+                {
+                  "instanceName":"Private Glacier",
+                  "defaultLanguage":"de",
+                  "publicBaseUrl":"https://notes.example.test",
+                  "smtpSenderName":"Private Glacier",
+                  "smtpSenderAddress":"notes@example.test",
+                  "normalSessionDurationMinutes":60,
+                  "rememberSessionDurationMinutes":10080,
+                  "auditRetentionDays":730,
+                  "operationalLogRetentionDays":30,
+                  "loginDelayThreshold":6,
+                  "loginLockThreshold":12,
+                  "loginLockMinutes":20
+                }
+                """).patch("/api/v1/admin/settings").then().statusCode(200)
+            .body("instanceName", equalTo("Private Glacier"))
+            .body("defaultLanguage", equalTo("de"))
+            .body("auditRetentionDays", equalTo(730));
+
+        adminRequest(admin).body("""
+            {"normalSessionDurationMinutes":2000,"rememberSessionDurationMinutes":1500}
+            """).patch("/api/v1/admin/settings").then().statusCode(422);
+        adminRequest(admin).get("/api/v1/admin/settings").then().statusCode(200)
+            .body("normalSessionDurationMinutes", equalTo(60))
+            .body("rememberSessionDurationMinutes", equalTo(10080));
+        adminRequest(admin).body("""
+            {"smtpPassword":"must-never-be-accepted","imageStorageBackend":"S3"}
+            """).patch("/api/v1/admin/settings").then().statusCode(400);
+
+        adminRequest(admin).get("/api/v1/admin/audit-events?eventType=INSTANCE_SETTINGS_CHANGED")
+            .then().statusCode(200).body("items", hasSize(1))
+            .body("items[0].correlationId", equalTo("m11-settings-correlation"))
+            .body("items[0].ipAddress", notNullValue())
+            .body("items[0].metadata.password", nullValue());
+        adminRequest(admin).get("/api/v1/admin/audit-events/export?format=csv")
+            .then().statusCode(200).header("Content-Disposition", matchesPattern(".*glacier-audit.csv.*"));
+        adminRequest(admin).get("/api/v1/admin/backups").then().statusCode(404)
+            .body("errorCode", equalTo("FEATURE_DISABLED"));
+
+        byte[] png = java.util.Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+        given().cookie("GLACIER_SESSION", admin.getCookie("GLACIER_SESSION"))
+            .cookie("GLACIER_CSRF", admin.getCookie("GLACIER_CSRF"))
+            .header("X-CSRF-Token", admin.getCookie("GLACIER_CSRF"))
+            .multiPart("file", "logo.png", png, "image/png")
+            .put("/api/v1/admin/settings/logo").then().statusCode(200)
+            .body("instanceLogoUrl", equalTo("/api/v1/instance/logo"));
+        try (var connection = dataSource.getConnection();
+             var statement = connection.createStatement();
+             var rows = statement.executeQuery("select count(*) from instance_logo")) {
+            rows.next();
+            assertEquals(1, rows.getInt(1));
+        }
+        given().accept("image/png").get("/api/v1/instance/logo").then().statusCode(200)
+            .header("ETag", notNullValue()).contentType("image/png");
     }
 
     @Test

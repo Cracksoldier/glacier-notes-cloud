@@ -13,6 +13,7 @@ import com.glaciernotes.cloud.generated.model.SessionContext;
 import com.glaciernotes.cloud.generated.model.TokenRequest;
 import com.glaciernotes.cloud.application.lifecycle.LifecycleService;
 import com.glaciernotes.cloud.application.lifecycle.AccountService;
+import com.glaciernotes.cloud.application.operations.RequestAuditContext;
 import com.glaciernotes.cloud.persistence.repository.SessionRepository;
 import com.glaciernotes.cloud.security.AuthenticationIdentity;
 import com.glaciernotes.cloud.security.CookieManager;
@@ -34,6 +35,7 @@ public class AuthenticationResource implements AuthenticationApi {
     private final SecurityIdentity identity;
     private final LifecycleService lifecycle;
     private final AccountService accounts;
+    private final RequestAuditContext auditContext;
 
     @Context
     HttpServerRequest request;
@@ -47,7 +49,8 @@ public class AuthenticationResource implements AuthenticationApi {
         CookieManager cookies,
         SecurityIdentity identity,
         LifecycleService lifecycle,
-        AccountService accounts
+        AccountService accounts,
+        RequestAuditContext auditContext
     ) {
         this.authentication = authentication;
         this.sessions = sessions;
@@ -55,6 +58,7 @@ public class AuthenticationResource implements AuthenticationApi {
         this.identity = identity;
         this.lifecycle = lifecycle;
         this.accounts = accounts;
+        this.auditContext = auditContext;
     }
 
     @Override
@@ -70,7 +74,7 @@ public class AuthenticationResource implements AuthenticationApi {
             loginRequest.getPassword().toCharArray(),
             Boolean.TRUE.equals(loginRequest.getRememberMe()),
             clientAddress(),
-            request.getHeader("User-Agent"),
+            auditContext.clientDescription(),
             Objects.toString(MDC.get("correlationId"), "unavailable")
         );
         cookies.issue(

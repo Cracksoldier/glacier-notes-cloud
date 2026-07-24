@@ -103,4 +103,30 @@ public class AuditEventEntity {
         event.metadataJson = Map.copyOf(metadata);
         return event;
     }
+
+    public static AuditEventEntity administrative(
+        UUID id, String type, UUID actorId, UUID targetUserId, String entityType,
+        UUID entityId, Instant now, String correlationId, Map<String, String> metadata,
+        InetAddress address, String clientDescription, String result
+    ) {
+        var event = administrative(id, type, actorId, targetUserId, entityType, entityId,
+            now, correlationId, metadata);
+        event.ipAddress = address;
+        event.clientDescription = clientDescription;
+        event.result = result;
+        return event;
+    }
+
+    public UUID id() { return id; }
+    public String eventType() { return eventType; }
+    public Instant occurredAt() { return occurredAt; }
+    public UUID actorUserId() { return actorUserId; }
+    public UUID targetUserId() { return targetUserId; }
+    public String targetEntityType() { return targetEntityType; }
+    public UUID targetEntityId() { return targetEntityId; }
+    public String result() { return result; }
+    public InetAddress ipAddress() { return ipAddress; }
+    public String clientDescription() { return clientDescription; }
+    public String correlationId() { return correlationId; }
+    public Map<String, String> metadataJson() { return metadataJson; }
 }

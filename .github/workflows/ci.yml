@@ -65,6 +65,9 @@ jobs:
   deployment:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
+    env:
+      GLACIER_BACKUP_ENABLED: 'true'
+      GLACIER_BUILD_IDENTIFIER: github-${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -94,6 +97,8 @@ jobs:
           curl --fail --silent --show-error \
             http://127.0.0.1:9000/q/health/ready \
             | jq --exit-status '.status == "UP"' >/dev/null
+          curl --fail --silent --show-error \
+            http://127.0.0.1:9000/q/metrics >/dev/null
       - name: Verify bootstrap persists across container recreation
         run: |
           curl --fail --silent \
@@ -161,9 +166,65 @@ jobs:
           GLACIER_E2E_USERNAME: member
           GLACIER_E2E_PASSWORD: ci-invited-user-passphrase-2026
         run: npm run test:e2e
+      - name: Verify backup creation and clean database restore
+        run: |
+          curl --fail --silent --show-error \
+            --cookie-jar /tmp/glacier-backup-cookies.txt \
+            --header 'Content-Type: application/json' \
+            --data '{"identifier":"admin","password":"ci-container-smoke-passphrase-2026","rememberMe":false}' \
+            http://127.0.0.1:8080/api/v1/auth/login >/dev/null
+          csrf_token="$(awk '$6 == "GLACIER_CSRF" {print $7}' /tmp/glacier-backup-cookies.txt)"
+          test -n "$csrf_token"
+          backup_id="$(curl --fail --silent --show-error \
+            --cookie /tmp/glacier-backup-cookies.txt \
+            --header "X-CSRF-Token: $csrf_token" \
+            --request POST \
+            http://127.0.0.1:8080/api/v1/admin/backups | jq --raw-output '.id')"
+          test -n "$backup_id"
+          for attempt in $(seq 1 60); do
+            backup_json="$(curl --fail --silent --show-error \
+              --cookie /tmp/glacier-backup-cookies.txt \
+              "http://127.0.0.1:8080/api/v1/admin/backups/$backup_id")"
+            state="$(printf '%s' "$backup_json" | jq --raw-output '.state')"
+            if [ "$state" = "SUCCEEDED" ]; then break; fi
+            test "$state" != "FAILED"
+            sleep 1
+          done
+          test "$state" = "SUCCEEDED"
+          output="$(printf '%s' "$backup_json" | jq --raw-output '.outputIdentifier')"
+          expected_archive_checksum="$(printf '%s' "$backup_json" | jq --raw-output '.checksum')"
+          docker compose cp "app:/var/lib/glacier-notes/backups/$output" /tmp/glacier-backup.zip
+          test "$(sha256sum /tmp/glacier-backup.zip | cut -d' ' -f1)" = "$expected_archive_checksum"
+          mkdir /tmp/glacier-backup-contents
+          unzip -q /tmp/glacier-backup.zip -d /tmp/glacier-backup-contents
+          jq -r '.checksums | to_entries[] | [.value, .key] | @tsv' \
+            /tmp/glacier-backup-contents/manifest.json |
+            while IFS="$(printf '\t')" read -r expected path; do
+              printf '%s  %s\n' "$expected" "/tmp/glacier-backup-contents/$path" |
+                sha256sum --check -
+            done
+          docker run --detach --name glacier-m11-restore \
+            --env POSTGRES_PASSWORD=clean-restore-password \
+            --env POSTGRES_DB=glacier_restore postgres:18.3-alpine
+          for attempt in $(seq 1 60); do
+            if docker exec glacier-m11-restore \
+              pg_isready -U postgres -d glacier_restore; then break; fi
+            sleep 1
+          done
+          docker cp /tmp/glacier-backup-contents/database.dump \
+            glacier-m11-restore:/tmp/database.dump
+          docker exec --env PGPASSWORD=clean-restore-password glacier-m11-restore \
+            pg_restore --clean --if-exists --no-owner --no-privileges \
+              -U postgres -d glacier_restore /tmp/database.dump
+          docker exec --env PGPASSWORD=clean-restore-password glacier-m11-restore \
+            psql -U postgres -d glacier_restore --tuples-only \
+              --command 'select count(*) from flyway_schema_history;' |
+            grep --extended-regexp '[1-9]'
       - name: Show logs on failure
         if: failure()
         run: docker compose logs
       - name: Stop deployment
         if: always()
-        run: docker compose down --volumes
+        run: |
+          docker rm --force glacier-m11-restore 2>/dev/null || true
+          docker compose down --volumes

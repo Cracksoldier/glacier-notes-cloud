@@ -13,6 +13,10 @@ public class InstanceSettingsEntity {
     @Id
     @Column(name = "singleton_key")
     private short singletonKey;
+    @Column(name = "instance_name")
+    private String instanceName;
+    @Column(name = "default_language")
+    private String defaultLanguage;
     @Column(name = "normal_session_duration_minutes")
     private int normalSessionDurationMinutes;
     @Column(name = "remember_session_duration_minutes")
@@ -59,6 +63,14 @@ public class InstanceSettingsEntity {
     private boolean commonPasswordCheckEnabled;
     @Column(name = "password_history_enabled")
     private boolean passwordHistoryEnabled;
+    @Column(name = "smtp_sender_name")
+    private String smtpSenderName;
+    @Column(name = "smtp_sender_address")
+    private String smtpSenderAddress;
+    @Column(name = "audit_retention_days")
+    private int auditRetentionDays;
+    @Column(name = "operational_log_retention_days")
+    private int operationalLogRetentionDays;
 
     protected InstanceSettingsEntity() {
     }
@@ -66,6 +78,11 @@ public class InstanceSettingsEntity {
     public int sessionDurationMinutes(boolean rememberMe) {
         return rememberMe ? rememberSessionDurationMinutes : normalSessionDurationMinutes;
     }
+
+    public String instanceName() { return instanceName; }
+    public String defaultLanguage() { return defaultLanguage; }
+    public int normalSessionDurationMinutes() { return normalSessionDurationMinutes; }
+    public int rememberSessionDurationMinutes() { return rememberSessionDurationMinutes; }
 
     public int loginDelayThreshold() {
         return loginDelayThreshold;
@@ -100,6 +117,10 @@ public class InstanceSettingsEntity {
     public boolean selfDeletionEnabled() { return selfDeletionEnabled; }
     public boolean commonPasswordCheckEnabled() { return commonPasswordCheckEnabled; }
     public boolean passwordHistoryEnabled() { return passwordHistoryEnabled; }
+    public String smtpSenderName() { return smtpSenderName; }
+    public String smtpSenderAddress() { return smtpSenderAddress; }
+    public int auditRetentionDays() { return auditRetentionDays; }
+    public int operationalLogRetentionDays() { return operationalLogRetentionDays; }
 
     public void updateLifecycle(List<String> domains, Integer invitationHours, Integer resetMinutes) {
         if (domains != null) allowedEmailDomains = domains.toArray(String[]::new);
@@ -133,5 +154,23 @@ public class InstanceSettingsEntity {
         if (selfDeletion != null) selfDeletionEnabled = selfDeletion;
         if (commonPasswords != null) commonPasswordCheckEnabled = commonPasswords;
         if (passwordHistory != null) passwordHistoryEnabled = passwordHistory;
+    }
+
+    public void updateOperations(String name, String language, Integer normalSessionMinutes,
+                                 Integer rememberSessionMinutes, String baseUrl, String senderName,
+                                 String senderAddress, Integer auditDays, Integer logDays,
+                                 Integer delayThreshold, Integer lockThreshold, Integer lockMinutes) {
+        if (name != null) instanceName = name.strip();
+        if (language != null) defaultLanguage = language;
+        if (normalSessionMinutes != null) normalSessionDurationMinutes = normalSessionMinutes;
+        if (rememberSessionMinutes != null) rememberSessionDurationMinutes = rememberSessionMinutes;
+        if (baseUrl != null) publicBaseUrl = baseUrl;
+        if (senderName != null) smtpSenderName = senderName.strip();
+        if (senderAddress != null) smtpSenderAddress = senderAddress.strip();
+        if (auditDays != null) auditRetentionDays = auditDays;
+        if (logDays != null) operationalLogRetentionDays = logDays;
+        if (delayThreshold != null) loginDelayThreshold = delayThreshold;
+        if (lockThreshold != null) loginLockThreshold = lockThreshold;
+        if (lockMinutes != null) loginLockMinutes = lockMinutes;
     }
 }

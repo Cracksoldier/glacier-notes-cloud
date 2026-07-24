@@ -1,6 +1,7 @@
 package com.glaciernotes.cloud.application.lifecycle;
 
 import com.glaciernotes.cloud.application.port.PasswordVerifier;
+import com.glaciernotes.cloud.application.operations.RequestAuditContext;
 import com.glaciernotes.cloud.application.setup.IdentityNormalizer;
 import com.glaciernotes.cloud.application.setup.PasswordPolicy;
 import com.glaciernotes.cloud.application.setup.SetupFailure;
@@ -31,6 +32,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -50,6 +52,7 @@ public class LifecycleService {
     private final GlacierConfiguration configuration;
     private final TimeProvider time;
     private final IdGenerator ids;
+    private final RequestAuditContext auditContext;
 
     public LifecycleService(EntityManager entityManager, IdentityNormalizer identities,
                             PasswordPolicy passwordPolicy, PasswordVerifier passwordVerifier,
@@ -58,7 +61,7 @@ public class LifecycleService {
                             EndpointRateLimiter rateLimiter, SessionRepository sessions,
                             UserUsageRepository userUsage, LifecycleEmailService email,
                             GlacierConfiguration configuration,
-                            TimeProvider time, IdGenerator ids) {
+                            TimeProvider time, IdGenerator ids, RequestAuditContext auditContext) {
         this.entityManager = entityManager;
         this.identities = identities;
         this.passwordPolicy = passwordPolicy;
@@ -74,6 +77,7 @@ public class LifecycleService {
         this.configuration = configuration;
         this.time = time;
         this.ids = ids;
+        this.auditContext = auditContext;
     }
 
     @Transactional(dontRollbackOn = LifecycleFailure.class)
@@ -348,6 +352,29 @@ public class LifecycleService {
         List<String> domains = update.getAllowedEmailDomains() == null
             ? null : normalizeDomains(update.getAllowedEmailDomains());
         var entity = entityManager.find(InstanceSettingsEntity.class, (short) 1, LockModeType.PESSIMISTIC_WRITE);
+        int normalMinutes = update.getNormalSessionDurationMinutes() == null
+            ? entity.normalSessionDurationMinutes() : update.getNormalSessionDurationMinutes();
+        int rememberMinutes = update.getRememberSessionDurationMinutes() == null
+            ? entity.rememberSessionDurationMinutes() : update.getRememberSessionDurationMinutes();
+        int delayThreshold = update.getLoginDelayThreshold() == null
+            ? entity.loginDelayThreshold() : update.getLoginDelayThreshold();
+        int lockThreshold = update.getLoginLockThreshold() == null
+            ? entity.loginLockThreshold() : update.getLoginLockThreshold();
+        var violations = new ArrayList<SetupFailure.FieldViolation>();
+        if (rememberMinutes < normalMinutes) {
+            violations.add(new SetupFailure.FieldViolation("rememberSessionDurationMinutes",
+                "Remember-me duration must be at least the normal session duration."));
+        }
+        if (lockThreshold <= delayThreshold) {
+            violations.add(new SetupFailure.FieldViolation("loginLockThreshold",
+                "Lock threshold must be greater than the delay threshold."));
+        }
+        if (update.getPublicBaseUrl() != null
+            && !Set.of("http", "https").contains(update.getPublicBaseUrl().getScheme())) {
+            violations.add(new SetupFailure.FieldViolation("publicBaseUrl",
+                "Public base URL must use HTTP or HTTPS."));
+        }
+        if (!violations.isEmpty()) throw LifecycleFailure.invalid(violations);
         entity.updateLifecycle(domains, update.getInvitationExpirationHours(), update.getPasswordResetExpirationMinutes());
         entity.updateImages(
             update.getAllowedImageTypes() == null || update.getAllowedImageTypes().isEmpty()
@@ -360,6 +387,13 @@ public class LifecycleService {
             update.getUsersMayDisableAutoPurge(), update.getAdminDeletionRetentionDays(),
             update.getSelfDeletionEnabled(), update.getCommonPasswordCheckEnabled(),
             update.getPasswordHistoryEnabled());
+        entity.updateOperations(update.getInstanceName(),
+            update.getDefaultLanguage() == null ? null : update.getDefaultLanguage().toString(),
+            update.getNormalSessionDurationMinutes(), update.getRememberSessionDurationMinutes(),
+            update.getPublicBaseUrl() == null ? null : update.getPublicBaseUrl().toString(),
+            update.getSmtpSenderName(), update.getSmtpSenderAddress(),
+            update.getAuditRetentionDays(), update.getOperationalLogRetentionDays(),
+            update.getLoginDelayThreshold(), update.getLoginLockThreshold(), update.getLoginLockMinutes());
         if (Boolean.FALSE.equals(update.getUsersMayDisableAutoPurge())) {
             entityManager.createNativeQuery("update user_settings set trash_auto_purge_days = :days "
                     + "where trash_auto_purge_days is null")
@@ -519,9 +553,21 @@ public class LifecycleService {
     }
 
     private AdminSettings settingsModel(InstanceSettingsEntity value) {
-        return new AdminSettings().allowedEmailDomains(value.allowedEmailDomains())
+        String senderName = value.smtpSenderName() == null
+            ? configuration.smtp().senderName().orElse("Glacier Notes") : value.smtpSenderName();
+        String senderAddress = value.smtpSenderAddress() == null
+            ? configuration.smtp().senderAddress().orElse("noreply@localhost") : value.smtpSenderAddress();
+        String baseUrl = value.publicBaseUrl() == null
+            ? configuration.publicBaseUrl().orElse("http://localhost:8080") : value.publicBaseUrl();
+        Number logos = (Number) entityManager.createNativeQuery("select count(*) from instance_logo").getSingleResult();
+        return new AdminSettings().instanceName(value.instanceName())
+            .instanceLogoUrl(logos.longValue() == 0 ? null : "/api/v1/instance/logo")
+            .defaultLanguage(AdminSettings.DefaultLanguageEnum.fromValue(value.defaultLanguage()))
+            .allowedEmailDomains(value.allowedEmailDomains())
             .invitationExpirationHours(value.invitationExpirationHours())
             .passwordResetExpirationMinutes(value.passwordResetExpirationMinutes())
+            .normalSessionDurationMinutes(value.normalSessionDurationMinutes())
+            .rememberSessionDurationMinutes(value.rememberSessionDurationMinutes())
             .allowedImageTypes(value.allowedUploadTypes().stream().map(AdminSettings.AllowedImageTypesEnum::fromValue).toList())
             .maximumImageBytes(value.maximumImageBytes())
             .perUserStorageQuotaBytes(value.perUserStorageQuotaBytes())
@@ -534,8 +580,22 @@ public class LifecycleService {
             .usersMayDisableAutoPurge(value.usersMayDisableAutoPurge())
             .adminDeletionRetentionDays(value.adminDeletionRetentionDays())
             .selfDeletionEnabled(value.selfDeletionEnabled())
+            .publicBaseUrl(URI.create(baseUrl))
+            .smtpSenderName(senderName)
+            .smtpSenderAddress(senderAddress)
+            .auditRetentionDays(value.auditRetentionDays())
+            .operationalLogRetentionDays(value.operationalLogRetentionDays())
+            .loginDelayThreshold(value.loginDelayThreshold())
+            .loginLockThreshold(value.loginLockThreshold())
+            .loginLockMinutes(value.loginLockMinutes())
             .commonPasswordCheckEnabled(value.commonPasswordCheckEnabled())
-            .passwordHistoryEnabled(value.passwordHistoryEnabled());
+            .passwordHistoryEnabled(value.passwordHistoryEnabled())
+            .restartRequiredSettings(List.of(
+                AdminSettings.RestartRequiredSettingsEnum.IMAGE_STORAGE_BACKEND,
+                AdminSettings.RestartRequiredSettingsEnum.SMTP_ENABLED,
+                AdminSettings.RestartRequiredSettingsEnum.BACKUP_ENABLED,
+                AdminSettings.RestartRequiredSettingsEnum.METRICS_ENABLED
+            ));
     }
 
     private InstanceSettingsEntity settings() {
@@ -575,7 +635,8 @@ public class LifecycleService {
     private void audit(String type, UUID actor, UUID target, String entityType, UUID entityId,
                        String correlationId, Map<String, String> metadata) {
         entityManager.persist(AuditEventEntity.administrative(ids.nextId(), type, actor, target,
-            entityType, entityId, time.now(), correlationId, metadata));
+            entityType, entityId, time.now(), correlationId, metadata,
+            auditContext.address(), auditContext.clientDescription(), "SUCCESS"));
     }
 
     private record IssuedReset(SecurityTokenEntity entity, String raw, String url) {}

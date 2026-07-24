@@ -7,6 +7,62 @@
 <p role="status">Loading instance settings…</p>
 }
 <form (ngSubmit)="save()">
+  <fieldset>
+    <legend>Identity and public links</legend>
+    <label
+      >Instance name<input
+        name="instanceName"
+        required
+        maxlength="128"
+        [(ngModel)]="instanceName"
+      ></label
+    >
+    <label
+      >Default language<select name="defaultLanguage" [(ngModel)]="defaultLanguage">
+        <option value="en">English</option>
+        <option value="de">Deutsch</option>
+      </select></label
+    >
+    <label
+      >Public base URL<input
+        name="publicBaseUrl"
+        type="url"
+        required
+        [(ngModel)]="publicBaseUrl"
+      ></label
+    >
+    <label
+      >SMTP sender name<input
+        name="smtpSenderName"
+        required
+        maxlength="128"
+        [(ngModel)]="smtpSenderName"
+      ></label
+    >
+    <label
+      >SMTP sender address<input
+        name="smtpSenderAddress"
+        type="email"
+        required
+        [(ngModel)]="smtpSenderAddress"
+      ></label
+    >
+    <div>
+      <span>Instance logo</span>
+      @if (instanceLogoUrl) {
+      <img class="instance-logo" [src]="instanceLogoUrl" alt="Current instance logo">
+      <button type="button" (click)="removeLogo()">Remove logo</button>
+      }
+      <label class="file-button"
+        >Choose logo<input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          (change)="uploadLogo($event)"
+        ></label
+      >
+      <small>PNG, JPEG, or WebP; maximum 2 MB. Logo bytes are stored with instance data.</small>
+    </div>
+  </fieldset>
   <label
     >Allowed email domains<textarea name="domains" rows="6" [(ngModel)]="domains"></textarea></label
   >
@@ -35,6 +91,24 @@
       min="5"
       max="1440"
       [(ngModel)]="emailChangeMinutes"
+    ></label
+  >
+  <label
+    >Normal session duration (minutes)<input
+      name="normalSessionMinutes"
+      type="number"
+      min="15"
+      max="10080"
+      [(ngModel)]="normalSessionMinutes"
+    ></label
+  >
+  <label
+    >Remember-me duration (minutes)<input
+      name="rememberSessionMinutes"
+      type="number"
+      min="1440"
+      max="525600"
+      [(ngModel)]="rememberSessionMinutes"
     ></label
   >
   <fieldset>
@@ -127,6 +201,51 @@
       ></label
     >
     <label
+      >Audit retention (days)<input
+        name="auditRetentionDays"
+        type="number"
+        min="1"
+        max="3650"
+        [(ngModel)]="auditRetentionDays"
+      ></label
+    >
+    <label
+      >Operational log retention guidance (days)<input
+        name="operationalLogRetentionDays"
+        type="number"
+        min="1"
+        max="365"
+        [(ngModel)]="operationalLogRetentionDays"
+      ></label
+    >
+    <label
+      >Login delay threshold<input
+        name="loginDelayThreshold"
+        type="number"
+        min="3"
+        max="20"
+        [(ngModel)]="loginDelayThreshold"
+      ></label
+    >
+    <label
+      >Login lock threshold<input
+        name="loginLockThreshold"
+        type="number"
+        min="4"
+        max="50"
+        [(ngModel)]="loginLockThreshold"
+      ></label
+    >
+    <label
+      >Login lock duration (minutes)<input
+        name="loginLockMinutes"
+        type="number"
+        min="1"
+        max="1440"
+        [(ngModel)]="loginLockMinutes"
+      ></label
+    >
+    <label
       ><input name="selfDeletionEnabled" type="checkbox" [(ngModel)]="selfDeletionEnabled">
       Allow immediate self-service account deletion</label
     >
@@ -143,6 +262,10 @@
       Prevent reuse of previous passwords</label
     >
   </fieldset>
+  <p class="full-width">
+    Image storage, SMTP enablement, metrics, and full backups are deployment-managed settings. They
+    are read-only here and require an application restart. Secrets are never accepted by this form.
+  </p>
   <button type="submit" [disabled]="!loaded() || saving()">
     {{ saving() ? 'Saving…' : 'Save settings' }}
   </button>

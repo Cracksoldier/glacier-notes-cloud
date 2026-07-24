@@ -19,7 +19,8 @@ RUN ./mvnw -pl backend package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
-RUN addgroup -S -g 10001 glacier \
+RUN apk add --no-cache postgresql-client \
+    && addgroup -S -g 10001 glacier \
     && adduser -S -D -H -u 10001 -G glacier glacier \
     && mkdir -p /opt/glacier /var/lib/glacier-notes/images /var/lib/glacier-notes/backups /var/lib/glacier-notes/transfers/uploads \
     && chown -R glacier:glacier /opt/glacier /var/lib/glacier-notes

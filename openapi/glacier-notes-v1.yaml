@@ -959,6 +959,160 @@ paths:
               schema: { $ref: '#/components/schemas/AdminSettings' }
         '422': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/settings/logo:
+    put:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      tags: [Administration]
+      summary: Replace the public instance logo
+      operationId: updateInstanceLogo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200':
+          description: Updated instance settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminSettings' }
+        '413': { $ref: '#/components/responses/ProblemResponse' }
+        '415': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      tags: [Administration]
+      summary: Remove the public instance logo
+      operationId: deleteInstanceLogo
+      responses:
+        '204': { description: Instance logo removed }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/instance/logo:
+    get:
+      security: []
+      tags: [Images]
+      summary: Read the configured public instance logo
+      operationId: getInstanceLogo
+      responses:
+        '200':
+          description: Instance logo bytes
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            image/png: { schema: { type: string, format: binary } }
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/smtp/test:
+    post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      tags: [Administration]
+      summary: Send an SMTP test email to the current administrator
+      operationId: testSmtp
+      responses:
+        '200':
+          description: SMTP test status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SmtpStatus' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/audit-events:
+    get:
+      tags: [Administration]
+      summary: List immutable administrative and security audit events
+      operationId: listAuditEvents
+      parameters:
+        - { name: eventType, in: query, schema: { type: string, maxLength: 64 } }
+        - { name: result, in: query, schema: { type: string, enum: [SUCCESS, FAILURE, DENIED] } }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 512 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: Audit-event page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuditEventPage' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/audit-events/export:
+    get:
+      tags: [Administration]
+      summary: Export filtered audit events as CSV or JSON
+      operationId: exportAuditEvents
+      parameters:
+        - { name: format, in: query, required: true, schema: { type: string, enum: [csv, json] } }
+        - { name: eventType, in: query, schema: { type: string, maxLength: 64 } }
+        - { name: result, in: query, schema: { type: string, enum: [SUCCESS, FAILURE, DENIED] } }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: Audit export
+          headers:
+            Content-Disposition: { schema: { type: string } }
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/backups:
+    post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      tags: [Administration]
+      summary: Queue a full server backup when enabled
+      operationId: createBackup
+      responses:
+        '202':
+          description: Queued backup
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BackupJob' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+    get:
+      tags: [Administration]
+      summary: List backup jobs when enabled
+      operationId: listBackups
+      parameters:
+        - { name: cursor, in: query, schema: { type: string, maxLength: 512 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+      responses:
+        '200':
+          description: Backup-job page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BackupJobPage' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/backups/{backupId}:
+    get:
+      tags: [Administration]
+      summary: Get a backup job when enabled
+      operationId: getBackup
+      parameters:
+        - name: backupId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Backup job
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BackupJob' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/notebooks:
     get:
       tags: [Notebooks]
@@ -1843,7 +1997,7 @@ components:
           $ref: '#/components/schemas/SessionSummary'
     AdminStatus:
       type: object
-      required: [service, status, apiVersion, database, imageStorageBackend, imageStorage]
+      required: [service, status, apiVersion, applicationVersion, buildIdentifier, database, imageStorageBackend, imageStorage, smtp, backupEnabled, metricsEnabled, jobsHealthy]
       properties:
         service:
           type: string
@@ -1854,15 +2008,33 @@ components:
         apiVersion:
           type: string
           const: v1
+        applicationVersion: { type: string }
+        buildIdentifier: { type: string }
         database:
           type: string
-          enum: [up]
+          enum: [up, down]
         imageStorageBackend:
           type: string
           enum: [FILESYSTEM, POSTGRESQL, S3]
         imageStorage:
           type: string
           enum: [up, down]
+        smtp: { $ref: '#/components/schemas/SmtpStatus' }
+        backupEnabled: { type: boolean }
+        metricsEnabled: { type: boolean }
+        jobsHealthy: { type: boolean }
+    SmtpStatus:
+      type: object
+      required: [configured, senderName, senderAddress, state]
+      properties:
+        configured: { type: boolean }
+        senderName: { type: string }
+        senderAddress: { type: string, format: email }
+        state: { type: string, enum: [NOT_CONFIGURED, READY, SUCCEEDED, FAILED] }
+        lastSuccessfulAt: { type: string, format: date-time }
+        lastFailureCategory:
+          type: string
+          enum: [CONNECTION, AUTHENTICATION, TLS, DELIVERY, UNKNOWN]
     TokenRequest:
       type: object
       required: [token]
@@ -2031,14 +2203,19 @@ components:
         expiresAt: { type: string, format: date-time }
     AdminSettings:
       type: object
-      required: [allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, emailChangeExpirationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours, noteVersionMaximumCount, noteVersionRetentionDays, userExportsEnabled, defaultTrashRetentionDays, usersMayDisableAutoPurge, adminDeletionRetentionDays, selfDeletionEnabled, commonPasswordCheckEnabled, passwordHistoryEnabled]
+      required: [instanceName, defaultLanguage, allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, emailChangeExpirationMinutes, normalSessionDurationMinutes, rememberSessionDurationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours, noteVersionMaximumCount, noteVersionRetentionDays, userExportsEnabled, defaultTrashRetentionDays, usersMayDisableAutoPurge, adminDeletionRetentionDays, selfDeletionEnabled, publicBaseUrl, smtpSenderName, smtpSenderAddress, auditRetentionDays, operationalLogRetentionDays, loginDelayThreshold, loginLockThreshold, loginLockMinutes, commonPasswordCheckEnabled, passwordHistoryEnabled, restartRequiredSettings]
       properties:
+        instanceName: { type: string, minLength: 1, maxLength: 128 }
+        instanceLogoUrl: { type: string, format: uri-reference }
+        defaultLanguage: { type: string, enum: [en, de] }
         allowedEmailDomains:
           type: array
           items: { type: string, maxLength: 253 }
         invitationExpirationHours: { type: integer, minimum: 1, maximum: 720 }
         passwordResetExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
         emailChangeExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
+        normalSessionDurationMinutes: { type: integer, minimum: 15, maximum: 10080 }
+        rememberSessionDurationMinutes: { type: integer, minimum: 1440, maximum: 525600 }
         allowedImageTypes:
           type: array
           items: { type: string, enum: [image/png, image/jpeg, image/webp] }
@@ -2052,11 +2229,26 @@ components:
         usersMayDisableAutoPurge: { type: boolean }
         adminDeletionRetentionDays: { type: integer, minimum: 0, maximum: 3650 }
         selfDeletionEnabled: { type: boolean }
+        publicBaseUrl: { type: string, format: uri }
+        smtpSenderName: { type: string, minLength: 1, maxLength: 128 }
+        smtpSenderAddress: { type: string, format: email, maxLength: 320 }
+        auditRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
+        operationalLogRetentionDays: { type: integer, minimum: 1, maximum: 365 }
+        loginDelayThreshold: { type: integer, minimum: 3, maximum: 20 }
+        loginLockThreshold: { type: integer, minimum: 4, maximum: 50 }
+        loginLockMinutes: { type: integer, minimum: 1, maximum: 1440 }
         commonPasswordCheckEnabled: { type: boolean }
         passwordHistoryEnabled: { type: boolean }
+        restartRequiredSettings:
+          type: array
+          items:
+            type: string
+            enum: [imageStorageBackend, smtpEnabled, backupEnabled, metricsEnabled]
     AdminSettingsUpdate:
       type: object
       properties:
+        instanceName: { type: string, minLength: 1, maxLength: 128 }
+        defaultLanguage: { type: string, enum: [en, de] }
         allowedEmailDomains:
           type: array
           maxItems: 100
@@ -2064,6 +2256,8 @@ components:
         invitationExpirationHours: { type: integer, minimum: 1, maximum: 720 }
         passwordResetExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
         emailChangeExpirationMinutes: { type: integer, minimum: 5, maximum: 1440 }
+        normalSessionDurationMinutes: { type: integer, minimum: 15, maximum: 10080 }
+        rememberSessionDurationMinutes: { type: integer, minimum: 1440, maximum: 525600 }
         allowedImageTypes:
           type: array
           uniqueItems: true
@@ -2078,8 +2272,64 @@ components:
         usersMayDisableAutoPurge: { type: boolean }
         adminDeletionRetentionDays: { type: integer, minimum: 0, maximum: 3650 }
         selfDeletionEnabled: { type: boolean }
+        publicBaseUrl: { type: string, format: uri }
+        smtpSenderName: { type: string, minLength: 1, maxLength: 128 }
+        smtpSenderAddress: { type: string, format: email, maxLength: 320 }
+        auditRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
+        operationalLogRetentionDays: { type: integer, minimum: 1, maximum: 365 }
+        loginDelayThreshold: { type: integer, minimum: 3, maximum: 20 }
+        loginLockThreshold: { type: integer, minimum: 4, maximum: 50 }
+        loginLockMinutes: { type: integer, minimum: 1, maximum: 1440 }
         commonPasswordCheckEnabled: { type: boolean }
         passwordHistoryEnabled: { type: boolean }
+    AuditEvent:
+      type: object
+      required: [id, eventType, occurredAt, result, correlationId, metadata]
+      properties:
+        id: { type: string, format: uuid }
+        eventType: { type: string }
+        occurredAt: { type: string, format: date-time }
+        actorUserId: { type: string, format: uuid }
+        targetUserId: { type: string, format: uuid }
+        targetEntityType: { type: string }
+        targetEntityId: { type: string, format: uuid }
+        result: { type: string, enum: [SUCCESS, FAILURE, DENIED] }
+        ipAddress: { type: string }
+        clientDescription: { type: string }
+        correlationId: { type: string }
+        metadata:
+          type: object
+          additionalProperties: { type: string }
+    AuditEventPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AuditEvent' }
+        page: { $ref: '#/components/schemas/PageMetadata' }
+    BackupJob:
+      type: object
+      required: [id, createdByUserId, state, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        createdByUserId: { type: string, format: uuid }
+        state: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELED] }
+        createdAt: { type: string, format: date-time }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+        outputIdentifier: { type: string }
+        byteSize: { type: integer, format: int64, minimum: 0 }
+        checksum: { type: string }
+        errorMessage: { type: string }
+    BackupJobPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/BackupJob' }
+        page: { $ref: '#/components/schemas/PageMetadata' }
     ImageMetadata:
       type: object
       required: [id, mimeType, byteSize, width, height, thumbnailMimeType, thumbnailByteSize, thumbnailWidth, thumbnailHeight, contentUrl, thumbnailUrl, createdAt]

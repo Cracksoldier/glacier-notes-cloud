@@ -24,6 +24,8 @@ public interface GlacierConfiguration {
 
     Transfer transfer();
 
+    Backup backup();
+
     interface Bootstrap {
         Optional<String> token();
 
@@ -129,5 +131,11 @@ public interface GlacierConfiguration {
         @WithDefault("32") int maximumJsonDepth();
         @WithDefault("16777216") int maximumStringLength();
         @WithDefault("24") int retentionHours();
+    }
+
+    interface Backup {
+        @WithDefault("false") boolean enabled();
+        @WithDefault("/var/lib/glacier-notes/backups") Path directory();
+        @WithDefault("unknown") String buildIdentifier();
     }
 }

@@ -5,6 +5,7 @@ import com.glaciernotes.cloud.application.auth.AuthenticationFailure;
 import com.glaciernotes.cloud.application.lifecycle.LifecycleFailure;
 import com.glaciernotes.cloud.application.content.ContentFailure;
 import com.glaciernotes.cloud.application.image.ImageFailure;
+import com.glaciernotes.cloud.application.operations.OperationalFailure;
 import com.glaciernotes.cloud.generated.model.ProblemDetails;
 import com.glaciernotes.cloud.generated.model.ValidationError;
 import jakarta.validation.ConstraintViolationException;
@@ -108,6 +109,18 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
             return new Description(status, status == 413 ? "Image Too Large" : status == 422 ? "Invalid Image" :
                 status == 404 ? "Not Found" : status == 409 ? "Image Still Referenced" : "Image Storage Unavailable",
                 imageFailure.code(), imageFailure.getMessage(), List.of(), 0);
+        }
+        if (exception instanceof OperationalFailure operationalFailure) {
+            return switch (operationalFailure.reason()) {
+                case FEATURE_DISABLED -> new Description(404, "Feature Disabled", "FEATURE_DISABLED",
+                    operationalFailure.getMessage(), List.of(), 0);
+                case SMTP_NOT_CONFIGURED -> new Description(409, "SMTP Not Configured",
+                    "SMTP_NOT_CONFIGURED", operationalFailure.getMessage(), List.of(), 0);
+                case NOT_FOUND -> new Description(404, "Not Found", "ENTITY_NOT_FOUND",
+                    operationalFailure.getMessage(), List.of(), 0);
+                case INVALID -> new Description(422, "Validation Failed", "VALIDATION_FAILED",
+                    operationalFailure.getMessage(), List.of(), 0);
+            };
         }
         if (exception instanceof ConstraintViolationException violations) {
             var validationErrors = violations.getConstraintViolations().stream()

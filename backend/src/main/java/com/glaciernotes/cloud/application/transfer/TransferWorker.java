@@ -66,7 +66,6 @@ public class TransferWorker {
         return () -> { if (calls.incrementAndGet() % 100 == 1 && jobs.cancelRequested(id)) throw new Canceled(); };
     }
 
-    @Scheduled(every = "1h", delayed = "2m", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
-    void cleanup() { jobs.expire(); }
+    public void cleanup() { jobs.expire(); }
     private static final class Canceled extends RuntimeException {}
 }

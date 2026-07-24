@@ -1,10 +1,16 @@
 <main class="admin-shell">
   <aside>
     <p class="eyebrow">Administration</p>
+    <a href="/admin/overview" routerLink="overview" routerLinkActive="active">Overview</a>
     <a href="/admin/users" routerLink="users" routerLinkActive="active">Users</a>
     <a href="/admin/invitations" routerLink="invitations" routerLinkActive="active">Invitations</a>
-    <a href="/admin/settings" routerLink="settings" routerLinkActive="active">Access settings</a>
+    <a href="/admin/settings" routerLink="settings" routerLinkActive="active">Instance settings</a>
+    <a href="/admin/smtp" routerLink="smtp" routerLinkActive="active">SMTP</a>
+    <a href="/admin/audit" routerLink="audit" routerLinkActive="active">Audit log</a>
     <a href="/admin/status" routerLink="status" routerLinkActive="active">Status</a>
+    @if (backupEnabled()) {
+    <a href="/admin/backups" routerLink="backups" routerLinkActive="active">Backups</a>
+    }
   </aside>
   <section><router-outlet /></section>
 </main>

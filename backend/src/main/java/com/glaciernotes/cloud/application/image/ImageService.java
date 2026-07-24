@@ -110,9 +110,8 @@ public class ImageService {
         return new StorageUsage().usedBytes(used).quotaBytes(quota).remainingBytes(Math.max(0, quota - used)).imageCount(repository.count(owner));
     }
 
-    @Scheduled(every = "1h", delayed = "1m")
     @Transactional
-    void collectOrphans() {
+    public void collectOrphans() {
         Number locked = (Number) entityManager.createNativeQuery("select pg_try_advisory_xact_lock(7197007)::int").getSingleResult();
         if (locked.intValue() == 0) return;
         int grace = repository.settings().imageOrphanGraceHours();

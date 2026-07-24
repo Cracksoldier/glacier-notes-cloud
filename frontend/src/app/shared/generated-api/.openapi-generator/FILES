@@ -25,7 +25,11 @@ model/adminStatus.ts
 model/adminUser.ts
 model/adminUserPage.ts
 model/adminUserUpdate.ts
+model/auditEvent.ts
+model/auditEventPage.ts
 model/authenticatedUser.ts
+model/backupJob.ts
+model/backupJobPage.ts
 model/checklistItemInput.ts
 model/checklistItemView.ts
 model/contentColor.ts
@@ -75,6 +79,7 @@ model/sessionContext.ts
 model/sessionSummary.ts
 model/setupCompletion.ts
 model/setupStatus.ts
+model/smtpStatus.ts
 model/storageUsage.ts
 model/tokenRequest.ts
 model/transferCounts.ts

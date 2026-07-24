@@ -256,6 +256,50 @@ export class ImagesService extends BaseService {
     }
 
     /**
+     * Read the configured public instance logo
+     * @endpoint get /api/v1/instance/logo
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getInstanceLogo(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'image/png' | 'image/jpeg' | 'image/webp' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Blob>;
+    public getInstanceLogo(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'image/png' | 'image/jpeg' | 'image/webp' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Blob>>;
+    public getInstanceLogo(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'image/png' | 'image/jpeg' | 'image/webp' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Blob>>;
+    public getInstanceLogo(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'image/png' | 'image/jpeg' | 'image/webp' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'image/png',
+            'image/jpeg',
+            'image/webp',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let localVarPath = `/api/v1/instance/logo`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: "blob",
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Upload and normalize an owned image
      * @endpoint post /api/v1/images
      * @param file 

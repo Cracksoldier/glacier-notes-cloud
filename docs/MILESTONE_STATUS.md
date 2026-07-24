@@ -17,7 +17,8 @@ implementation and repository verification gates pass.
 | M8 | Complete | Ranked owner-scoped PostgreSQL search, conflict-safe editing, retained note versions, restore, and cleanup policies |
 | M9 | Complete | Portable full/notebook/note transfer, desktop compatibility, conflict strategies, bounded jobs, and blind administrative import |
 | M10 | Complete | Account self-service, verified email changes, deletion retention, synchronized preferences, i18n, themes, and external email sharing |
-| M11–M13 | Pending | Not yet implemented |
+| M11 | Complete | Administrative overview, safe settings, SMTP status, immutable audit, metrics, coordinated cleanup, and gated full backups |
+| M12–M13 | Pending | Not yet implemented |
 
 ## M5 Verification
 
@@ -106,3 +107,24 @@ Backend integration tests cover session revocation, password reuse, retained del
 destructive deletion, last-administrator protection, migration constraints, and existing lifecycle
 boundaries. The frontend gates type-check the account, policy, localized-date, checklist-order, and
 sharing surfaces. Run the standard backend and frontend verification commands above.
+
+## M11 Verification
+
+M11 adds an operational administration overview; complete non-secret instance settings with atomic
+validation; persisted instance logos; SMTP status and test delivery; immutable, filterable audit
+events with CSV/JSON export; structured production request logs; management-port health and
+Prometheus metrics; database-leased cleanup jobs; and environment-gated background backups.
+
+Backend tests cover settings safety and audit metadata, disabled backup behavior, public logos, and
+exclusive job leases. Frontend tests cover the settings load boundary, normalized audit display, and
+credential-free SMTP testing. The deployment CI gate verifies readiness and metrics, creates a real
+backup, validates archive and entry checksums, and restores the dump into a clean PostgreSQL
+container. Run the standard gates plus:
+
+~~~bash
+docker compose config --quiet
+GLACIER_BACKUP_ENABLED=true docker compose up --build --wait
+~~~
+
+Backup sensitivity, encryption requirements, checksum validation, and clean restore steps are in
+`docs/BACKUP_RESTORE.md`.

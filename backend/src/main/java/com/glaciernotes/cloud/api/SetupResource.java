@@ -19,7 +19,6 @@ public class SetupResource implements SetupApi {
 
     @Context
     HttpServerRequest httpRequest;
-
     public SetupResource(BootstrapService bootstrapService) {
         this.bootstrapService = bootstrapService;
     }

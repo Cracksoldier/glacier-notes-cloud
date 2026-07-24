@@ -10,10 +10,15 @@
 
 
 export interface AdminSettings { 
+    instanceName: string;
+    instanceLogoUrl?: string;
+    defaultLanguage: AdminSettingsDefaultLanguageEnum;
     allowedEmailDomains: Array<string>;
     invitationExpirationHours: number;
     passwordResetExpirationMinutes: number;
     emailChangeExpirationMinutes: number;
+    normalSessionDurationMinutes: number;
+    rememberSessionDurationMinutes: number;
     allowedImageTypes: Array<AdminSettingsAllowedImageTypesEnum>;
     maximumImageBytes: number;
     perUserStorageQuotaBytes: number;
@@ -25,13 +30,32 @@ export interface AdminSettings {
     usersMayDisableAutoPurge: boolean;
     adminDeletionRetentionDays: number;
     selfDeletionEnabled: boolean;
+    publicBaseUrl: string;
+    smtpSenderName: string;
+    smtpSenderAddress: string;
+    auditRetentionDays: number;
+    operationalLogRetentionDays: number;
+    loginDelayThreshold: number;
+    loginLockThreshold: number;
+    loginLockMinutes: number;
     commonPasswordCheckEnabled: boolean;
     passwordHistoryEnabled: boolean;
+    restartRequiredSettings: Array<AdminSettingsRestartRequiredSettingsEnum>;
 }
+export enum AdminSettingsDefaultLanguageEnum {
+    En = 'en',
+    De = 'de'
+};
 export enum AdminSettingsAllowedImageTypesEnum {
     ImagePng = 'image/png',
     ImageJpeg = 'image/jpeg',
     ImageWebp = 'image/webp'
+};
+export enum AdminSettingsRestartRequiredSettingsEnum {
+    ImageStorageBackend = 'imageStorageBackend',
+    SmtpEnabled = 'smtpEnabled',
+    BackupEnabled = 'backupEnabled',
+    MetricsEnabled = 'metricsEnabled'
 };
 
 

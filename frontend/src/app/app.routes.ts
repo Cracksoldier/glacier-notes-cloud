@@ -1,8 +1,12 @@
 import { Routes } from '@angular/router';
 import { AccountSettingsComponent } from './account/account-settings.component';
+import { AdminAuditComponent } from './admin/admin-audit.component';
+import { AdminBackupsComponent } from './admin/admin-backups.component';
 import { AdminInvitationsComponent } from './admin/admin-invitations.component';
+import { AdminOverviewComponent } from './admin/admin-overview.component';
 import { AdminSettingsComponent } from './admin/admin-settings.component';
 import { AdminShellComponent } from './admin/admin-shell.component';
+import { AdminSmtpComponent } from './admin/admin-smtp.component';
 import { AdminStatusComponent } from './admin/admin-status.component';
 import { AdminUserDetailComponent } from './admin/admin-user-detail.component';
 import { AdminUsersComponent } from './admin/admin-users.component';
@@ -50,12 +54,16 @@ export const routes: Routes = [
     component: AdminShellComponent,
     canActivate: [adminGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'users' },
+      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: 'overview', component: AdminOverviewComponent },
       { path: 'users', component: AdminUsersComponent },
       { path: 'users/:id', component: AdminUserDetailComponent },
       { path: 'invitations', component: AdminInvitationsComponent },
       { path: 'settings', component: AdminSettingsComponent },
+      { path: 'smtp', component: AdminSmtpComponent },
+      { path: 'audit', component: AdminAuditComponent },
       { path: 'status', component: AdminStatusComponent },
+      { path: 'backups', component: AdminBackupsComponent },
     ],
   },
   { path: '**', redirectTo: 'notes' },

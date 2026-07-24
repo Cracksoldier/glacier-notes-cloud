@@ -46,6 +46,9 @@ use `SameSite=Lax` and `Path=/`.
 | `GLACIER_BOOTSTRAP_TOKEN_FILE` | One-time setup token file; overrides `GLACIER_BOOTSTRAP_TOKEN` |
 | `GLACIER_SECURITY_SESSION_SECRET_FILE` | HMAC/session secret file; overrides the direct value |
 | `GLACIER_PUBLIC_BASE_URL` | External origin used for secure-cookie policy; default `http://localhost:8080` |
+| `GLACIER_METRICS_ENABLED` | Enables Micrometer and Prometheus metrics on the management port; default `true` |
+| `GLACIER_BACKUP_ENABLED` | Enables administrator-created server backups; default `false` |
+| `GLACIER_BUILD_IDENTIFIER` | Operator-provided build identifier recorded in backup manifests |
 | `GLACIER_BOOTSTRAP_FAILURE_LIMIT` | Invalid attempts per window; default `5` |
 | `GLACIER_BOOTSTRAP_WINDOW_SECONDS`, `GLACIER_BOOTSTRAP_BLOCK_SECONDS` | Rate-limit window and block duration; defaults `900` |
 | `GLACIER_PASSWORD_ARGON2_MEMORY_KIB` | Argon2id memory cost; minimum/default `19456` |
@@ -113,9 +116,18 @@ network, terminate TLS at the proxy, and forward only port 8080. Enable and rest
 header processing with `QUARKUS_HTTP_PROXY_PROXY_ADDRESS_FORWARDING=true` only when the proxy
 addresses are trusted. Never publish port 9000 publicly.
 
+Liveness, readiness, and Prometheus metrics are exposed only on the management interface at
+`/q/health/live`, `/q/health/ready`, and `/q/metrics`. Metrics are enabled by default and may be
+disabled with `GLACIER_METRICS_ENABLED=false`. Application metrics use bounded route and result
+labels; do not add usernames, email addresses, note titles, image filenames, or tokens as labels.
+Production request logs are JSON and include method, route template, response status, duration,
+correlation ID, and error code. Retain operational logs for 30 days by default.
+
 The `transfer_data` volume contains short-lived uploads and generated exports. It is not a backup:
 jobs expire automatically, and successful imports remove their upload. Restrict the volume like user
 content because files may contain complete note libraries.
 
-Back up the `postgres_data`, `image_data`, and `backup_data` volumes together. Restores must preserve
-database and filesystem data from the same point in time.
+The environment-gated backup job and clean-restore procedure are documented in
+[`docs/BACKUP_RESTORE.md`](../docs/BACKUP_RESTORE.md). Backups contain sensitive user data and
+authentication hashes even though configuration secrets are excluded. Encrypt and protect external
+copies and the `backup_data` volume.

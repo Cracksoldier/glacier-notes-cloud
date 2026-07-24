@@ -107,7 +107,7 @@ class AuthenticationResourceTest {
     }
 
     @Test
-    void credentialFailuresAreNeutralAndDisplayNamesCannotAuthenticate() {
+    void credentialFailuresAreNeutralAndDisplayNamesCannotAuthenticate() throws SQLException {
         login("Admin.User", "wrong-password-value", false).then()
             .statusCode(401)
             .body("errorCode", equalTo("AUTH_INVALID_CREDENTIALS"));
@@ -117,6 +117,18 @@ class AuthenticationResourceTest {
         login("missing@example.com", PASSWORD, false).then()
             .statusCode(401)
             .body("errorCode", equalTo("AUTH_INVALID_CREDENTIALS"));
+
+        try (var connection = dataSource.getConnection();
+             var statement = connection.createStatement();
+             var rows = statement.executeQuery("""
+                 select count(*), min(client_description), count(ip_address)
+                 from audit_events where event_type='LOGIN_FAILED'
+                 """)) {
+            assertTrue(rows.next());
+            assertTrue(rows.getInt(1) == 3);
+            assertTrue("Other browser / Other platform".equals(rows.getString(2)));
+            assertTrue(rows.getInt(3) == 3);
+        }
     }
 
     @Test

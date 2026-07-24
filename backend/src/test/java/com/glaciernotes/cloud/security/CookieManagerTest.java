@@ -3,6 +3,7 @@ package com.glaciernotes.cloud.security;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -19,7 +20,10 @@ class CookieManagerTest {
     SessionTokenService tokens;
 
     @Test
+    @Transactional
     void malformedPublicBaseUrlProducesAnExplicitConfigurationFailure() throws Exception {
+        entityManager.createNativeQuery("update instance_settings set public_base_url = null")
+            .executeUpdate();
         CookieManager cookies = new CookieManager(entityManager, "http://[invalid", tokens);
         var method = CookieManager.class.getDeclaredMethod("secureCookies");
         method.setAccessible(true);

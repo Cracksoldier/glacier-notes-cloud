@@ -275,9 +275,8 @@ public class ContentService {
         return contentNote(ownerId, note);
     }
 
-    @Scheduled(every = "1h", delayed = "5m")
     @Transactional
-    void cleanNoteHistory() {
+    public void cleanNoteHistory() {
         if (!repository.acquireHistoryCleanupLock()) return;
         var settings = repository.settings();
         Instant now = clock.now();

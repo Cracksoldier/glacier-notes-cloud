@@ -24,8 +24,7 @@ public class TrashRetentionService {
         this.time = time;
     }
 
-    @Scheduled(every = "1h", delayed = "7m", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
-    void purgeExpiredTrash() {
+    public void purgeExpiredTrash() {
         @SuppressWarnings("unchecked")
         List<Object[]> expired = entityManager.createNativeQuery("""
             select n.owner_id, n.id, n.version

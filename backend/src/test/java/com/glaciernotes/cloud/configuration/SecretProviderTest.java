@@ -154,6 +154,9 @@ class SecretProviderTest {
 
             @Override
             public Transfer transfer() { return null; }
+
+            @Override
+            public Backup backup() { return null; }
         };
     }
 }

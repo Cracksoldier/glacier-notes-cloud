@@ -79,9 +79,8 @@ public class AccountDeletionService {
         return user;
     }
 
-    @Scheduled(every = "1m", delayed = "30s", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
     @Transactional
-    void finalizeDueAccounts() {
+    public void finalizeDueAccounts() {
         @SuppressWarnings("unchecked")
         List<UUID> due = entityManager.createNativeQuery("""
             select id from app_users

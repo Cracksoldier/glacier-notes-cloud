@@ -3,7 +3,13 @@ package com.glaciernotes.cloud.api;
 import com.glaciernotes.cloud.generated.api.AdministrationApi;
 import com.glaciernotes.cloud.generated.model.AdminStatus;
 import com.glaciernotes.cloud.application.lifecycle.LifecycleService;
+import com.glaciernotes.cloud.application.lifecycle.LifecycleEmailService;
+import com.glaciernotes.cloud.application.operations.AuditService;
+import com.glaciernotes.cloud.application.operations.BackupService;
+import com.glaciernotes.cloud.application.operations.InstanceLogoService;
+import com.glaciernotes.cloud.application.operations.JobLeaseRepository;
 import com.glaciernotes.cloud.application.port.BinaryAssetStorage;
+import com.glaciernotes.cloud.configuration.GlacierConfiguration;
 import com.glaciernotes.cloud.application.transfer.TransferModels.ApplyCommand;
 import com.glaciernotes.cloud.application.transfer.TransferService;
 import com.glaciernotes.cloud.generated.model.*;
@@ -14,10 +20,14 @@ import jakarta.ws.rs.core.Context;
 import org.jboss.logging.MDC;
 
 import java.io.InputStream;
+import java.io.File;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityManager;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 @RolesAllowed("ADMIN")
@@ -27,17 +37,42 @@ public class AdministrationResource implements AdministrationApi {
     private final CookieManager cookies;
     private final BinaryAssetStorage imageStorage;
     private final TransferService transfers;
+    private final AuditService audit;
+    private final BackupService backups;
+    private final InstanceLogoService logo;
+    private final LifecycleEmailService email;
+    private final JobLeaseRepository jobs;
+    private final EntityManager entityManager;
+    private final GlacierConfiguration configuration;
+    private final String applicationVersion;
+    private final boolean metricsEnabled;
 
     @Context
     HttpServerResponse response;
 
     public AdministrationResource(LifecycleService lifecycle, SecurityIdentity identity, CookieManager cookies,
-                                  BinaryAssetStorage imageStorage, TransferService transfers) {
+                                  BinaryAssetStorage imageStorage, TransferService transfers,
+                                  AuditService audit, BackupService backups, InstanceLogoService logo,
+                                  LifecycleEmailService email, JobLeaseRepository jobs,
+                                  EntityManager entityManager, GlacierConfiguration configuration,
+                                  @ConfigProperty(name = "quarkus.application.version", defaultValue = "0.1.0")
+                                  String applicationVersion,
+                                  @ConfigProperty(name = "quarkus.micrometer.enabled", defaultValue = "true")
+                                  boolean metricsEnabled) {
         this.lifecycle = lifecycle;
         this.identity = identity;
         this.cookies = cookies;
         this.imageStorage = imageStorage;
         this.transfers = transfers;
+        this.audit = audit;
+        this.backups = backups;
+        this.logo = logo;
+        this.email = email;
+        this.jobs = jobs;
+        this.entityManager = entityManager;
+        this.configuration = configuration;
+        this.applicationVersion = applicationVersion;
+        this.metricsEnabled = metricsEnabled;
     }
 
     @Override
@@ -46,9 +81,13 @@ public class AdministrationResource implements AdministrationApi {
             .service(AdminStatus.ServiceEnum.GLACIER_NOTES_CLOUD)
             .status(AdminStatus.StatusEnum.OK)
             .apiVersion(AdminStatus.ApiVersionEnum.V1)
+            .applicationVersion(applicationVersion)
+            .buildIdentifier(configuration.backup().buildIdentifier())
             .database(AdminStatus.DatabaseEnum.UP)
             .imageStorageBackend(AdminStatus.ImageStorageBackendEnum.fromValue(imageStorage.backend()))
-            .imageStorage(imageStorage.healthy() ? AdminStatus.ImageStorageEnum.UP : AdminStatus.ImageStorageEnum.DOWN);
+            .imageStorage(imageStorage.healthy() ? AdminStatus.ImageStorageEnum.UP : AdminStatus.ImageStorageEnum.DOWN)
+            .smtp(email.status()).backupEnabled(backups.enabled()).metricsEnabled(metricsEnabled)
+            .jobsHealthy(jobs.healthy());
     }
 
     @Override
@@ -127,6 +166,66 @@ public class AdministrationResource implements AdministrationApi {
     @Override
     public AdminSettings updateAdminSettings(AdminSettingsUpdate update) {
         return lifecycle.updateSettings(update, actor(), correlationId());
+    }
+
+    @Override
+    public AdminSettings updateInstanceLogo(InputStream file) {
+        logo.replace(file);
+        audit.record("INSTANCE_LOGO_CHANGED", actor(), null, "INSTANCE_SETTINGS", null,
+            "SUCCESS", correlationId(), java.util.Map.of("action", "replace"));
+        return lifecycle.settingsModel();
+    }
+
+    @Override
+    public void deleteInstanceLogo() {
+        logo.delete();
+        audit.record("INSTANCE_LOGO_CHANGED", actor(), null, "INSTANCE_SETTINGS", null,
+            "SUCCESS", correlationId(), java.util.Map.of("action", "remove"));
+    }
+
+    @Override
+    public SmtpStatus testSmtp() {
+        if (!email.configured()) throw com.glaciernotes.cloud.application.operations.OperationalFailure.smtpNotConfigured();
+        String recipient = entityManager.createQuery(
+                "select u.email from UserEntity u where u.id=:id", String.class)
+            .setParameter("id", actor()).getSingleResult();
+        boolean sent = email.sendTest(recipient);
+        audit.record("SMTP_TEST", actor(), null, "SMTP", null, sent ? "SUCCESS" : "FAILURE",
+            correlationId(), java.util.Map.of());
+        return email.status();
+    }
+
+    @Override
+    public AuditEventPage listAuditEvents(String eventType, String result, OffsetDateTime from,
+                                          OffsetDateTime to, String cursor, Integer limit) {
+        return audit.list(eventType, result, from, to, cursor, limit);
+    }
+
+    @Override
+    public File exportAuditEvents(String format, String eventType, String result,
+                                  OffsetDateTime from, OffsetDateTime to) {
+        File file = audit.export(format, eventType, result, from, to);
+        response.putHeader("Content-Type", "csv".equals(format) ? "text/csv" : "application/json");
+        response.putHeader("Content-Disposition", "attachment; filename=\"glacier-audit." + format + "\"");
+        return file;
+    }
+
+    @Override
+    public BackupJob createBackup() {
+        BackupJob job = backups.create(actor());
+        audit.record("BACKUP_INITIATED", actor(), null, "BACKUP", job.getId(), "SUCCESS",
+            correlationId(), java.util.Map.of());
+        return job;
+    }
+
+    @Override
+    public BackupJobPage listBackups(String cursor, Integer limit) {
+        return backups.list(cursor, limit);
+    }
+
+    @Override
+    public BackupJob getBackup(UUID backupId) {
+        return backups.get(backupId);
     }
 
     @Override

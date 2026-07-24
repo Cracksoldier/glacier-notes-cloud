@@ -14,9 +14,15 @@ import type { AdminStatus } from '../shared/generated-api/model/adminStatus';
           <dl>
             <div><dt>Service</dt><dd>{{ value.service }}</dd></div>
             <div><dt>API</dt><dd>{{ value.apiVersion }}</dd></div>
+            <div><dt>Application version</dt><dd>{{ value.applicationVersion }}</dd></div>
+            <div><dt>Build</dt><dd>{{ value.buildIdentifier }}</dd></div>
             <div><dt>Database</dt><dd>{{ value.database }}</dd></div>
             <div><dt>Image backend</dt><dd>{{ value.imageStorageBackend }}</dd></div>
             <div><dt>Image storage</dt><dd>{{ value.imageStorage }}</dd></div>
+            <div><dt>SMTP</dt><dd>{{ value.smtp.state }}</dd></div>
+            <div><dt>Backups</dt><dd>{{ value.backupEnabled ? 'enabled' : 'disabled' }}</dd></div>
+            <div><dt>Metrics</dt><dd>{{ value.metricsEnabled ? 'enabled' : 'disabled' }}</dd></div>
+            <div><dt>Scheduled jobs</dt><dd>{{ value.jobsHealthy ? 'healthy' : 'degraded' }}</dd></div>
           </dl>
         } @else if (error()) {
           <p role="alert">{{ error() }}</p>

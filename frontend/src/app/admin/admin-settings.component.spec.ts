@@ -5,14 +5,20 @@ import { AdministrationService } from '../shared/generated-api/api/administratio
 import {
   type AdminSettings,
   AdminSettingsAllowedImageTypesEnum,
+  AdminSettingsDefaultLanguageEnum,
+  AdminSettingsRestartRequiredSettingsEnum,
 } from '../shared/generated-api/model/adminSettings';
 import { AdminSettingsComponent } from './admin-settings.component';
 
 const settings: AdminSettings = {
+  instanceName: 'Glacier Notes',
+  defaultLanguage: AdminSettingsDefaultLanguageEnum.En,
   allowedEmailDomains: [],
   invitationExpirationHours: 168,
   passwordResetExpirationMinutes: 60,
   emailChangeExpirationMinutes: 60,
+  normalSessionDurationMinutes: 720,
+  rememberSessionDurationMinutes: 43_200,
   allowedImageTypes: [
     AdminSettingsAllowedImageTypesEnum.ImagePng,
     AdminSettingsAllowedImageTypesEnum.ImageJpeg,
@@ -28,8 +34,22 @@ const settings: AdminSettings = {
   usersMayDisableAutoPurge: true,
   adminDeletionRetentionDays: 30,
   selfDeletionEnabled: true,
+  publicBaseUrl: 'http://localhost:8080',
+  smtpSenderName: 'Glacier Notes',
+  smtpSenderAddress: 'noreply@localhost',
+  auditRetentionDays: 365,
+  operationalLogRetentionDays: 30,
+  loginDelayThreshold: 5,
+  loginLockThreshold: 10,
+  loginLockMinutes: 15,
   commonPasswordCheckEnabled: true,
   passwordHistoryEnabled: false,
+  restartRequiredSettings: [
+    AdminSettingsRestartRequiredSettingsEnum.ImageStorageBackend,
+    AdminSettingsRestartRequiredSettingsEnum.SmtpEnabled,
+    AdminSettingsRestartRequiredSettingsEnum.BackupEnabled,
+    AdminSettingsRestartRequiredSettingsEnum.MetricsEnabled,
+  ],
 };
 
 describe('AdminSettingsComponent', () => {
