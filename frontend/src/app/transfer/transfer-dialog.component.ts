@@ -12,12 +12,13 @@ import { ImportApplyRequestStrategyEnum } from '../shared/generated-api/model/im
 import type { NotebookView } from '../shared/generated-api/model/notebookView';
 import type { NoteSummary } from '../shared/generated-api/model/noteSummary';
 import type { TransferJob } from '../shared/generated-api/model/transferJob';
+import { ModalFocusDirective } from '../shared/modal-focus.directive';
 
 type Step = 'menu' | 'working' | 'conflict' | 'done' | 'error';
 
 @Component({
   selector: 'app-transfer-dialog',
-  imports: [FormsModule],
+  imports: [FormsModule, ModalFocusDirective],
   templateUrl: './transfer-dialog.component.html',
   styleUrl: './transfer-dialog.component.css',
 })

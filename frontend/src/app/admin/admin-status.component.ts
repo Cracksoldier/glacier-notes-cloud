@@ -18,6 +18,8 @@ import type { AdminStatus } from '../shared/generated-api/model/adminStatus';
             <div><dt>Image backend</dt><dd>{{ value.imageStorageBackend }}</dd></div>
             <div><dt>Image storage</dt><dd>{{ value.imageStorage }}</dd></div>
           </dl>
+        } @else if (error()) {
+          <p role="alert">{{ error() }}</p>
         } @else {
           <p role="status">Loading administrative status…</p>
         }
@@ -37,8 +39,15 @@ import type { AdminStatus } from '../shared/generated-api/model/adminStatus';
 export class AdminStatusComponent {
   private readonly administrationApi = inject(AdministrationService);
   protected readonly status = signal<AdminStatus | null>(null);
+  protected readonly error = signal('');
 
   constructor() {
-    this.administrationApi.getAdminStatus().subscribe((status) => this.status.set(status));
+    this.administrationApi.getAdminStatus().subscribe({
+      next: (status) => this.status.set(status),
+      error: (failure) =>
+        this.error.set(
+          failure.error?.detail ?? 'Administrative status could not be loaded. Try again.',
+        ),
+    });
   }
 }

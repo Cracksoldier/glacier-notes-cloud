@@ -70,6 +70,10 @@ textarea {
   block-size: 1px;
   opacity: 0;
 }
+.file-button:focus-within {
+  outline: 2px solid #87c7d8;
+  outline-offset: 2px;
+}
 
 .list {
   display: grid;

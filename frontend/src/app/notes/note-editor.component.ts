@@ -11,7 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { lastValueFrom, tap } from 'rxjs';
-import { I18nService } from '../core/i18n.service';
+import { I18nService, type MessageKey } from '../core/i18n.service';
 import { PreferencesService } from '../core/preferences.service';
 import { ProblemService } from '../core/problem.service';
 import { CurrentUserService } from '../shared/generated-api/api/currentUser.service';
@@ -23,6 +23,7 @@ import type { NoteUpdate } from '../shared/generated-api/model/noteUpdate';
 import type { NoteVersion } from '../shared/generated-api/model/noteVersion';
 import type { NoteVersionSummary } from '../shared/generated-api/model/noteVersionSummary';
 import type { StorageUsage } from '../shared/generated-api/model/storageUsage';
+import { ModalFocusDirective } from '../shared/modal-focus.directive';
 import { MarkdownService } from './markdown.service';
 import { NotesStore } from './notes.store';
 
@@ -47,6 +48,7 @@ interface DraftItem {
 }
 
 interface UploadState {
+  id: number;
   name: string;
   progress: number;
   error?: string;
@@ -56,6 +58,7 @@ const SAVE_DELAY = 500;
 
 @Component({
   selector: 'app-note-editor',
+  imports: [ModalFocusDirective],
   templateUrl: './note-editor.component.html',
   styleUrl: './note-editor.component.css',
 })
@@ -90,7 +93,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly versions = signal<NoteVersionSummary[]>([]);
   protected readonly selectedVersion = signal<NoteVersion | null>(null);
   protected readonly historyCursor = signal<string | null>(null);
-  protected readonly shareWarning = signal<{ url: string; reasons: string[] } | null>(null);
+  protected readonly shareWarning = signal<{ url: string; reasons: MessageKey[] } | null>(null);
   protected readonly colors = Object.values(ContentColor);
   protected readonly toolbar: { action: ToolbarAction; label: string; icon?: string }[] = [
     { action: 'bold', label: 'Bold', icon: 'fa-bold' },
@@ -112,6 +115,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private saving: Promise<boolean> | null = null;
   private closing = false;
   private itemSequence = 0;
+  private uploadSequence = 0;
   private conflictDraft: Omit<NoteUpdate, 'version'> | null = null;
   private meaningfulChanges = false;
   private historyOperationSequence = 0;
@@ -191,10 +195,9 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected shareByEmail(): void {
     const url = this.mailtoUrl();
-    const reasons: string[] = [];
-    if (this.imageIds().length) reasons.push('Images cannot be attached to the email.');
-    if (url.length > 2000)
-      reasons.push('This note may be too long for your browser or mail application.');
+    const reasons: MessageKey[] = [];
+    if (this.imageIds().length) reasons.push('shareImageWarning');
+    if (url.length > 2000) reasons.push('shareLengthWarning');
     if (reasons.length) {
       this.shareWarning.set({ url, reasons });
       return;
@@ -480,8 +483,8 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private async uploadFiles(files: File[]): Promise<void> {
     for (const file of files) {
-      const index = this.uploads().length;
-      this.uploads.update((items) => [...items, { name: file.name, progress: 0 }]);
+      const uploadId = ++this.uploadSequence;
+      this.uploads.update((items) => [...items, { id: uploadId, name: file.name, progress: 0 }]);
       try {
         const event = await lastValueFrom(
           this.imagesApi.uploadImage(file, 'events', true).pipe(
@@ -489,8 +492,8 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
               if (value.type === HttpEventType.UploadProgress && value.total) {
                 const total = value.total;
                 this.uploads.update((items) =>
-                  items.map((item, itemIndex) =>
-                    itemIndex === index
+                  items.map((item) =>
+                    item.id === uploadId
                       ? { ...item, progress: Math.round((100 * value.loaded) / total) }
                       : item,
                   ),
@@ -508,13 +511,13 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
                 `${value}${value.endsWith('\n') || !value ? '' : '\n'}![${file.name}](glacier-img://${id})\n`,
             );
           }
-          this.uploads.update((items) => items.filter((_, itemIndex) => itemIndex !== index));
+          this.uploads.update((items) => items.filter((item) => item.id !== uploadId));
           this.changed();
         }
       } catch (error) {
         this.uploads.update((items) =>
-          items.map((item, itemIndex) =>
-            itemIndex === index ? { ...item, error: this.problems.message(error) } : item,
+          items.map((item) =>
+            item.id === uploadId ? { ...item, error: this.problems.message(error) } : item,
           ),
         );
       }
@@ -545,8 +548,15 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     };
     if (action === 'bold') wrap('**');
     else if (action === 'italic') wrap('_');
-    else if (action === 'code') wrap(selected.includes('\n') ? '```\n' : '`');
-    else if (action === 'link') {
+    else if (action === 'code') {
+      if (selected.includes('\n')) {
+        insertion = `\`\`\`\n${selected}${selected.endsWith('\n') ? '' : '\n'}\`\`\``;
+        selectionStart = start + 4;
+        selectionEnd = selectionStart + selected.length;
+      } else {
+        wrap('`');
+      }
+    } else if (action === 'link') {
       insertion = `[${selected || 'link'}](https://)`;
       selectionStart = start + (selected || 'link').length + 3;
       selectionEnd = selectionStart + 8;

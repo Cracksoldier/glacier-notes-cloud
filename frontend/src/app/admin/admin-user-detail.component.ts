@@ -249,8 +249,9 @@ export class AdminUserDetailComponent {
     request.subscribe({
       next: () => {
         this.message.set('Action completed.');
+        const self = this.auth.session()?.user.id === this.id;
         if (kind === 'deactivate' || kind === 'sessions') this.checkSelf();
-        else this.load();
+        if (!self) this.load();
       },
       error: (failure) => this.fail(failure),
     });

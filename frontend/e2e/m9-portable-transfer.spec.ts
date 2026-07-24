@@ -30,7 +30,7 @@ test('portable fixture import and full export complete through the notes UI', as
   const conflicts = page.getByRole('heading', { name: 'Import conflicts' });
   await expect(complete.or(conflicts)).toBeVisible({ timeout: 30_000 });
   if (await conflicts.isVisible()) {
-    await page.getByRole('button', { name: /Add as copies/ }).click();
+    await page.getByRole('button', { name: /Replace existing by ID/ }).click();
     await expect(complete).toBeVisible({ timeout: 30_000 });
   }
   await page.getByRole('button', { name: 'Done' }).click();

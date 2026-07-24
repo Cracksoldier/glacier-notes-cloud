@@ -418,10 +418,12 @@ notebook) {
 <div class="modal-backdrop" (click)="notebookDelete.set(null)">
   <section
     class="modal"
+    appModalFocus
     role="dialog"
     aria-modal="true"
     aria-labelledby="delete-notebook-title"
     (click)="$event.stopPropagation()"
+    (modalDismiss)="notebookDelete.set(null)"
   >
     <h2 id="delete-notebook-title">Delete “{{ notebook.name }}”?</h2>
     <p>This notebook contains {{ notebook.noteCount }} notes.</p>
@@ -460,9 +462,17 @@ notebook) {
 />
 } @else if (overlay(); as visibleOverlay) {
 <div class="modal-backdrop" (click)="overlay.set(null)">
-  <section class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+  <section
+    class="modal"
+    appModalFocus
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="visibleOverlay === 'shortcuts' ? 'shortcuts-title' : 'settings-title'"
+    (click)="$event.stopPropagation()"
+    (modalDismiss)="overlay.set(null)"
+  >
     @if (visibleOverlay === 'shortcuts') {
-    <h2>Keyboard shortcuts</h2>
+    <h2 id="shortcuts-title">Keyboard shortcuts</h2>
     <table>
       <tbody>
         <tr>
@@ -504,19 +514,21 @@ notebook) {
       </tbody>
     </table>
     } @else {
-    <h2>{{ i18n.t('settings') }}</h2>
+    <h2 id="settings-title">{{ i18n.t('settings') }}</h2>
     <p class="setting-row">
-      <span>Theme</span
+      <span>{{ i18n.t('theme') }}</span
       ><button type="button" (click)="toggleTheme()">
-        Use {{ theme.dark() ? 'light' : 'dark' }} theme
+        {{ i18n.t(theme.dark() ? 'useLightTheme' : 'useDarkTheme') }}
       </button>
     </p>
-    <p class="future-note">Theme changes are synchronized with your account.</p>
+    <p class="future-note">{{ i18n.t('settingsSynchronized') }}</p>
     <a class="settings-link" href="/settings" routerLink="/settings" (click)="overlay.set(null)"
-      >Open account & settings</a
+      >{{ i18n.t('openAccountSettings') }}</a
     >
     }
-    <footer><button type="button" (click)="overlay.set(null)">Close</button></footer>
+    <footer>
+      <button type="button" (click)="overlay.set(null)">{{ i18n.t('close') }}</button>
+    </footer>
   </section>
 </div>
 }

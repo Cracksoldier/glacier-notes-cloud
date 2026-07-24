@@ -43,4 +43,27 @@ describe('LoginComponent', () => {
       rememberMe: true,
     });
   });
+
+  it('associates required-field feedback with both login fields', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const identifier = fixture.nativeElement.querySelector(
+      'input[formControlName="identifier"]',
+    ) as HTMLInputElement;
+    const password = fixture.nativeElement.querySelector(
+      'input[formControlName="password"]',
+    ) as HTMLInputElement;
+    expect(identifier.getAttribute('aria-describedby')).toBe('identifier-error');
+    expect(password.getAttribute('aria-describedby')).toBe('password-error');
+    expect(fixture.nativeElement.querySelector('#identifier-error')?.textContent).toContain(
+      'required',
+    );
+    expect(fixture.nativeElement.querySelector('#password-error')?.textContent).toContain(
+      'required',
+    );
+  });
 });

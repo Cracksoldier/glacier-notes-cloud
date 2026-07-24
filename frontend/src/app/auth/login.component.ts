@@ -6,6 +6,11 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthStore } from '../core/auth.store';
 import type { ProblemDetails } from '../shared/generated-api/model/problemDetails';
 
+interface LoginControlErrors {
+  required?: boolean;
+  maxlength?: { requiredLength: number };
+}
+
 @Component({
   selector: 'app-login',
   imports: [ReactiveFormsModule, RouterLink],
@@ -57,5 +62,14 @@ export class LoginComponent {
         }
       },
     });
+  }
+
+  protected errorFor(field: 'identifier' | 'password'): string | null {
+    const control = this.form.controls[field];
+    if (!control.touched || !control.errors) return null;
+    const errors = control.errors as LoginControlErrors;
+    if (errors.required) return 'This field is required.';
+    if (errors.maxlength) return `Use no more than ${errors.maxlength.requiredLength} characters.`;
+    return 'Check this value.';
   }
 }

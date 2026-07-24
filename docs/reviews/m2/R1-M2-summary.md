@@ -73,3 +73,15 @@ current-state inspection.
 3. Correct the canonical bootstrap-token and global security definitions before regenerating code.
 4. Add focused schema and setup-error tests, then record all executed verification in
    `test-results.md`.
+
+## Batch 5 Remediation Update
+
+Revalidated on 2026-07-24 against base `7514d1b`.
+
+| Original finding | Final status |
+|---|---|
+| Setup validation/API/rate-limit feedback lacks regression coverage | **Resolved.** Behavioral tests cover invalid fields, associated messages, server details, and throttling feedback. |
+| Setup stylesheet contains invalid `font` shorthand | **Resolved.** The action now inherits the font and declares weight and line-height with valid properties. |
+
+Focused pre-fix failures and full verification are in the
+[Batch 5 record](../remediation/batch-5/B5-FRONTEND-ACCESSIBILITY-summary.md).

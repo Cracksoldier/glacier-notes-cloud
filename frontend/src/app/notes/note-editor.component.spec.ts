@@ -1,8 +1,12 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
+import { I18nService } from '../core/i18n.service';
+import { CurrentUserService } from '../shared/generated-api/api/currentUser.service';
+import { ImagesService } from '../shared/generated-api/api/images.service';
 import { ContentColor } from '../shared/generated-api/model/contentColor';
 import type { ContentNote } from '../shared/generated-api/model/contentNote';
 import { NoteType } from '../shared/generated-api/model/noteType';
@@ -77,6 +81,10 @@ describe('NoteEditorComponent', () => {
     getNoteVersion: vi.fn(),
     restoreNoteVersion: vi.fn(),
   };
+  const imagesApi = { uploadImage: vi.fn() };
+  const currentUserApi = {
+    getCurrentUserStorage: vi.fn(() => of({ usedBytes: 0, quotaBytes: 1024 })),
+  };
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -97,7 +105,13 @@ describe('NoteEditorComponent', () => {
       version: 1,
     }));
     store.snapshotEditorNote.mockResolvedValue(undefined);
-    TestBed.configureTestingModule({ providers: [{ provide: NotesStore, useValue: store }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: NotesStore, useValue: store },
+        { provide: ImagesService, useValue: imagesApi },
+        { provide: CurrentUserService, useValue: currentUserApi },
+      ],
+    });
     fixture = TestBed.createComponent(NoteEditorComponent);
     fixture.componentRef.setInput('initialNote', note);
     fixture.detectChanges();
@@ -249,5 +263,110 @@ describe('NoteEditorComponent', () => {
       fixture.nativeElement.querySelectorAll('.editor__conflict button'),
     ).map((button) => (button as HTMLButtonElement).textContent?.trim());
     expect(actions).toEqual(['Copy local draft', 'Reload server', 'Overwrite with draft']);
+  });
+
+  it('puts the closing fence on its own line for multiline code', async () => {
+    const component = fixture.componentInstance as unknown as {
+      content: { set(value: string): void };
+    };
+    component.content.set('first\nsecond');
+    fixture.detectChanges();
+    const textarea = fixture.nativeElement.querySelector(
+      '[aria-label="Note content"]',
+    ) as HTMLTextAreaElement;
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    (
+      Array.from(fixture.nativeElement.querySelectorAll('[aria-label="Code"]')).at(
+        0,
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(textarea.value).toBe('```\nfirst\nsecond\n```');
+    expect(textarea.selectionStart).toBe(4);
+    expect(textarea.selectionEnd).toBe(16);
+  });
+
+  it('tracks overlapping uploads by stable identity when an earlier row completes first', async () => {
+    const firstEvents = new Subject<unknown>();
+    const secondEvents = new Subject<unknown>();
+    imagesApi.uploadImage.mockReturnValueOnce(firstEvents).mockReturnValueOnce(secondEvents);
+    const component = fixture.componentInstance as unknown as {
+      uploadFiles(files: File[]): Promise<void>;
+      uploads(): Array<{ name: string; progress: number }>;
+    };
+
+    const first = component.uploadFiles([new File(['first'], 'first.png', { type: 'image/png' })]);
+    const second = component.uploadFiles([
+      new File(['second'], 'second.png', { type: 'image/png' }),
+    ]);
+    firstEvents.next({
+      type: HttpEventType.Response,
+      body: { id: '33333333-3333-4333-8333-333333333333' },
+    });
+    firstEvents.complete();
+    await first;
+    secondEvents.next({
+      type: HttpEventType.Response,
+      body: { id: '44444444-4444-4444-8444-444444444444' },
+    });
+    secondEvents.complete();
+    await second;
+
+    expect(component.uploads()).toEqual([]);
+  });
+
+  it('moves focus into the image lightbox and restores the preview trigger on close', () => {
+    const component = fixture.componentInstance as unknown as {
+      imageIds: { set(value: string[]): void };
+    };
+    component.imageIds.set(['33333333-3333-4333-8333-333333333333']);
+    fixture.detectChanges();
+    const preview = fixture.nativeElement.querySelector(
+      '.image-gallery__preview',
+    ) as HTMLButtonElement;
+    preview.focus();
+    preview.click();
+    fixture.detectChanges();
+
+    const close = fixture.nativeElement.querySelector(
+      '[aria-label="Close image preview"]',
+    ) as HTMLButtonElement;
+    expect(document.activeElement).toBe(close);
+    expect((preview.closest('.image-gallery') as HTMLElement).inert).toBe(true);
+    close.click();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(preview);
+  });
+
+  it('localizes the share warning and restores its email-share trigger', () => {
+    TestBed.inject(I18nService).set('de');
+    const component = fixture.componentInstance as unknown as {
+      imageIds: { set(value: string[]): void };
+    };
+    component.imageIds.set(['33333333-3333-4333-8333-333333333333']);
+    fixture.detectChanges();
+    const share = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('button'),
+    ).find((button) => button.textContent?.includes('Per E-Mail teilen')) as HTMLButtonElement;
+    share.focus();
+    share.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.share-warning h2')?.textContent).toContain(
+      'Vor dem Teilen',
+    );
+    expect(fixture.nativeElement.querySelector('.share-warning')?.textContent).toContain(
+      'Bilder können nicht',
+    );
+    const cancel = fixture.nativeElement.querySelector(
+      '.share-warning button',
+    ) as HTMLButtonElement;
+    expect(document.activeElement).toBe(cancel);
+    cancel.click();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(share);
   });
 });

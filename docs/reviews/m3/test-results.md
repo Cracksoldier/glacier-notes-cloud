@@ -13,3 +13,9 @@ Delayed-restoration guard coverage passed and the deployment E2E suite verified 
 navigation in desktop and tablet browsers. The complete frontend suite passed 41 tests; all 68
 backend tests also passed. See the [Batch 3 test record](../remediation/batch-3/test-results.md) for
 the exact gates, pre-fix failures, deployment profile, and CodeRabbit follow-up evidence.
+
+## 2026-07-24 Batch 5 frontend remediation
+
+Admin-status failure and associated login-validation regressions failed before the fixes and passed
+afterward. The complete frontend suite passed 59 tests, all 82 backend tests passed, and all six
+browser workflows passed. See the [Batch 5 test record](../remediation/batch-5/test-results.md).

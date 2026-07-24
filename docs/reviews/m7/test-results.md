@@ -40,3 +40,9 @@ record credentials, tokens, cookies, user content, image bytes, or unredacted lo
 
 The S3 client now enforces explicit API-call and attempt bounds, and deployment configuration passes
 the validated `AES256` or `aws:kms` server-side-encryption policy through to uploads.
+
+## 2026-07-24 Batch 5 frontend remediation
+
+Pre-fix regressions exposed shifting concurrent-upload rows and missing lightbox focus entry,
+containment, background exclusion, and restoration. The focused tests and complete 59-test frontend
+suite pass. See the [Batch 5 test record](../remediation/batch-5/test-results.md).

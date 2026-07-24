@@ -90,3 +90,16 @@ Revalidated on 2026-07-24 against base `c28f701`.
 
 Contract, parser, database, download, and deployment evidence is in the
 [Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).
+
+## Batch 5 Remediation Update
+
+Revalidated on 2026-07-24 against base `7514d1b`.
+
+| Original finding | Final status |
+|---|---|
+| Portable-transfer E2E accumulates `ADD_AS_COPIES` data | **Resolved.** Conflict handling replaces the deterministic fixture IDs instead of adding copies. |
+| Transfer dialog lacks modal focus management | **Resolved.** Shared focus entry, containment, Escape handling, background exclusion, and restoration are applied and tested. |
+| Transfer/admin file pickers conceal keyboard focus | **Resolved.** Both styled pickers expose a visible `:focus-within` outline. |
+
+The isolated Compose and six-workflow browser run is recorded in the
+[Batch 5 evidence](../remediation/batch-5/B5-FRONTEND-ACCESSIBILITY-summary.md).

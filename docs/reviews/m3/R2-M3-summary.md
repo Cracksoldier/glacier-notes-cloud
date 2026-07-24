@@ -97,3 +97,15 @@ Revalidated on 2026-07-24 against base `c28f701`.
 
 Implementation and verification evidence is in the
 [Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).
+
+## Batch 5 Remediation Update
+
+Revalidated on 2026-07-24 against base `7514d1b`.
+
+| Original finding | Final status |
+|---|---|
+| Admin status loading never settles on request failure | **Resolved.** The subscription now exposes a problem alert and clears the loading state. |
+| Login fields omit validation feedback | **Resolved.** Required feedback is visible and programmatically associated with each invalid control. |
+
+Regression and deployment evidence is in the
+[Batch 5 record](../remediation/batch-5/B5-FRONTEND-ACCESSIBILITY-summary.md).

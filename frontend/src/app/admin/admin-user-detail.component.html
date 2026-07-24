@@ -68,8 +68,8 @@
 @if (reset(); as link) {
 <label>One-time reset URL<input readonly [value]="link.resetUrl"></label>
 <button type="button" (click)="copy(link.resetUrl)">Copy reset link</button>
-} @if (message()) {
+} } @if (message()) {
 <p role="status">{{ message() }}</p>
 } @if (error()) {
 <p role="alert">{{ error() }}</p>
-} }
+}

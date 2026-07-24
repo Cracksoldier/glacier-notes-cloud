@@ -28,3 +28,9 @@ Admin settings coverage proved both the disabled form and the direct save guard 
 failure. The complete frontend suite passed 41 tests. See the
 [Batch 3 test record](../remediation/batch-3/test-results.md) for regression-first and full-gate
 evidence.
+
+## 2026-07-24 Batch 5 frontend remediation
+
+Lifecycle/admin regressions cover masked tokens, reset single-flight behavior, post-action user
+refresh, initial-load alert visibility, and picker focus. The complete frontend suite passed 59
+tests. See the [Batch 5 test record](../remediation/batch-5/test-results.md).

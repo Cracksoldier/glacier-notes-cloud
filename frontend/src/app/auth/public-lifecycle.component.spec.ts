@@ -92,4 +92,43 @@ describe('public lifecycle flows', () => {
     expect(component.done()).toBe(true);
     expect(component.password).toBe('');
   });
+
+  it('masks manually entered invitation and reset bearer tokens', () => {
+    const invitation = TestBed.createComponent(AcceptInvitationComponent);
+    invitation.detectChanges();
+    expect(
+      (invitation.nativeElement.querySelector('input[name="token"]') as HTMLInputElement).type,
+    ).toBe('password');
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/v1/auth/invitations/inspect')
+      .flush({ detail: 'Invalid' }, { status: 404, statusText: 'Not Found' });
+
+    const reset = TestBed.createComponent(ResetPasswordComponent);
+    reset.detectChanges();
+    expect(
+      (reset.nativeElement.querySelector('input[name="token"]') as HTMLInputElement).type,
+    ).toBe('password');
+  });
+
+  it('keeps a password-reset token single-flight while completion is pending', () => {
+    const fixture = TestBed.createComponent(ResetPasswordComponent);
+    const component = fixture.componentInstance;
+    component.password = 'new-correct-horse-battery-staple';
+    fixture.detectChanges();
+
+    component.submit();
+    component.submit();
+    fixture.detectChanges();
+
+    const requests = TestBed.inject(HttpTestingController).match(
+      '/api/v1/auth/password-reset/complete',
+    );
+    expect(requests).toHaveLength(1);
+    expect(
+      (fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement).disabled,
+    ).toBe(true);
+    requests.forEach((request) => {
+      request.flush(null);
+    });
+  });
 });

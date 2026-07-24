@@ -20,26 +20,45 @@
       <div class="field-grid">
         <div class="field">
           <label for="username">Username</label>
-          <input id="username" formControlName="username" autocomplete="username">
+          <input
+            id="username"
+            formControlName="username"
+            autocomplete="username"
+            [attr.aria-invalid]="errorFor('username') ? 'true' : null"
+            [attr.aria-describedby]="errorFor('username') ? 'username-error' : null"
+          >
           @if (errorFor('username'); as error) {
-          <p class="field-error">{{ error }}</p>
+          <p id="username-error" class="field-error">{{ error }}</p>
           }
         </div>
 
         <div class="field">
           <label for="email">Email</label>
-          <input id="email" type="email" formControlName="email" autocomplete="email">
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            [attr.aria-invalid]="errorFor('email') ? 'true' : null"
+            [attr.aria-describedby]="errorFor('email') ? 'email-error' : null"
+          >
           @if (errorFor('email'); as error) {
-          <p class="field-error">{{ error }}</p>
+          <p id="email-error" class="field-error">{{ error }}</p>
           }
         </div>
       </div>
 
       <div class="field">
         <label for="display-name">Display name <span>(optional)</span></label>
-        <input id="display-name" formControlName="displayName" autocomplete="name">
+        <input
+          id="display-name"
+          formControlName="displayName"
+          autocomplete="name"
+          [attr.aria-invalid]="errorFor('displayName') ? 'true' : null"
+          [attr.aria-describedby]="errorFor('displayName') ? 'display-name-error' : null"
+        >
         @if (errorFor('displayName'); as error) {
-        <p class="field-error">{{ error }}</p>
+        <p id="display-name-error" class="field-error">{{ error }}</p>
         }
       </div>
 
@@ -51,10 +70,14 @@
             type="password"
             formControlName="password"
             autocomplete="new-password"
+            [attr.aria-invalid]="errorFor('password') ? 'true' : null"
+            [attr.aria-describedby]="
+              errorFor('password') ? 'password-hint password-error' : 'password-hint'
+            "
           >
-          <p class="hint">12–128 characters, without spaces.</p>
+          <p id="password-hint" class="hint">12–128 characters, without spaces.</p>
           @if (errorFor('password'); as error) {
-          <p class="field-error">{{ error }}</p>
+          <p id="password-error" class="field-error">{{ error }}</p>
           }
         </div>
 
@@ -65,9 +88,13 @@
             type="password"
             formControlName="passwordConfirmation"
             autocomplete="new-password"
+            [attr.aria-invalid]="errorFor('passwordConfirmation') ? 'true' : null"
+            [attr.aria-describedby]="
+              errorFor('passwordConfirmation') ? 'password-confirmation-error' : null
+            "
           >
           @if (errorFor('passwordConfirmation'); as error) {
-          <p class="field-error">{{ error }}</p>
+          <p id="password-confirmation-error" class="field-error">{{ error }}</p>
           }
         </div>
       </div>
@@ -80,10 +107,18 @@
           formControlName="bootstrapToken"
           autocomplete="off"
           spellcheck="false"
+          [attr.aria-invalid]="errorFor('bootstrapToken') ? 'true' : null"
+          [attr.aria-describedby]="
+            errorFor('bootstrapToken')
+              ? 'bootstrap-token-hint bootstrap-token-error'
+              : 'bootstrap-token-hint'
+          "
         >
-        <p class="hint">Use the value configured on the server or stored in its secret file.</p>
+        <p id="bootstrap-token-hint" class="hint">
+          Use the value configured on the server or stored in its secret file.
+        </p>
         @if (errorFor('bootstrapToken'); as error) {
-        <p class="field-error">{{ error }}</p>
+        <p id="bootstrap-token-error" class="field-error">{{ error }}</p>
         }
       </div>
 

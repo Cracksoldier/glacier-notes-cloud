@@ -49,7 +49,7 @@
       </figure>
       }
     </section>
-    } @for (upload of uploads(); track $index) {
+    } @for (upload of uploads(); track upload.id) {
     <div class="image-upload" [class.image-upload--error]="upload.error" role="status">
       <span>{{ upload.name }}</span>
       @if (upload.error) { <span>{{ upload.error }}</span> } @else {
@@ -248,10 +248,12 @@
     @if (lightbox(); as imageId) {
     <div
       class="image-lightbox"
+      appModalFocus
       role="dialog"
       aria-modal="true"
       aria-label="Image preview"
       (click)="lightbox.set(null)"
+      (modalDismiss)="lightbox.set(null)"
     >
       <button type="button" aria-label="Close image preview" (click)="lightbox.set(null)">
         <i class="fa-solid fa-xmark"></i>
@@ -325,24 +327,30 @@
     } @if (shareWarning(); as warning) {
     <div
       class="share-warning"
+      appModalFocus
       role="dialog"
       aria-modal="true"
       aria-labelledby="share-warning-title"
+      (modalDismiss)="shareWarning.set(null)"
     >
       <section>
-        <h2 id="share-warning-title">Before sharing</h2>
+        <h2 id="share-warning-title">{{ i18n.t('shareWarningTitle') }}</h2>
         <ul>
           @for (reason of warning.reasons; track reason) {
-          <li>{{ reason }}</li>
+          <li>{{ i18n.t(reason) }}</li>
           }
         </ul>
-        <p>
-          Note content is passed directly to your email application and is never sent by the server.
-        </p>
+        <p>{{ i18n.t('sharePrivacy') }}</p>
         <footer>
-          <button type="button" (click)="shareWarning.set(null)">Cancel</button>
-          <button type="button" (click)="exportMarkdown()">Export Markdown instead</button>
-          <button type="button" (click)="continueShare(warning.url)">Continue to email</button>
+          <button type="button" (click)="shareWarning.set(null)">
+            {{ i18n.t('shareCancel') }}
+          </button>
+          <button type="button" (click)="exportMarkdown()">
+            {{ i18n.t('exportMarkdownInstead') }}
+          </button>
+          <button type="button" (click)="continueShare(warning.url)">
+            {{ i18n.t('continueToEmail') }}
+          </button>
         </footer>
       </section>
     </div>

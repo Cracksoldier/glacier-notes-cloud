@@ -30,3 +30,10 @@ Preference tests proved concurrent-load coalescing, GET/PATCH serialization, and
 after a 30-second request timeout. The complete frontend suite passed 41 tests and production
 dependency audit found no vulnerabilities. See the
 [Batch 3 test record](../remediation/batch-3/test-results.md).
+
+## 2026-07-24 Batch 5 frontend remediation
+
+German translation and keyboard-modal regressions cover share headings, reasons, privacy/actions,
+focus restoration, and notes settings text. The complete frontend suite passed 59 tests and the
+production audit found zero vulnerabilities. See the
+[Batch 5 test record](../remediation/batch-5/test-results.md).

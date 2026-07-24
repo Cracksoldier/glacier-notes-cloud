@@ -163,3 +163,15 @@ Revalidated on 2026-07-24 against base `c28f701`.
 
 Implementation and full-suite evidence is in the
 [Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).
+
+## Batch 5 Remediation Update
+
+Revalidated on 2026-07-24 against base `7514d1b`.
+
+| Original finding | Final status |
+|---|---|
+| Image lightbox asserts modality without focus behavior | **Resolved.** Focus entry, containment, Escape dismissal, background exclusion, and opener restoration are shared and tested. |
+| Concurrent upload state captures shifting indexes | **Resolved.** Monotonic IDs identify every upload row and asynchronous update. |
+
+Keyboard and overlapping-upload regression evidence is in the
+[Batch 5 record](../remediation/batch-5/B5-FRONTEND-ACCESSIBILITY-summary.md).

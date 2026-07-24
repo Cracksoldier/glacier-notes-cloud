@@ -136,4 +136,49 @@ describe('TransferDialogComponent', () => {
 
     expect(api.cancelExport).toHaveBeenCalledWith(current.id);
   });
+
+  it('moves focus into the dialog, handles Escape, and restores the opener', () => {
+    fixture.destroy();
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    fixture = TestBed.createComponent(TransferDialogComponent);
+    fixture.componentRef.setInput('notebooks', []);
+    fixture.componentRef.setInput('notes', []);
+    const closed = vi.fn();
+    fixture.componentInstance.closed.subscribe(closed);
+    fixture.detectChanges();
+
+    const close = fixture.nativeElement.querySelector('[aria-label="Close"]') as HTMLButtonElement;
+    expect(document.activeElement).toBe(close);
+    close.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(closed).toHaveBeenCalledOnce();
+
+    fixture.destroy();
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
+  });
+
+  it('shows visible focus on the styled import-file control', () => {
+    const input = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
+    input.focus();
+    const styles = Array.from(document.querySelectorAll('style'))
+      .map((style) => style.textContent)
+      .join('\n');
+    expect(styles).toMatch(/\.file-button[^{]*:focus-within/);
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('wraps Tab focus within the modal boundary', () => {
+    const close = fixture.nativeElement.querySelector('[aria-label="Close"]') as HTMLButtonElement;
+    const input = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
+    input.focus();
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(close);
+    close.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }),
+    );
+    expect(document.activeElement).toBe(input);
+  });
 });

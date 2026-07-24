@@ -20,3 +20,10 @@ and do not record credentials, tokens, cookies, user content, or unredacted logs
 The bootstrap token now has one explicit header delivery path, central secret validation rejects
 whitespace and invalid lengths, and generic client errors no longer become `INTERNAL_ERROR`.
 Source inspection confirms unhandled server failures retain their throwable when logged.
+
+## 2026-07-24 Batch 5 frontend remediation
+
+Setup regressions failed before the production change and now cover invalid-field associations,
+server details, rate-limit feedback, and valid action typography. The complete frontend suite passed
+59 tests. See the [Batch 5 test record](../remediation/batch-5/test-results.md) for exact focused,
+CI-equivalent, deployment, browser, and finished-diff review evidence.

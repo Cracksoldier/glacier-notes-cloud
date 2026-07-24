@@ -4,7 +4,16 @@
     <h1>Create your account</h1>
     @if (!inspection()) {
     <form (ngSubmit)="inspect()">
-      <label>Full invitation token<input name="token" [(ngModel)]="token" required></label>
+      <label
+        >Full invitation token<input
+          name="token"
+          type="password"
+          autocomplete="off"
+          spellcheck="false"
+          [(ngModel)]="token"
+          required
+        ></label
+      >
       <button type="submit">Continue</button>
     </form>
     } @else if (!completed()) {

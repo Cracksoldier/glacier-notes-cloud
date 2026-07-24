@@ -129,3 +129,14 @@ Both confirmed R4 findings remain relevant, and the false positive remains rejec
 3. Generate valid multiline fenced code and cover both inline and block toolbar behavior.
 4. Retain the unresolved R0–R4 Major groups, especially payload bounds, OpenAPI CSRF defaults,
    secret validation, problem mapping, and the admin-settings overwrite path.
+
+## Batch 5 Remediation Update
+
+Revalidated on 2026-07-24 against base `7514d1b`.
+
+| Original finding | Final status |
+|---|---|
+| Multiline code action creates a malformed closing fence | **Resolved.** Block-code insertion places the closing fence on its own line and preserves selection around the original content. |
+
+The regression failed before the fix and passes with the full frontend suite; see the
+[Batch 5 record](../remediation/batch-5/B5-FRONTEND-ACCESSIBILITY-summary.md).

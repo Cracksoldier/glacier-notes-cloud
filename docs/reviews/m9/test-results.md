@@ -42,3 +42,9 @@ Regression tests covered failed admin cancellation, cancel/restart isolation, la
 and import cleanup, and closing a live job from the error state. The final deployment run passed the
 portable transfer workflow in both browser projects. See the
 [Batch 3 test record](../remediation/batch-3/test-results.md).
+
+## 2026-07-24 Batch 5 frontend remediation
+
+Transfer modal/picker regressions pass, and the E2E fixture now resolves conflicts by replacement.
+An isolated production Compose deployment passed all six desktop/tablet workflows without
+copy-accumulation behavior. See the [Batch 5 test record](../remediation/batch-5/test-results.md).

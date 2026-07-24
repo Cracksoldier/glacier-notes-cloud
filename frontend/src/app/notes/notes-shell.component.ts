@@ -19,6 +19,7 @@ import { ThemeService } from '../core/theme.service';
 import type { LabelView } from '../shared/generated-api/model/labelView';
 import type { NotebookView } from '../shared/generated-api/model/notebookView';
 import { NoteType } from '../shared/generated-api/model/noteType';
+import { ModalFocusDirective } from '../shared/modal-focus.directive';
 import { TransferDialogComponent } from '../transfer/transfer-dialog.component';
 import { NoteCardComponent } from './note-card.component';
 import { NoteEditorComponent } from './note-editor.component';
@@ -33,6 +34,7 @@ import type { NotesView, SearchFilters } from './notes-data-access';
     NoteCardComponent,
     NoteEditorComponent,
     TransferDialogComponent,
+    ModalFocusDirective,
   ],
   templateUrl: './notes-shell.component.html',
   styleUrl: './notes-shell.component.css',

@@ -85,6 +85,12 @@ input:focus {
   box-shadow: 0 0 0 0.2rem rgb(118 194 213 / 13%);
 }
 
+.field-error {
+  margin: -0.35rem 0 0;
+  color: #ffaaa4;
+  font-size: 0.78rem;
+}
+
 .remember {
   display: flex;
   align-items: center;

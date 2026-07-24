@@ -117,3 +117,18 @@ Revalidated on 2026-07-24 against base `c28f701`.
 
 Contract regeneration and boundary-test evidence is in the
 [Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).
+
+## Batch 5 Remediation Update
+
+Revalidated on 2026-07-24 against base `7514d1b`.
+
+| Original finding | Final status |
+|---|---|
+| Reset and invitation bearer-token inputs are cleartext | **Resolved.** Both fields are masked and disable autocomplete. |
+| Reset submission permits concurrent requests | **Resolved.** A single-flight busy guard blocks duplicate token consumption and response-order races. |
+| User deactivation leaves stale status/actions | **Resolved.** Successful non-self actions reload the selected user. |
+| Initial admin-user load errors are hidden | **Resolved.** Alert and status output no longer depends on a loaded user. |
+| Admin component test gap | **Resolved.** Settings, status, and user-detail specs cover the affected loading, forms, failures, refresh, and focus behavior. |
+
+Focused and complete-suite evidence is in the
+[Batch 5 record](../remediation/batch-5/B5-FRONTEND-ACCESSIBILITY-summary.md).

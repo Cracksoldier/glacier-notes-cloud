@@ -15,3 +15,10 @@ Regression tests covered handled initialization failure, normal and search pagin
 identity, dialog descriptor cleanup, and serialized checklist/trash mutations. The focused store
 suite passed 8 tests and the complete frontend suite passed 41. See the
 [Batch 3 test record](../remediation/batch-3/test-results.md).
+
+## 2026-07-24 Batch 5 frontend remediation
+
+The multiline-fence regression failed against the symmetric wrapper and now proves a standalone
+closing fence plus preserved selection. The complete frontend suite passed 59 tests and the
+production desktop/tablet workflows passed 6/6. See the
+[Batch 5 test record](../remediation/batch-5/test-results.md).

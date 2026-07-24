@@ -14,14 +14,29 @@
     }
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <label>
-        Username or email
-        <input formControlName="identifier" autocomplete="username">
-      </label>
-      <label>
-        Password
-        <input formControlName="password" type="password" autocomplete="current-password">
-      </label>
+      <label for="identifier">Username or email</label>
+      <input
+        id="identifier"
+        formControlName="identifier"
+        autocomplete="username"
+        [attr.aria-invalid]="errorFor('identifier') ? 'true' : null"
+        [attr.aria-describedby]="errorFor('identifier') ? 'identifier-error' : null"
+      >
+      @if (errorFor('identifier'); as error) {
+      <p id="identifier-error" class="field-error">{{ error }}</p>
+      }
+      <label for="password">Password</label>
+      <input
+        id="password"
+        formControlName="password"
+        type="password"
+        autocomplete="current-password"
+        [attr.aria-invalid]="errorFor('password') ? 'true' : null"
+        [attr.aria-describedby]="errorFor('password') ? 'password-error' : null"
+      >
+      @if (errorFor('password'); as error) {
+      <p id="password-error" class="field-error">{{ error }}</p>
+      }
       <label class="remember">
         <input formControlName="rememberMe" type="checkbox">
         Keep me signed in on this device

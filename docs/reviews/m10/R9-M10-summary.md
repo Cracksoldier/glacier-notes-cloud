@@ -72,3 +72,16 @@ separate remediation mechanism.
    external bytes inside the database transaction.
 5. Keep the unresolved R0–R8 Major groups in the remediation backlog, especially modal focus,
    request sizing, transfer polling, checklist search consistency, and storage reconciliation.
+
+## Batch 5 Remediation Update
+
+Revalidated on 2026-07-24 against base `7514d1b`.
+
+| Original finding | Final status |
+|---|---|
+| Share-warning heading, privacy text, actions, and reasons are hard-coded | **Resolved.** Complete English and German message keys now drive the warning. |
+| Share-warning modal does not manage focus | **Resolved.** The warning contains focus, handles Escape, excludes its background, and restores the share trigger. |
+| Notes settings overlay is partially hard-coded English | **Resolved.** Theme, synchronization, and account-settings text is localized. |
+
+German-message and keyboard-modal regression evidence is in the
+[Batch 5 record](../remediation/batch-5/B5-FRONTEND-ACCESSIBILITY-summary.md).
