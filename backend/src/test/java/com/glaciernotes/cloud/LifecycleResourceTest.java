@@ -182,7 +182,20 @@ class LifecycleResourceTest {
 
     @Test
     void passwordResetRequestsAreNeutralAndSeparatelyThrottled() {
-        for (int attempt = 0; attempt < 5; attempt++) {
+        var knownAccount = given().contentType(ContentType.JSON)
+            .body("{\"email\":\"admin@example.com\"}")
+            .post("/api/v1/auth/password-reset/request");
+        var unknownAccount = given().contentType(ContentType.JSON)
+            .body("{\"email\":\"absent@example.com\"}")
+            .post("/api/v1/auth/password-reset/request");
+
+        assertEquals(202, knownAccount.statusCode());
+        assertEquals(knownAccount.statusCode(), unknownAccount.statusCode());
+        assertEquals(knownAccount.contentType(), unknownAccount.contentType());
+        assertEquals(knownAccount.asString(), unknownAccount.asString());
+        assertEquals("", knownAccount.asString());
+
+        for (int attempt = 1; attempt < 5; attempt++) {
             given().contentType(ContentType.JSON)
                 .body("{\"email\":\"absent@example.com\"}")
                 .post("/api/v1/auth/password-reset/request")

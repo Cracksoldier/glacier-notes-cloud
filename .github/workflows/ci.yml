@@ -116,6 +116,19 @@ jobs:
             http://127.0.0.1:8080/api/v1/auth/session | grep '"current":true'
           csrf_token="$(awk '$6 == "GLACIER_CSRF" {print $7}' /tmp/glacier-cookies.txt)"
           test -n "$csrf_token"
+          invalid_csrf_status="$(curl --silent --show-error \
+            --output /tmp/glacier-invalid-csrf.json \
+            --write-out '%{http_code}' \
+            --cookie /tmp/glacier-cookies.txt \
+            --header 'X-CSRF-Token: invalid-ci-csrf-token' \
+            --request POST \
+            http://127.0.0.1:8080/api/v1/auth/logout)"
+          test "$invalid_csrf_status" = "403"
+          jq --exit-status '.errorCode == "CSRF_INVALID"' \
+            /tmp/glacier-invalid-csrf.json >/dev/null
+          curl --fail --silent \
+            --cookie /tmp/glacier-cookies.txt \
+            http://127.0.0.1:8080/api/v1/auth/session | grep '"current":true'
           invitation_response="$(curl --fail --silent \
             --cookie /tmp/glacier-cookies.txt \
             --header "X-CSRF-Token: $csrf_token" \

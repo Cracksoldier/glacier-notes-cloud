@@ -27,3 +27,9 @@ Setup regressions failed before the production change and now cover invalid-fiel
 server details, rate-limit feedback, and valid action typography. The complete frontend suite passed
 59 tests. See the [Batch 5 test record](../remediation/batch-5/test-results.md) for exact focused,
 CI-equivalent, deployment, browser, and finished-diff review evidence.
+
+## 2026-07-24 Batch 7 coverage closure
+
+PostgreSQL now behaviorally proves that a negative bootstrap failure count is rejected with
+SQLSTATE `23514`. All 83 backend tests and the complete CI-equivalent checks passed. See the
+[Batch 7 test record](../remediation/batch-7/test-results.md).

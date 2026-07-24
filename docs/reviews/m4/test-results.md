@@ -34,3 +34,9 @@ evidence.
 Lifecycle/admin regressions cover masked tokens, reset single-flight behavior, post-action user
 refresh, initial-load alert visibility, and picker focus. The complete frontend suite passed 59
 tests. See the [Batch 5 test record](../remediation/batch-5/test-results.md).
+
+## 2026-07-24 Batch 7 coverage closure
+
+Known and unknown password-reset requests now have an explicit neutral-response comparison, and
+SMTP delivery tests require complete invitation and reset tokens. Focused tests passed 14/14 and
+all 83 backend tests passed. See the [Batch 7 test record](../remediation/batch-7/test-results.md).

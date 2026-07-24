@@ -85,3 +85,15 @@ Revalidated on 2026-07-24 against base `7514d1b`.
 
 Focused pre-fix failures and full verification are in the
 [Batch 5 record](../remediation/batch-5/B5-FRONTEND-ACCESSIBILITY-summary.md).
+
+## Batch 7 Remediation Update
+
+Revalidated on 2026-07-24 against base `1b1b712`.
+
+| Original finding | Final status |
+|---|---|
+| Negative bootstrap `failure_count` behavior lacks a migration test | **Resolved.** A PostgreSQL behavioral test proves a negative insert fails with check-violation SQLSTATE `23514`. |
+| `DatabaseSchemaTest` duplicate of the negative-count finding | **Resolved with the canonical finding.** Both raw comments refer to the same missing behavioral assertion. |
+
+Focused and complete verification is in the
+[Batch 7 record](../remediation/batch-7/B7-COVERAGE-CLOSURE-summary.md).

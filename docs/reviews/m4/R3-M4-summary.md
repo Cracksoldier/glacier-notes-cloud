@@ -132,3 +132,15 @@ Revalidated on 2026-07-24 against base `7514d1b`.
 
 Focused and complete-suite evidence is in the
 [Batch 5 record](../remediation/batch-5/B5-FRONTEND-ACCESSIBILITY-summary.md).
+
+## Batch 7 Remediation Update
+
+Revalidated on 2026-07-24 against base `1b1b712`.
+
+| Original finding | Final status |
+|---|---|
+| Password-reset neutrality is not compared for known and unknown accounts | **Resolved.** The lifecycle test compares their successful status, content type, and empty body while retaining separate throttling coverage. |
+| Invitation and reset email assertions accept token prefixes only | **Resolved.** Both delivered tokens are extracted and must match the complete 43-character URL-safe format. |
+
+Focused SMTP, lifecycle, and complete-suite evidence is in the
+[Batch 7 record](../remediation/batch-7/B7-COVERAGE-CLOSURE-summary.md).

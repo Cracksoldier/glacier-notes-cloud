@@ -76,12 +76,14 @@ class LifecycleEmailTest {
         assertNull(invitation.getToken());
         assertNull(invitation.getActivationUrl());
         var invitationMail = mailbox.getMailsSentTo("invited@example.com").getFirst();
-        assertTrue(invitationMail.getText().contains("/accept-invitation?token="));
+        assertTrue(tokenFrom(invitationMail.getText(), "/accept-invitation?token=")
+            .matches("[A-Za-z0-9_-]{43}"));
 
         lifecycle.requestPasswordReset("admin@example.com", "127.0.0.1", "smtp-test");
 
         var resetMail = mailbox.getMailsSentTo("admin@example.com").getFirst();
-        assertTrue(resetMail.getText().contains("/reset-password?token="));
+        assertTrue(tokenFrom(resetMail.getText(), "/reset-password?token=")
+            .matches("[A-Za-z0-9_-]{43}"));
         assertEquals(2, mailbox.getTotalMessagesSent());
     }
 
@@ -112,6 +114,13 @@ class LifecycleEmailTest {
         }
         org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
             () -> accounts.completeEmailChange(raw, "127.0.0.2", "email-change-test"));
+    }
+
+    private String tokenFrom(String message, String marker) {
+        var markerIndex = message.indexOf(marker);
+        assertTrue(markerIndex >= 0);
+        return message.substring(markerIndex + marker.length()).lines()
+            .findFirst().orElseThrow().strip();
     }
 
     public static class SmtpProfile implements QuarkusTestProfile {

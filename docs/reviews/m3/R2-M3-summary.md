@@ -109,3 +109,14 @@ Revalidated on 2026-07-24 against base `7514d1b`.
 
 Regression and deployment evidence is in the
 [Batch 5 record](../remediation/batch-5/B5-FRONTEND-ACCESSIBILITY-summary.md).
+
+## Batch 7 Remediation Update
+
+Revalidated on 2026-07-24 against base `1b1b712`.
+
+| Original finding | Final status |
+|---|---|
+| Deployment CI lacks invalid-CSRF logout smoke coverage | **Resolved.** The supported deployment now proves invalid logout returns `403 CSRF_INVALID` without revoking the session, then completes the existing valid-CSRF workflow. |
+
+Deployment and browser evidence is in the
+[Batch 7 record](../remediation/batch-7/B7-COVERAGE-CLOSURE-summary.md).

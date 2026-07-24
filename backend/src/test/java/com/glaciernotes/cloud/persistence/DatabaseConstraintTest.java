@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @QuarkusTest
@@ -100,6 +101,22 @@ class DatabaseConstraintTest {
             assertThrows(SQLException.class, () -> statement.executeUpdate(
                 "update instance_settings set password_reset_expiration_minutes = 1441"
             ));
+            connection.rollback();
+        }
+    }
+
+    @Test
+    void bootstrapRateLimitsRejectNegativeFailureCounts() throws SQLException {
+        try (var connection = transaction(); var statement = connection.createStatement()) {
+            var failure = assertThrows(SQLException.class, () -> statement.executeUpdate("""
+                insert into bootstrap_rate_limits(
+                    client_key, window_started_at, failure_count, updated_at
+                ) values (
+                    repeat('a', 64), current_timestamp, -1, current_timestamp
+                )
+                """));
+
+            assertEquals("23514", failure.getSQLState());
             connection.rollback();
         }
     }

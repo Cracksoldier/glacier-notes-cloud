@@ -19,3 +19,9 @@ the exact gates, pre-fix failures, deployment profile, and CodeRabbit follow-up 
 Admin-status failure and associated login-validation regressions failed before the fixes and passed
 afterward. The complete frontend suite passed 59 tests, all 82 backend tests passed, and all six
 browser workflows passed. See the [Batch 5 test record](../remediation/batch-5/test-results.md).
+
+## 2026-07-24 Batch 7 coverage closure
+
+The isolated supported deployment rejected invalid-CSRF logout with `403 CSRF_INVALID`, preserved
+the active session, and then completed valid logout. All six browser workflows passed. See the
+[Batch 7 test record](../remediation/batch-7/test-results.md).
