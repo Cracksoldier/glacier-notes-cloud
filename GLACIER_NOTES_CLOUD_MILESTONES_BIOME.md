@@ -1,12 +1,12 @@
 # Glacier Notes Cloud — Milestone Plan and Acceptance Criteria
 
-**Document status:** Implementation planning baseline  
-**Document version:** 1.0  
-**Date:** 2026-07-20  
-**Source specification:** Glacier Notes Cloud Product and Technical Specification 1.0  
-**Target release:** Glacier Notes Cloud v1  
-**Primary stack:** Angular, Quarkus, PostgreSQL, OpenAPI  
-**Supported deployment:** Docker Compose  
+- **Document status:** Active delivery plan — M0 through M11 complete; M12 next
+- **Document version:** 1.1
+- **Last updated:** 2026-07-24
+- **Source specification:** Glacier Notes Cloud Product and Technical Specification 1.0
+- **Target release:** Glacier Notes Cloud v1
+- **Primary stack:** Angular, Quarkus, PostgreSQL, OpenAPI
+- **Supported deployment:** Docker Compose
 
 ---
 
@@ -79,22 +79,35 @@ Features involving autosave, concurrency, import, deletion, image storage, and b
 
 ## 3. Milestone Overview
 
-| ID | Milestone | Primary Outcome | Depends On |
-|---|---|---|---|
-| M0 | Architecture and Repository Foundation | Buildable project, canonical contracts, CI foundation | None |
-| M1 | PostgreSQL Domain Foundation | Migrated schema, persistence rules, ownership groundwork | M0 |
-| M2 | Deployment, Bootstrap, and Instance Initialization | Docker deployment and secure first-admin setup | M0, M1 |
-| M3 | Authentication, Sessions, and Security Baseline | Secure login, cookies, CSRF, lockout, session management | M1, M2 |
-| M4 | User Administration and Invitation Lifecycle | Admin-managed users, invitations, resets, activation | M3 |
-| M5 | Core Notes Backend | Notebooks, notes, labels, checklist, archive, trash APIs | M1, M3 |
-| M6 | Core Angular Note Application | Usable multi-user note-taking web UI | M3, M5 |
-| M7 | Image Assets and Storage Backends | Secure uploads, quotas, filesystem/DB/S3 storage | M5, M6 |
-| M8 | Search, Concurrency, and Version History | FTS, optimistic locking, historical note restore | M5, M6 |
-| M9 | Import, Export, and Desktop Compatibility | Portable data exchange and compatibility fixtures | M5, M7, M8 |
-| M10 | Account Lifecycle, User Settings, and Email Flows | Profile, email change, self-deletion, i18n, themes | M3, M4, M6 |
-| M11 | Administrative Operations and Observability | Audit, metrics, health, settings, backup jobs | M4, M7, M9, M10 |
-| M12 | Security Hardening and Release Candidate | Tested, documented, deployable v1 candidate | M0–M11 |
-| M13 | Version 1 Release | Approved production release and tagged artifacts | M12 |
+| ID | Milestone | Primary Outcome | Depends On | Status |
+|---|---|---|---|---|
+| M0 | Architecture and Repository Foundation | Buildable project, canonical contracts, CI foundation | None | Complete |
+| M1 | PostgreSQL Domain Foundation | Migrated schema, persistence rules, ownership groundwork | M0 | Complete |
+| M2 | Deployment, Bootstrap, and Instance Initialization | Docker deployment and secure first-admin setup | M0, M1 | Complete |
+| M3 | Authentication, Sessions, and Security Baseline | Secure login, cookies, CSRF, lockout, session management | M1, M2 | Complete |
+| M4 | User Administration and Invitation Lifecycle | Admin-managed users, invitations, resets, activation | M3 | Complete |
+| M5 | Core Notes Backend | Notebooks, notes, labels, checklist, archive, trash APIs | M1, M3 | Complete |
+| M6 | Core Angular Note Application | Usable multi-user note-taking web UI | M3, M5 | Complete |
+| M7 | Image Assets and Storage Backends | Secure uploads, quotas, filesystem/DB/S3 storage | M5, M6 | Complete |
+| M8 | Search, Concurrency, and Version History | FTS, optimistic locking, historical note restore | M5, M6 | Complete |
+| M9 | Import, Export, and Desktop Compatibility | Portable data exchange and compatibility fixtures | M5, M7, M8 | Complete |
+| M10 | Account Lifecycle, User Settings, and Email Flows | Profile, email change, self-deletion, i18n, themes | M3, M4, M6 | Complete |
+| M11 | Administrative Operations and Observability | Audit, metrics, health, settings, backup jobs | M4, M7, M9, M10 | Complete |
+| M12 | Security Hardening and Release Candidate | Tested, documented, deployable v1 candidate | M0–M11 | Next |
+| M13 | Version 1 Release | Approved production release and tagged artifacts | M12 | Pending |
+
+### 3.1 Implementation Tracking
+
+This table is the current roadmap snapshot. Detailed delivered scope and verification commands live
+in [`docs/MILESTONE_STATUS.md`](docs/MILESTONE_STATUS.md). Acceptance checkboxes are checked for
+completed M0–M11 scope; M12, M13, and their release gates remain unchecked until verified.
+
+M11 satisfied its exit gate with the committed administration and observability implementation,
+CodeRabbit triage, CI-equivalent checks, a real environment-gated backup, checksum validation, and a
+clean PostgreSQL restore. Its durable review classification and test evidence are in
+[`docs/reviews/m11/R10-M11-summary.md`](docs/reviews/m11/R10-M11-summary.md) and
+[`docs/reviews/m11/test-results.md`](docs/reviews/m11/test-results.md). M12 security hardening and
+release-candidate qualification is the next delivery gate.
 
 Some milestones may be developed in parallel after their shared dependencies are complete, but they shall not be accepted out of dependency order.
 
@@ -314,54 +327,54 @@ The exact Angular test command may be adapted to the selected Angular test runne
 
 ### Build and Repository
 
-- [ ] A clean checkout can build both frontend and backend using documented commands.
-- [ ] Generated API code is produced automatically and is not manually edited.
-- [ ] CI fails when the OpenAPI document is invalid.
-- [ ] CI fails when generated code is stale relative to the OpenAPI contract.
-- [ ] The backend and frontend dependency versions are pinned or reproducibly resolved.
-- [ ] `@biomejs/biome` is installed as an exact-version development dependency.
-- [ ] The `biome.json` schema URL matches the pinned Biome version.
-- [ ] No Prettier package, plugin, configuration file, editor default, or CI command exists in the Angular project.
-- [ ] No production secret is committed to the repository.
-- [ ] The repository contains a clear local-development guide.
+- [x] A clean checkout can build both frontend and backend using documented commands.
+- [x] Generated API code is produced automatically and is not manually edited.
+- [x] CI fails when the OpenAPI document is invalid.
+- [x] CI fails when generated code is stale relative to the OpenAPI contract.
+- [x] The backend and frontend dependency versions are pinned or reproducibly resolved.
+- [x] `@biomejs/biome` is installed as an exact-version development dependency.
+- [x] The `biome.json` schema URL matches the pinned Biome version.
+- [x] No Prettier package, plugin, configuration file, editor default, or CI command exists in the Angular project.
+- [x] No production secret is committed to the repository.
+- [x] The repository contains a clear local-development guide.
 
 ### Biome and Angular Quality Tooling
 
-- [ ] `npm run check` passes from a clean checkout.
-- [ ] `npm run check:write` followed by `npm run check` produces no further changes.
-- [ ] `npm run format` is idempotent.
-- [ ] TypeScript, JavaScript, JSON, and CSS files are formatted and linted by Biome.
-- [ ] The generated Angular API client is excluded from rewriting or has a separately documented generated-code policy.
-- [ ] `lint/style/useImportType` is disabled for Angular source because of decorator metadata requirements.
-- [ ] Angular compiler options include `strict: true` and `strictTemplates: true`.
-- [ ] Angular production compilation runs after Biome checks in CI.
-- [ ] Angular template fixtures compile successfully after `biome check --write`.
-- [ ] Biome formatting does not alter the behavior or bindings of the representative Angular template fixtures.
-- [ ] If Angular HTML formatting is disabled, the exception follows the documented temporary-exclusion policy.
-- [ ] Biome remains the only formatting tool; no fallback formatter is introduced.
-- [ ] `angular-eslint`, if present, is limited to documented Angular-specific rules and is not used for formatting.
-- [ ] Editor documentation identifies Biome as the default formatter for supported frontend files.
-- [ ] CI does not depend on developer-specific editor formatting behavior.
+- [x] `npm run check` passes from a clean checkout.
+- [x] `npm run check:write` followed by `npm run check` produces no further changes.
+- [x] `npm run format` is idempotent.
+- [x] TypeScript, JavaScript, JSON, and CSS files are formatted and linted by Biome.
+- [x] The generated Angular API client is excluded from rewriting or has a separately documented generated-code policy.
+- [x] `lint/style/useImportType` is disabled for Angular source because of decorator metadata requirements.
+- [x] Angular compiler options include `strict: true` and `strictTemplates: true`.
+- [x] Angular production compilation runs after Biome checks in CI.
+- [x] Angular template fixtures compile successfully after `biome check --write`.
+- [x] Biome formatting does not alter the behavior or bindings of the representative Angular template fixtures.
+- [x] If Angular HTML formatting is disabled, the exception follows the documented temporary-exclusion policy.
+- [x] Biome remains the only formatting tool; no fallback formatter is introduced.
+- [x] `angular-eslint`, if present, is limited to documented Angular-specific rules and is not used for formatting.
+- [x] Editor documentation identifies Biome as the default formatter for supported frontend files.
+- [x] CI does not depend on developer-specific editor formatting behavior.
 
 ### OpenAPI
 
-- [ ] `/api/v1` is established as the API base path.
-- [ ] The API defines a standard problem response containing status, application error code, safe detail, and correlation ID.
-- [ ] Pagination conventions are documented.
-- [ ] UUID and ISO-8601 timestamp conventions are documented.
-- [ ] Authentication and CSRF behavior are represented or referenced in the contract.
-- [ ] Stable operation IDs are assigned.
-- [ ] At least one generated Angular-client operation successfully calls a backend placeholder endpoint.
+- [x] `/api/v1` is established as the API base path.
+- [x] The API defines a standard problem response containing status, application error code, safe detail, and correlation ID.
+- [x] Pagination conventions are documented.
+- [x] UUID and ISO-8601 timestamp conventions are documented.
+- [x] Authentication and CSRF behavior are represented or referenced in the contract.
+- [x] Stable operation IDs are assigned.
+- [x] At least one generated Angular-client operation successfully calls a backend placeholder endpoint.
 
 ### Architecture
 
-- [ ] Generated DTOs are separated from persistence entities.
-- [ ] Domain/application logic does not depend directly on Angular or transport-layer classes.
-- [ ] Storage, email, password checking, time, and ID generation have replaceable interfaces where testing requires them.
-- [ ] User-content authorization is designated as a service/persistence concern, not only a UI concern.
-- [ ] The architecture leaves room for a desktop adapter and future synchronization.
-- [ ] The frontend-tooling decision is recorded in an architecture decision record.
-- [ ] The decision explicitly states that Biome replaces Prettier for the Angular project.
+- [x] Generated DTOs are separated from persistence entities.
+- [x] Domain/application logic does not depend directly on Angular or transport-layer classes.
+- [x] Storage, email, password checking, time, and ID generation have replaceable interfaces where testing requires them.
+- [x] User-content authorization is designated as a service/persistence concern, not only a UI concern.
+- [x] The architecture leaves room for a desktop adapter and future synchronization.
+- [x] The frontend-tooling decision is recorded in an architecture decision record.
+- [x] The decision explicitly states that Biome replaces Prettier for the Angular project.
 
 ## Exit Gate
 
@@ -406,32 +419,32 @@ Establish the PostgreSQL persistence model, schema migrations, base repositories
 
 ### Schema
 
-- [ ] Every synchronizable entity uses a UUID.
-- [ ] Every synchronizable mutable entity has `createdAt`, `updatedAt`, and `version`.
-- [ ] Server timestamps are stored as `timestamptz`.
-- [ ] User-owned entities contain an immutable `ownerId`.
-- [ ] Unique indexes exist for normalized username and normalized email.
-- [ ] A user can have only one default notebook.
-- [ ] Label names are unique per owner using normalized comparison.
-- [ ] Foreign keys prevent invalid note/notebook/checklist/label relationships.
-- [ ] The schema supports a stable image ID independent of the selected storage backend.
-- [ ] Tombstones contain no note content fields.
-- [ ] Audit and operational job tables do not require access to user note content.
+- [x] Every synchronizable entity uses a UUID.
+- [x] Every synchronizable mutable entity has `createdAt`, `updatedAt`, and `version`.
+- [x] Server timestamps are stored as `timestamptz`.
+- [x] User-owned entities contain an immutable `ownerId`.
+- [x] Unique indexes exist for normalized username and normalized email.
+- [x] A user can have only one default notebook.
+- [x] Label names are unique per owner using normalized comparison.
+- [x] Foreign keys prevent invalid note/notebook/checklist/label relationships.
+- [x] The schema supports a stable image ID independent of the selected storage backend.
+- [x] Tombstones contain no note content fields.
+- [x] Audit and operational job tables do not require access to user note content.
 
 ### Migrations
 
-- [ ] A blank PostgreSQL database migrates to the latest schema automatically in the supported development workflow.
-- [ ] Migrations are deterministic and repeatable in CI.
-- [ ] Integration tests use PostgreSQL rather than substituting an incompatible in-memory database.
-- [ ] Failed migrations prevent normal startup with a clear operator-facing error.
-- [ ] Migration documentation warns before destructive schema changes.
+- [x] A blank PostgreSQL database migrates to the latest schema automatically in the supported development workflow.
+- [x] Migrations are deterministic and repeatable in CI.
+- [x] Integration tests use PostgreSQL rather than substituting an incompatible in-memory database.
+- [x] Failed migrations prevent normal startup with a clear operator-facing error.
+- [x] Migration documentation warns before destructive schema changes.
 
 ### Ownership
 
-- [ ] Repository methods for user-owned entities require an owner scope or authenticated context.
-- [ ] Tests prove that the same entity ID cannot be read through another owner scope.
-- [ ] Cross-user UUID collisions can exist only where the global primary-key design permits safe handling; they can never grant access or overwrite another owner’s data.
-- [ ] Queries used by later collection endpoints have owner-first indexes.
+- [x] Repository methods for user-owned entities require an owner scope or authenticated context.
+- [x] Tests prove that the same entity ID cannot be read through another owner scope.
+- [x] Cross-user UUID collisions can exist only where the global primary-key design permits safe handling; they can never grant access or overwrite another owner’s data.
+- [x] Queries used by later collection endpoints have owner-first indexes.
 
 ## Exit Gate
 
@@ -475,30 +488,30 @@ Deliver the officially supported Docker Compose environment and the secure one-t
 
 ### Deployment
 
-- [ ] `docker compose up` starts the application and PostgreSQL using documented configuration.
-- [ ] The compiled Angular application is served from the Quarkus application container.
-- [ ] Application data survives container recreation.
-- [ ] The application container can run without root privileges where supported.
-- [ ] Database readiness is checked before accepting normal requests.
-- [ ] No default production password is embedded in the image or Compose file.
-- [ ] Filesystem image storage uses a persistent mounted directory by default.
-- [ ] Direct local HTTP access works for development.
-- [ ] Reverse-proxy configuration requirements are documented.
+- [x] `docker compose up` starts the application and PostgreSQL using documented configuration.
+- [x] The compiled Angular application is served from the Quarkus application container.
+- [x] Application data survives container recreation.
+- [x] The application container can run without root privileges where supported.
+- [x] Database readiness is checked before accepting normal requests.
+- [x] No default production password is embedded in the image or Compose file.
+- [x] Filesystem image storage uses a persistent mounted directory by default.
+- [x] Direct local HTTP access works for development.
+- [x] Reverse-proxy configuration requirements are documented.
 
 ### Bootstrap
 
-- [ ] An uninitialized instance reports that setup is required.
-- [ ] The first administrator cannot be created without the configured bootstrap token.
-- [ ] Invalid bootstrap tokens receive a generic failure and are rate-limited.
-- [ ] The token never appears in logs, audit metadata, or response bodies.
-- [ ] The first administrator is created with normalized username and email.
-- [ ] Normal password policy is enforced.
-- [ ] A default notebook and initial user settings are created transactionally.
-- [ ] Instance initialization is persisted.
-- [ ] The bootstrap endpoint becomes permanently unavailable after successful setup.
-- [ ] Restarting with the same bootstrap token does not re-enable setup.
-- [ ] Bootstrap completion creates an audit event without storing the token.
-- [ ] Startup warns or fails clearly when no user exists and no bootstrap token is configured.
+- [x] An uninitialized instance reports that setup is required.
+- [x] The first administrator cannot be created without the configured bootstrap token.
+- [x] Invalid bootstrap tokens receive a generic failure and are rate-limited.
+- [x] The token never appears in logs, audit metadata, or response bodies.
+- [x] The first administrator is created with normalized username and email.
+- [x] Normal password policy is enforced.
+- [x] A default notebook and initial user settings are created transactionally.
+- [x] Instance initialization is persisted.
+- [x] The bootstrap endpoint becomes permanently unavailable after successful setup.
+- [x] Restarting with the same bootstrap token does not re-enable setup.
+- [x] Bootstrap completion creates an audit event without storing the token.
+- [x] Startup warns or fails clearly when no user exists and no bootstrap token is configured.
 
 ## Exit Gate
 
@@ -545,57 +558,57 @@ Provide secure username/email login, server-managed sessions, CSRF protection, p
 
 ### Login
 
-- [ ] A user can log in using username or email.
-- [ ] Login and uniqueness matching are case-insensitive while original casing remains available for display.
-- [ ] Display name cannot be used to log in.
-- [ ] Incorrect credentials return a neutral error that does not reveal account existence.
-- [ ] Deactivated, deleted, pending, and locked users cannot authenticate.
-- [ ] Password hashes use Argon2id with documented parameters.
-- [ ] Plaintext passwords and password hashes never appear in API responses or logs.
+- [x] A user can log in using username or email.
+- [x] Login and uniqueness matching are case-insensitive while original casing remains available for display.
+- [x] Display name cannot be used to log in.
+- [x] Incorrect credentials return a neutral error that does not reveal account existence.
+- [x] Deactivated, deleted, pending, and locked users cannot authenticate.
+- [x] Password hashes use Argon2id with documented parameters.
+- [x] Plaintext passwords and password hashes never appear in API responses or logs.
 
 ### Sessions
 
-- [ ] Normal sessions expire after 12 hours by default.
-- [ ] Remember-me sessions expire after 30 days by default.
-- [ ] Session duration settings are validated.
-- [ ] Session state survives application restart.
-- [ ] Sessions are not stored only in process memory.
-- [ ] Authentication cookies are `HttpOnly`.
-- [ ] `Secure` is applied when the configured public URL uses HTTPS.
-- [ ] Cookie `SameSite` and path settings match the documented deployment model.
-- [ ] Session identifiers are rotated after login and privilege changes.
-- [ ] A user can list active sessions without seeing raw tokens.
-- [ ] A user can revoke an individual session.
-- [ ] A user can revoke all other sessions.
-- [ ] Logout revokes the current server-side session.
+- [x] Normal sessions expire after 12 hours by default.
+- [x] Remember-me sessions expire after 30 days by default.
+- [x] Session duration settings are validated.
+- [x] Session state survives application restart.
+- [x] Sessions are not stored only in process memory.
+- [x] Authentication cookies are `HttpOnly`.
+- [x] `Secure` is applied when the configured public URL uses HTTPS.
+- [x] Cookie `SameSite` and path settings match the documented deployment model.
+- [x] Session identifiers are rotated after login and privilege changes.
+- [x] A user can list active sessions without seeing raw tokens.
+- [x] A user can revoke an individual session.
+- [x] A user can revoke all other sessions.
+- [x] Logout revokes the current server-side session.
 
 ### CSRF and Headers
 
-- [ ] State-changing cookie-authenticated requests without a valid CSRF token are rejected.
-- [ ] The generated Angular client or interceptor sends the CSRF value correctly.
-- [ ] Content Security Policy is active.
-- [ ] Framing is restricted.
-- [ ] MIME sniffing is disabled.
-- [ ] Referrer and permissions policies are configured.
-- [ ] Security-header tests run in CI.
+- [x] State-changing cookie-authenticated requests without a valid CSRF token are rejected.
+- [x] The generated Angular client or interceptor sends the CSRF value correctly.
+- [x] Content Security Policy is active.
+- [x] Framing is restricted.
+- [x] MIME sniffing is disabled.
+- [x] Referrer and permissions policies are configured.
+- [x] Security-header tests run in CI.
 
 ### Throttling and Lockout
 
-- [ ] Login attempts are limited by account identifier and IP address.
-- [ ] Increasing delays begin after five failed attempts by default.
-- [ ] The account is locked for 15 minutes after ten failed attempts by default.
-- [ ] A successful login resets the applicable failure state.
-- [ ] Lockout behavior cannot be used to enumerate account existence.
-- [ ] Authentication endpoints return `429` where appropriate.
-- [ ] Throttling has automated tests using deterministic clocks.
+- [x] Login attempts are limited by account identifier and IP address.
+- [x] Increasing delays begin after five failed attempts by default.
+- [x] The account is locked for 15 minutes after ten failed attempts by default.
+- [x] A successful login resets the applicable failure state.
+- [x] Lockout behavior cannot be used to enumerate account existence.
+- [x] Authentication endpoints return `429` where appropriate.
+- [x] Throttling has automated tests using deterministic clocks.
 
 ### Authorization Baseline
 
-- [ ] Anonymous requests to protected endpoints receive the documented response.
-- [ ] USER accounts cannot access ADMIN endpoints.
-- [ ] ADMIN access does not automatically bypass content ownership.
-- [ ] Angular route guards prevent normal navigation to unauthorized routes.
-- [ ] Server authorization remains effective when UI guards are bypassed.
+- [x] Anonymous requests to protected endpoints receive the documented response.
+- [x] USER accounts cannot access ADMIN endpoints.
+- [x] ADMIN access does not automatically bypass content ownership.
+- [x] Angular route guards prevent normal navigation to unauthorized routes.
+- [x] Server authorization remains effective when UI guards are bypassed.
 
 ## Exit Gate
 
@@ -644,47 +657,47 @@ Deliver administrator-managed onboarding, invitations, activation, password rese
 
 ### Invitations
 
-- [ ] Public self-registration does not exist.
-- [ ] An administrator can create an invitation for a valid unique email and username.
-- [ ] Invitation tokens use at least 256 bits of entropy.
-- [ ] Only token hashes are persisted.
-- [ ] Tokens are single-use and expire after seven days by default.
-- [ ] An invitation can be accepted from a URL containing the token.
-- [ ] The same full token can be pasted into the invitation page manually.
-- [ ] No short human-readable code is required.
-- [ ] Successful acceptance creates an active account and default notebook.
-- [ ] Acceptance marks the invitation as consumed.
-- [ ] Replaying a consumed token fails.
-- [ ] Administrators can revoke pending invitations.
-- [ ] Administrators can resend or regenerate invitations.
-- [ ] Token values are not exposed in audit logs.
-- [ ] When SMTP is unavailable, the admin can copy an activation link.
-- [ ] Optional email-domain restrictions are enforced for new invitations.
-- [ ] Existing users are not disabled when the domain allowlist changes.
+- [x] Public self-registration does not exist.
+- [x] An administrator can create an invitation for a valid unique email and username.
+- [x] Invitation tokens use at least 256 bits of entropy.
+- [x] Only token hashes are persisted.
+- [x] Tokens are single-use and expire after seven days by default.
+- [x] An invitation can be accepted from a URL containing the token.
+- [x] The same full token can be pasted into the invitation page manually.
+- [x] No short human-readable code is required.
+- [x] Successful acceptance creates an active account and default notebook.
+- [x] Acceptance marks the invitation as consumed.
+- [x] Replaying a consumed token fails.
+- [x] Administrators can revoke pending invitations.
+- [x] Administrators can resend or regenerate invitations.
+- [x] Token values are not exposed in audit logs.
+- [x] When SMTP is unavailable, the admin can copy an activation link.
+- [x] Optional email-domain restrictions are enforced for new invitations.
+- [x] Existing users are not disabled when the domain allowlist changes.
 
 ### Password Reset
 
-- [ ] A user can request a password-reset email when SMTP is configured.
-- [ ] The request response does not reveal whether the account exists.
-- [ ] Reset tokens are hashed, single-use, throttled, and expire after the configured period.
-- [ ] An administrator can generate a copyable reset link.
-- [ ] Administrators never set or see a user's password.
-- [ ] Completing a reset revokes all prior sessions and reset tokens.
-- [ ] Reset-link generation is audited without storing the token.
+- [x] A user can request a password-reset email when SMTP is configured.
+- [x] The request response does not reveal whether the account exists.
+- [x] Reset tokens are hashed, single-use, throttled, and expire after the configured period.
+- [x] An administrator can generate a copyable reset link.
+- [x] Administrators never set or see a user's password.
+- [x] Completing a reset revokes all prior sessions and reset tokens.
+- [x] Reset-link generation is audited without storing the token.
 
 ### User Administration
 
-- [ ] Administrators can list users and view counts/usage metadata without content previews.
-- [ ] Administrators can activate and deactivate users.
-- [ ] Deactivation revokes all sessions immediately.
-- [ ] Administrators can unlock a locked account.
-- [ ] Administrators can revoke all sessions for a user.
-- [ ] Administrators can change role, username, and email subject to constraints.
-- [ ] The last active administrator cannot be deactivated, deleted, or demoted.
-- [ ] A last administrator cannot self-demote.
-- [ ] Blocked last-admin operations return a specific documented error.
-- [ ] USER accounts cannot execute any user-administration operation.
-- [ ] ADMIN accounts cannot retrieve note titles, bodies, checklist text, image data, or image filenames through administration endpoints.
+- [x] Administrators can list users and view counts/usage metadata without content previews.
+- [x] Administrators can activate and deactivate users.
+- [x] Deactivation revokes all sessions immediately.
+- [x] Administrators can unlock a locked account.
+- [x] Administrators can revoke all sessions for a user.
+- [x] Administrators can change role, username, and email subject to constraints.
+- [x] The last active administrator cannot be deactivated, deleted, or demoted.
+- [x] A last administrator cannot self-demote.
+- [x] Blocked last-admin operations return a specific documented error.
+- [x] USER accounts cannot execute any user-administration operation.
+- [x] ADMIN accounts cannot retrieve note titles, bodies, checklist text, image data, or image filenames through administration endpoints.
 
 ## Exit Gate
 
@@ -732,51 +745,51 @@ Implement the complete owner-scoped backend domain for notebooks, notes, checkli
 
 ### Notebooks
 
-- [ ] Every activated user has exactly one default notebook.
-- [ ] The default notebook can be renamed.
-- [ ] The default notebook cannot be deleted.
-- [ ] Users can create, rename, recolor, and reorder notebooks.
-- [ ] Notebook list responses contain note counts without exposing other users' data.
-- [ ] Deleting a non-default notebook supports moving notes to the default notebook or moving them to trash.
-- [ ] Notebook deletion behavior is transactional.
-- [ ] A user cannot read or mutate another user's notebook by UUID.
+- [x] Every activated user has exactly one default notebook.
+- [x] The default notebook can be renamed.
+- [x] The default notebook cannot be deleted.
+- [x] Users can create, rename, recolor, and reorder notebooks.
+- [x] Notebook list responses contain note counts without exposing other users' data.
+- [x] Deleting a non-default notebook supports moving notes to the default notebook or moving them to trash.
+- [x] Notebook deletion behavior is transactional.
+- [x] A user cannot read or mutate another user's notebook by UUID.
 
 ### Notes
 
-- [ ] Users can create text notes and checklist notes.
-- [ ] Client-generated valid UUIDs are accepted when non-conflicting.
-- [ ] Server-generated `createdAt`, `updatedAt`, and `version` values are returned.
-- [ ] Users can update title, content, checklist, pinned state, archive state, color, labels, and notebook.
-- [ ] Users can move notes between owned notebooks.
-- [ ] Text-to-checklist and checklist-to-text conversion follows documented best-effort rules.
-- [ ] Collection endpoints are paginated.
-- [ ] Collection endpoints support notebook, note-type, pinned, archive, and trash filters.
-- [ ] Notes belonging to another user return the same safe not-found behavior as nonexistent notes.
+- [x] Users can create text notes and checklist notes.
+- [x] Client-generated valid UUIDs are accepted when non-conflicting.
+- [x] Server-generated `createdAt`, `updatedAt`, and `version` values are returned.
+- [x] Users can update title, content, checklist, pinned state, archive state, color, labels, and notebook.
+- [x] Users can move notes between owned notebooks.
+- [x] Text-to-checklist and checklist-to-text conversion follows documented best-effort rules.
+- [x] Collection endpoints are paginated.
+- [x] Collection endpoints support notebook, note-type, pinned, archive, and trash filters.
+- [x] Notes belonging to another user return the same safe not-found behavior as nonexistent notes.
 
 ### Labels
 
-- [ ] Users can create, rename, list, and delete labels.
-- [ ] Label uniqueness is case-insensitive within one user's account.
-- [ ] Different users can use the same label names.
-- [ ] Deleting a label removes assignments without deleting notes.
-- [ ] A note cannot be assigned another user's label.
+- [x] Users can create, rename, list, and delete labels.
+- [x] Label uniqueness is case-insensitive within one user's account.
+- [x] Different users can use the same label names.
+- [x] Deleting a label removes assignments without deleting notes.
+- [x] A note cannot be assigned another user's label.
 
 ### Trash and Archive
 
-- [ ] Trashing sets a server timestamp and removes the note from default views.
-- [ ] A trashed note can be restored.
-- [ ] An individual trashed note can be permanently deleted.
-- [ ] Empty trash permanently deletes eligible notes.
-- [ ] Archived notes remain editable.
-- [ ] Archived notes are separated from the normal notebook view.
-- [ ] Retention cleanup can be added without changing the note schema.
+- [x] Trashing sets a server timestamp and removes the note from default views.
+- [x] A trashed note can be restored.
+- [x] An individual trashed note can be permanently deleted.
+- [x] Empty trash permanently deletes eligible notes.
+- [x] Archived notes remain editable.
+- [x] Archived notes are separated from the normal notebook view.
+- [x] Retention cleanup can be added without changing the note schema.
 
 ### Ownership and Privacy
 
-- [ ] Automated tests attempt IDOR access for every content endpoint.
-- [ ] Cross-user update and deletion attempts fail.
-- [ ] ADMIN users are subject to the same ownership rule on normal note endpoints.
-- [ ] No repository method used by the API performs an unscoped user-content lookup.
+- [x] Automated tests attempt IDOR access for every content endpoint.
+- [x] Cross-user update and deletion attempts fail.
+- [x] ADMIN users are subject to the same ownership rule on normal note endpoints.
+- [x] No repository method used by the API performs an unscoped user-content lookup.
 
 ## Exit Gate
 
@@ -826,50 +839,50 @@ Deliver a usable browser application for the core Glacier Notes workflow using t
 
 ### Navigation and Layout
 
-- [ ] Authenticated users see the main Glacier Notes layout.
-- [ ] Sidebar lists notebooks, labels, archive, trash, and import/export navigation.
-- [ ] Selecting a notebook loads only that user's notes.
-- [ ] The layout remains usable at supported desktop and tablet widths.
-- [ ] Protected routes redirect unauthenticated users to login.
-- [ ] Browser refresh preserves route and session state where valid.
+- [x] Authenticated users see the main Glacier Notes layout.
+- [x] Sidebar lists notebooks, labels, archive, trash, and import/export navigation.
+- [x] Selecting a notebook loads only that user's notes.
+- [x] The layout remains usable at supported desktop and tablet widths.
+- [x] Protected routes redirect unauthenticated users to login.
+- [x] Browser refresh preserves route and session state where valid.
 
 ### Note Cards and Editor
 
-- [ ] Notes display title and suitable text/checklist previews.
-- [ ] Pinned notes appear before other notes where applicable.
-- [ ] Note colors remain readable in dark and light themes.
-- [ ] A user can create a text note from the UI.
-- [ ] A user can create a checklist note from the UI.
-- [ ] A user can edit title and content.
-- [ ] Checklist items can be added, edited, toggled, deleted, and reordered.
-- [ ] Notes can be moved, pinned, archived, labeled, colored, trashed, and restored.
-- [ ] The UI handles safe not-found and permission-equivalent errors without exposing ownership details.
+- [x] Notes display title and suitable text/checklist previews.
+- [x] Pinned notes appear before other notes where applicable.
+- [x] Note colors remain readable in dark and light themes.
+- [x] A user can create a text note from the UI.
+- [x] A user can create a checklist note from the UI.
+- [x] A user can edit title and content.
+- [x] Checklist items can be added, edited, toggled, deleted, and reordered.
+- [x] Notes can be moved, pinned, archived, labeled, colored, trashed, and restored.
+- [x] The UI handles safe not-found and permission-equivalent errors without exposing ownership details.
 
 ### Markdown
 
-- [ ] Markdown headings, emphasis, lists, links, code, blockquotes, and tables render.
-- [ ] Raw HTML does not execute.
-- [ ] Rendered HTML is sanitized.
-- [ ] External links do not retain opener access.
-- [ ] Toolbar actions insert or wrap Markdown at the cursor.
-- [ ] Checklist item Markdown is restricted to supported inline formatting.
+- [x] Markdown headings, emphasis, lists, links, code, blockquotes, and tables render.
+- [x] Raw HTML does not execute.
+- [x] Rendered HTML is sanitized.
+- [x] External links do not retain opener access.
+- [x] Toolbar actions insert or wrap Markdown at the cursor.
+- [x] Checklist item Markdown is restricted to supported inline formatting.
 
 ### Autosave and UX
 
-- [ ] Autosave is debounced to approximately 500 ms by default.
-- [ ] The editor visibly distinguishes saving, saved, error, and conflict states.
-- [ ] Failed saves retain the local draft.
-- [ ] Closing the editor after a pending save does not silently discard edits.
-- [ ] Lists refresh after create, update, restore, archive, and deletion.
-- [ ] Lists refresh when the window regains focus as specified.
-- [ ] Applicable keyboard shortcuts work.
-- [ ] Browser-reserved shortcuts fail gracefully.
+- [x] Autosave is debounced to approximately 500 ms by default.
+- [x] The editor visibly distinguishes saving, saved, error, and conflict states.
+- [x] Failed saves retain the local draft.
+- [x] Closing the editor after a pending save does not silently discard edits.
+- [x] Lists refresh after create, update, restore, archive, and deletion.
+- [x] Lists refresh when the window regains focus as specified.
+- [x] Applicable keyboard shortcuts work.
+- [x] Browser-reserved shortcuts fail gracefully.
 
 ### Generated Client
 
-- [ ] The frontend uses generated OpenAPI client methods for backend calls.
-- [ ] Handwritten duplicate API DTOs are not used for covered operations.
-- [ ] Standard problem responses are shown through consistent user-facing messages.
+- [x] The frontend uses generated OpenAPI client methods for backend calls.
+- [x] Handwritten duplicate API DTOs are not used for covered operations.
+- [x] Standard problem responses are shown through consistent user-facing messages.
 
 ## Exit Gate
 
@@ -917,56 +930,56 @@ Implement secure image upload, processing, references, quotas, garbage collectio
 
 ### Upload and Validation
 
-- [ ] PNG, JPEG, and WebP uploads are accepted when valid.
-- [ ] GIF and unsupported formats are rejected.
-- [ ] Validation uses signatures and decoding rather than extension alone.
-- [ ] Malformed images are rejected without excessive memory or CPU usage.
-- [ ] Configured byte and pixel-dimension limits are enforced.
-- [ ] Files larger than the configured incoming limit are downscaled/re-encoded when safe.
-- [ ] Files are rejected if the processed result still exceeds the limit.
-- [ ] Temporary files are randomly named and cleaned after success or failure.
-- [ ] Original filenames cannot cause path traversal.
+- [x] PNG, JPEG, and WebP uploads are accepted when valid.
+- [x] GIF and unsupported formats are rejected.
+- [x] Validation uses signatures and decoding rather than extension alone.
+- [x] Malformed images are rejected without excessive memory or CPU usage.
+- [x] Configured byte and pixel-dimension limits are enforced.
+- [x] Files larger than the configured incoming limit are downscaled/re-encoded when safe.
+- [x] Files are rejected if the processed result still exceeds the limit.
+- [x] Temporary files are randomly named and cleaned after success or failure.
+- [x] Original filenames cannot cause path traversal.
 
 ### Quota
 
-- [ ] A new user has a 1 GB default image quota.
-- [ ] Administrators can configure the default quota.
-- [ ] Uploads that exceed remaining quota fail atomically with a documented error.
-- [ ] Concurrent uploads cannot materially bypass the quota.
-- [ ] Administrators can view counts and byte totals without filenames or image previews.
-- [ ] User-facing quota information reflects the authenticated user's own usage.
+- [x] A new user has a 1 GB default image quota.
+- [x] Administrators can configure the default quota.
+- [x] Uploads that exceed remaining quota fail atomically with a documented error.
+- [x] Concurrent uploads cannot materially bypass the quota.
+- [x] Administrators can view counts and byte totals without filenames or image previews.
+- [x] User-facing quota information reflects the authenticated user's own usage.
 
 ### Storage Backends
 
-- [ ] Filesystem is the default backend.
-- [ ] Filesystem writes are atomic and use the mounted persistent volume.
-- [ ] PostgreSQL storage streams binary data without requiring the complete object in memory.
-- [ ] S3 objects are private.
-- [ ] S3 credentials are supplied only through secret configuration.
-- [ ] Each installation records its selected backend.
-- [ ] Startup fails clearly if the configured backend changes after assets exist.
-- [ ] No automatic migration between backends is performed.
-- [ ] The same image API behavior passes against all three backends.
+- [x] Filesystem is the default backend.
+- [x] Filesystem writes are atomic and use the mounted persistent volume.
+- [x] PostgreSQL storage streams binary data without requiring the complete object in memory.
+- [x] S3 objects are private.
+- [x] S3 credentials are supplied only through secret configuration.
+- [x] Each installation records its selected backend.
+- [x] Startup fails clearly if the configured backend changes after assets exist.
+- [x] No automatic migration between backends is performed.
+- [x] The same image API behavior passes against all three backends.
 
 ### Ownership and References
 
-- [ ] Image IDs are stable UUIDs independent of storage location.
-- [ ] Only the owner can retrieve an image.
-- [ ] Guessing an image UUID does not reveal whether another user owns it.
-- [ ] Notes can reference owned images only.
-- [ ] Removing one reference does not delete an image still referenced elsewhere.
-- [ ] Images referenced by retained note versions are not garbage-collected.
-- [ ] Orphan assets are deleted only after the configured grace/eligibility checks.
+- [x] Image IDs are stable UUIDs independent of storage location.
+- [x] Only the owner can retrieve an image.
+- [x] Guessing an image UUID does not reveal whether another user owns it.
+- [x] Notes can reference owned images only.
+- [x] Removing one reference does not delete an image still referenced elsewhere.
+- [x] Images referenced by retained note versions are not garbage-collected.
+- [x] Orphan assets are deleted only after the configured grace/eligibility checks.
 
 ### Frontend
 
-- [ ] Users can add images through file picker.
-- [ ] Users can add images through drag and drop.
-- [ ] Users can paste supported images from the clipboard.
-- [ ] Cards display thumbnails.
-- [ ] The editor displays images.
-- [ ] Users can open a larger image view.
-- [ ] Upload progress and validation failures are understandable.
+- [x] Users can add images through file picker.
+- [x] Users can add images through drag and drop.
+- [x] Users can paste supported images from the clipboard.
+- [x] Cards display thumbnails.
+- [x] The editor displays images.
+- [x] Users can open a larger image view.
+- [x] Upload progress and validation failures are understandable.
 
 ## Exit Gate
 
@@ -1009,46 +1022,46 @@ Deliver PostgreSQL full-text search, conflict-safe autosave, and configurable no
 
 ### Search
 
-- [ ] Search uses PostgreSQL full-text search.
-- [ ] The `simple` language-neutral configuration is used.
-- [ ] Titles, Markdown source, and checklist text are indexed.
-- [ ] Default search includes non-trashed notes owned by the user.
-- [ ] Archived notes are included unless excluded by a filter.
-- [ ] Trash search requires explicit scope/filter.
-- [ ] Filters exist for notebook, label, archive status, trash, note type, and pinned state.
-- [ ] Results are ranked and use stable secondary ordering.
-- [ ] Results are paginated.
-- [ ] Search never returns another user's content.
-- [ ] Indexes update after note and checklist changes.
-- [ ] Empty-query behavior is documented and tested.
+- [x] Search uses PostgreSQL full-text search.
+- [x] The `simple` language-neutral configuration is used.
+- [x] Titles, Markdown source, and checklist text are indexed.
+- [x] Default search includes non-trashed notes owned by the user.
+- [x] Archived notes are included unless excluded by a filter.
+- [x] Trash search requires explicit scope/filter.
+- [x] Filters exist for notebook, label, archive status, trash, note type, and pinned state.
+- [x] Results are ranked and use stable secondary ordering.
+- [x] Results are paginated.
+- [x] Search never returns another user's content.
+- [x] Indexes update after note and checklist changes.
+- [x] Empty-query behavior is documented and tested.
 
 ### Optimistic Locking
 
-- [ ] Every note update requires the last known version.
-- [ ] A stale update returns `409 Conflict`.
-- [ ] A stale update does not overwrite the current stored note.
-- [ ] The conflict response includes the current version and safe metadata.
-- [ ] The Angular editor clearly reports the conflict.
-- [ ] The user can reload the server copy.
-- [ ] The user can copy or preserve the local draft before reloading.
-- [ ] Two-tab and two-session conflict scenarios have automated tests.
+- [x] Every note update requires the last known version.
+- [x] A stale update returns `409 Conflict`.
+- [x] A stale update does not overwrite the current stored note.
+- [x] The conflict response includes the current version and safe metadata.
+- [x] The Angular editor clearly reports the conflict.
+- [x] The user can reload the server copy.
+- [x] The user can copy or preserve the local draft before reloading.
+- [x] Two-tab and two-session conflict scenarios have automated tests.
 
 ### Version History
 
-- [ ] Default maximum history is 20 versions per note.
-- [ ] Default history age is 30 days.
-- [ ] Both values are administrator-configurable.
-- [ ] A snapshot is created when the editor closes after meaningful changes.
-- [ ] A snapshot is created after meaningful changes when at least five minutes have passed since the prior snapshot.
-- [ ] A snapshot is created when a conflicting update is rejected.
-- [ ] A snapshot is created before/when restoring from trash as specified.
-- [ ] A snapshot is created before restoring an older version.
-- [ ] Normal 500 ms autosaves do not create a version each time.
-- [ ] Duplicate snapshots are avoided where content has not changed.
-- [ ] Restoring a version preserves the note ID and increments the current version.
-- [ ] The pre-restore state is retained.
-- [ ] Image references required by retained versions remain valid.
-- [ ] Cleanup enforces both count and age limits.
+- [x] Default maximum history is 20 versions per note.
+- [x] Default history age is 30 days.
+- [x] Both values are administrator-configurable.
+- [x] A snapshot is created when the editor closes after meaningful changes.
+- [x] A snapshot is created after meaningful changes when at least five minutes have passed since the prior snapshot.
+- [x] A snapshot is created when a conflicting update is rejected.
+- [x] A snapshot is created before/when restoring from trash as specified.
+- [x] A snapshot is created before restoring an older version.
+- [x] Normal 500 ms autosaves do not create a version each time.
+- [x] Duplicate snapshots are avoided where content has not changed.
+- [x] Restoring a version preserves the note ID and increments the current version.
+- [x] The pre-restore state is retained.
+- [x] Image references required by retained versions remain valid.
+- [x] Cleanup enforces both count and age limits.
 
 ## Exit Gate
 
@@ -1093,65 +1106,65 @@ Provide safe user import/export, blind administrative import, and verified compa
 
 ### Export
 
-- [ ] A user can export all their content.
-- [ ] A user can export one notebook.
-- [ ] A user can export one note.
-- [ ] Users cannot export another user's content.
-- [ ] Images are included as base64 in the portable format.
-- [ ] Export uses bounded memory or streaming.
-- [ ] User exports can be disabled by an administrator.
-- [ ] Export files contain no authentication, session, audit, or authorization data.
-- [ ] Cloud metadata is optional and does not break compatible readers.
-- [ ] Pending exports can be cancelled.
-- [ ] Temporary export files are cleaned according to policy.
+- [x] A user can export all their content.
+- [x] A user can export one notebook.
+- [x] A user can export one note.
+- [x] Users cannot export another user's content.
+- [x] Images are included as base64 in the portable format.
+- [x] Export uses bounded memory or streaming.
+- [x] User exports can be disabled by an administrator.
+- [x] Export files contain no authentication, session, audit, or authorization data.
+- [x] Cloud metadata is optional and does not break compatible readers.
+- [x] Pending exports can be cancelled.
+- [x] Temporary export files are cleaned according to policy.
 
 ### Import Inspection
 
-- [ ] The import validates format and schema version.
-- [ ] UUID syntax and relationships are validated.
-- [ ] Image MIME type and decoded size are validated.
-- [ ] Maximum file size, entity count, nesting, and image totals are enforced.
-- [ ] Quota impact is calculated before apply.
-- [ ] Validation returns counts and actionable structural errors.
-- [ ] Invalid imports do not partially alter permanent user data.
-- [ ] Temporary uploads are deleted after completion, cancellation, or expiry.
+- [x] The import validates format and schema version.
+- [x] UUID syntax and relationships are validated.
+- [x] Image MIME type and decoded size are validated.
+- [x] Maximum file size, entity count, nesting, and image totals are enforced.
+- [x] Quota impact is calculated before apply.
+- [x] Validation returns counts and actionable structural errors.
+- [x] Invalid imports do not partially alter permanent user data.
+- [x] Temporary uploads are deleted after completion, cancellation, or expiry.
 
 ### Conflict Strategies
 
-- [ ] “Add as copies” remaps all required IDs and relationships consistently.
-- [ ] “Replace existing by ID” replaces only matching entities owned by the target user.
-- [ ] An ID belonging to another user is never overwritten.
-- [ ] Cross-user collisions do not reveal the other user's identity or content.
-- [ ] Import apply is transactional where possible and compensates binary writes on failure.
-- [ ] Import retries do not create uncontrolled duplicates.
+- [x] “Add as copies” remaps all required IDs and relationships consistently.
+- [x] “Replace existing by ID” replaces only matching entities owned by the target user.
+- [x] An ID belonging to another user is never overwritten.
+- [x] Cross-user collisions do not reveal the other user's identity or content.
+- [x] Import apply is transactional where possible and compensates binary writes on failure.
+- [x] Import retries do not create uncontrolled duplicates.
 
 ### Blind Administrative Import
 
-- [ ] An administrator can choose a target user and upload an import.
-- [ ] Admin validation output contains only counts and structural errors.
-- [ ] The administrator cannot preview note titles, bodies, checklist text, images, or image filenames.
-- [ ] Ownership is assigned to the target user.
-- [ ] The operation is audited.
-- [ ] USER accounts cannot invoke target-user imports.
+- [x] An administrator can choose a target user and upload an import.
+- [x] Admin validation output contains only counts and structural errors.
+- [x] The administrator cannot preview note titles, bodies, checklist text, images, or image filenames.
+- [x] Ownership is assigned to the target user.
+- [x] The operation is audited.
+- [x] USER accounts cannot invoke target-user imports.
 
 ### Desktop Compatibility
 
-- [ ] A full desktop export fixture imports successfully.
-- [ ] A notebook desktop export fixture imports successfully.
-- [ ] A single-note desktop export fixture imports successfully.
-- [ ] UUIDs are preserved when no conflict exists.
-- [ ] Image references survive a desktop-to-cloud round trip.
-- [ ] A cloud export can be opened by a compatible desktop client.
-- [ ] The default notebook is correctly handled.
-- [ ] Add-as-copies and replace-by-ID match desktop semantics.
+- [x] A full desktop export fixture imports successfully.
+- [x] A notebook desktop export fixture imports successfully.
+- [x] A single-note desktop export fixture imports successfully.
+- [x] UUIDs are preserved when no conflict exists.
+- [x] Image references survive a desktop-to-cloud round trip.
+- [x] A cloud export can be opened by a compatible desktop client.
+- [x] The default notebook is correctly handled.
+- [x] Add-as-copies and replace-by-ID match desktop semantics.
 
 ### Tombstones
 
-- [ ] Permanently deleted synchronizable entities can create minimal tombstones.
-- [ ] Tombstones contain owner, entity type, entity ID, version, and deletion/expiry timestamps only.
-- [ ] Tombstones contain no note content.
-- [ ] Default tombstone retention is 30 days.
-- [ ] The schema can support a future modification-time/change-feed endpoint.
+- [x] Permanently deleted synchronizable entities can create minimal tombstones.
+- [x] Tombstones contain owner, entity type, entity ID, version, and deletion/expiry timestamps only.
+- [x] Tombstones contain no note content.
+- [x] Default tombstone retention is 30 days.
+- [x] The schema can support a future modification-time/change-feed endpoint.
 
 ## Exit Gate
 
@@ -1199,64 +1212,64 @@ Complete user-facing profile/security settings, verified email changes, account 
 
 ### Profile and Password
 
-- [ ] Users can change display name.
-- [ ] Users can change username subject to case-insensitive uniqueness.
-- [ ] Changing password requires the current password.
-- [ ] New passwords satisfy configured policy.
-- [ ] Changing password revokes all sessions.
-- [ ] Password-history enforcement works when enabled.
-- [ ] Common-password rejection works by default and can be disabled by administrators.
+- [x] Users can change display name.
+- [x] Users can change username subject to case-insensitive uniqueness.
+- [x] Changing password requires the current password.
+- [x] New passwords satisfy configured policy.
+- [x] Changing password revokes all sessions.
+- [x] Password-history enforcement works when enabled.
+- [x] Common-password rejection works by default and can be disabled by administrators.
 
 ### Email Change
 
-- [ ] A user must provide the current password to request an email change.
-- [ ] The new email is verified before becoming active.
-- [ ] The old email remains the login address until verification completes.
-- [ ] The new email cannot conflict case-insensitively with another account.
-- [ ] Successful change notifies the old address when SMTP is available.
-- [ ] Pending email-change tokens are hashed, expiring, single-use, and throttled.
-- [ ] Self-service email change is unavailable with a clear explanation when SMTP is unavailable.
-- [ ] An administrator can change an email immediately.
-- [ ] Administrative email changes are audited.
+- [x] A user must provide the current password to request an email change.
+- [x] The new email is verified before becoming active.
+- [x] The old email remains the login address until verification completes.
+- [x] The new email cannot conflict case-insensitively with another account.
+- [x] Successful change notifies the old address when SMTP is available.
+- [x] Pending email-change tokens are hashed, expiring, single-use, and throttled.
+- [x] Self-service email change is unavailable with a clear explanation when SMTP is unavailable.
+- [x] An administrator can change an email immediately.
+- [x] Administrative email changes are audited.
 
 ### Deactivation and Deletion
 
-- [ ] Deactivation immediately revokes sessions and blocks login.
-- [ ] Deactivated user data remains and continues counting toward storage.
-- [ ] Cleanup policies continue for deactivated users.
-- [ ] An invitation cannot reuse the deactivated account's normalized identity.
-- [ ] An administrator can reactivate a deactivated account.
-- [ ] Administrative deletion uses the configured retention period by default.
-- [ ] An administrator can restore an account before retained deletion completes.
-- [ ] Immediate admin deletion requires destructive confirmation.
-- [ ] User self-deletion requires the current password.
-- [ ] The final self-deletion warning lists all permanently removed data classes.
-- [ ] Self-deletion is immediate and irreversible.
-- [ ] Self-deletion cancels sessions, pending exports, image processing, and security tokens.
-- [ ] The last active administrator cannot self-delete.
-- [ ] Permanent deletion removes user content and image binaries.
-- [ ] Minimal audit records and tombstones follow their independent retention policies.
+- [x] Deactivation immediately revokes sessions and blocks login.
+- [x] Deactivated user data remains and continues counting toward storage.
+- [x] Cleanup policies continue for deactivated users.
+- [x] An invitation cannot reuse the deactivated account's normalized identity.
+- [x] An administrator can reactivate a deactivated account.
+- [x] Administrative deletion uses the configured retention period by default.
+- [x] An administrator can restore an account before retained deletion completes.
+- [x] Immediate admin deletion requires destructive confirmation.
+- [x] User self-deletion requires the current password.
+- [x] The final self-deletion warning lists all permanently removed data classes.
+- [x] Self-deletion is immediate and irreversible.
+- [x] Self-deletion cancels sessions, pending exports, image processing, and security tokens.
+- [x] The last active administrator cannot self-delete.
+- [x] Permanent deletion removes user content and image binaries.
+- [x] Minimal audit records and tombstones follow their independent retention policies.
 
 ### Preferences and UI
 
-- [ ] Dark theme is the default.
-- [ ] Users can switch between dark and light themes.
-- [ ] Theme persists.
-- [ ] English and German can be switched at runtime.
-- [ ] Supported browser locale is used for the initial language; otherwise English.
-- [ ] Dates are formatted according to selected language.
-- [ ] Move-checked-to-bottom can be configured.
-- [ ] Trash auto-purge preference follows the administrator's policy.
-- [ ] Desktop-only tray and quick-note settings do not appear.
+- [x] Dark theme is the default.
+- [x] Users can switch between dark and light themes.
+- [x] Theme persists.
+- [x] English and German can be switched at runtime.
+- [x] Supported browser locale is used for the initial language; otherwise English.
+- [x] Dates are formatted according to selected language.
+- [x] Move-checked-to-bottom can be configured.
+- [x] Trash auto-purge preference follows the administrator's policy.
+- [x] Desktop-only tray and quick-note settings do not appear.
 
 ### Email Sharing
 
-- [ ] Share builds a `mailto:` URL using title and Markdown body.
-- [ ] Checklist notes are rendered as Markdown checklist lines.
-- [ ] The UI warns that images cannot be attached.
-- [ ] Export is offered as an alternative.
-- [ ] Excessive URL length is handled with a useful warning.
-- [ ] Note content is not sent through server SMTP.
+- [x] Share builds a `mailto:` URL using title and Markdown body.
+- [x] Checklist notes are rendered as Markdown checklist lines.
+- [x] The UI warns that images cannot be attached.
+- [x] Export is offered as an alternative.
+- [x] Excessive URL length is handled with a useful warning.
+- [x] Note content is not sent through server SMTP.
 
 ## Exit Gate
 
@@ -1303,73 +1316,73 @@ Complete runtime administration, audit logging, SMTP status, instance settings, 
 
 ### Instance Settings
 
-- [ ] Administrators can configure all approved non-secret settings.
-- [ ] Settings have validated safe ranges.
-- [ ] Restart-required settings are marked.
-- [ ] Secret settings cannot be entered or retrieved from the dashboard.
-- [ ] Setting changes generate audit events.
-- [ ] Invalid settings do not leave partial configuration.
-- [ ] The image backend cannot be changed through runtime settings after assets exist.
+- [x] Administrators can configure all approved non-secret settings.
+- [x] Settings have validated safe ranges.
+- [x] Restart-required settings are marked.
+- [x] Secret settings cannot be entered or retrieved from the dashboard.
+- [x] Setting changes generate audit events.
+- [x] Invalid settings do not leave partial configuration.
+- [x] The image backend cannot be changed through runtime settings after assets exist.
 
 ### SMTP Status
 
-- [ ] The dashboard shows configured/not configured status.
-- [ ] Sender name and address may be displayed.
-- [ ] Administrators can trigger a connection/test email.
-- [ ] Last successful email time is displayed.
-- [ ] Generic failure status is displayed without credentials.
-- [ ] SMTP password is never accepted or shown in the dashboard.
+- [x] The dashboard shows configured/not configured status.
+- [x] Sender name and address may be displayed.
+- [x] Administrators can trigger a connection/test email.
+- [x] Last successful email time is displayed.
+- [x] Generic failure status is displayed without credentials.
+- [x] SMTP password is never accepted or shown in the dashboard.
 
 ### Audit
 
-- [ ] Required administrative and security events are recorded.
-- [ ] Failed login attempts and security-sensitive login events are recorded.
-- [ ] Normal successful logins are not recorded by default.
-- [ ] Full IP address is stored as approved.
-- [ ] Client/browser information is normalized.
-- [ ] Correlation IDs connect audit events to request logs.
-- [ ] Audit metadata contains no tokens, passwords, note content, or image filenames.
-- [ ] Default retention is 365 days.
-- [ ] Retention is configurable.
-- [ ] Audit events cannot be edited or manually deleted through the dashboard.
-- [ ] Administrators can export audit records as CSV and JSON.
+- [x] Required administrative and security events are recorded.
+- [x] Failed login attempts and security-sensitive login events are recorded.
+- [x] Normal successful logins are not recorded by default.
+- [x] Full IP address is stored as approved.
+- [x] Client/browser information is normalized.
+- [x] Correlation IDs connect audit events to request logs.
+- [x] Audit metadata contains no tokens, passwords, note content, or image filenames.
+- [x] Default retention is 365 days.
+- [x] Retention is configurable.
+- [x] Audit events cannot be edited or manually deleted through the dashboard.
+- [x] Administrators can export audit records as CSV and JSON.
 
 ### Logs, Health, and Metrics
 
-- [ ] Production logs are structured.
-- [ ] Routine logs contain no note content.
-- [ ] Operational-log retention guidance defaults to 30 days.
-- [ ] Liveness reports process health.
-- [ ] Readiness checks PostgreSQL and required image storage.
-- [ ] SMTP failure is reported as degraded rather than automatically blocking note use.
-- [ ] Metrics are enabled by default.
-- [ ] Metrics are exposed on a separate management interface.
-- [ ] The management interface binds internally by default.
-- [ ] Metrics can be disabled.
-- [ ] Metric labels do not contain usernames, emails, note titles, image filenames, or tokens.
+- [x] Production logs are structured.
+- [x] Routine logs contain no note content.
+- [x] Operational-log retention guidance defaults to 30 days.
+- [x] Liveness reports process health.
+- [x] Readiness checks PostgreSQL and required image storage.
+- [x] SMTP failure is reported as degraded rather than automatically blocking note use.
+- [x] Metrics are enabled by default.
+- [x] Metrics are exposed on a separate management interface.
+- [x] The management interface binds internally by default.
+- [x] Metrics can be disabled.
+- [x] Metric labels do not contain usernames, emails, note titles, image filenames, or tokens.
 
 ### Scheduled Jobs
 
-- [ ] Jobs exist for invitation, reset-token, email-token, session, trash, history, tombstone, orphan-image, audit, deletion, and temporary-transfer cleanup.
-- [ ] Jobs are safe to retry.
-- [ ] Jobs do not rely solely on uncoordinated process-local scheduling.
-- [ ] Two simulated application instances cannot process the same exclusive job simultaneously where duplication is unsafe.
-- [ ] Job failures are logged with correlation/job IDs and recoverable states.
+- [x] Jobs exist for invitation, reset-token, email-token, session, trash, history, tombstone, orphan-image, audit, deletion, and temporary-transfer cleanup.
+- [x] Jobs are safe to retry.
+- [x] Jobs do not rely solely on uncoordinated process-local scheduling.
+- [x] Two simulated application instances cannot process the same exclusive job simultaneously where duplication is unsafe.
+- [x] Job failures are logged with correlation/job IDs and recoverable states.
 
 ### Backup
 
-- [ ] Backup operations are unavailable unless the environment feature flag is enabled.
-- [ ] When enabled, an administrator can initiate a backup from the dashboard.
-- [ ] The backup runs as a background job.
-- [ ] The backup is written only to the configured server directory.
-- [ ] The dashboard does not provide arbitrary filesystem browsing.
-- [ ] The backup includes PostgreSQL data, image assets, non-secret settings, manifest, versions, timestamps, and checksums.
-- [ ] Configuration values for database credentials, SMTP passwords, S3 secrets, bootstrap tokens, and cryptographic keys are not intentionally copied into the backup manifest/configuration.
-- [ ] Documentation states that the database dump still contains sensitive user data and authentication hashes.
-- [ ] Backup files have restrictive permissions.
-- [ ] Backup creation and outcome are audited.
-- [ ] Restore instructions are tested on a clean environment.
-- [ ] Documentation requires external encryption and protection of the backup directory.
+- [x] Backup operations are unavailable unless the environment feature flag is enabled.
+- [x] When enabled, an administrator can initiate a backup from the dashboard.
+- [x] The backup runs as a background job.
+- [x] The backup is written only to the configured server directory.
+- [x] The dashboard does not provide arbitrary filesystem browsing.
+- [x] The backup includes PostgreSQL data, image assets, non-secret settings, manifest, versions, timestamps, and checksums.
+- [x] Configuration values for database credentials, SMTP passwords, S3 secrets, bootstrap tokens, and cryptographic keys are not intentionally copied into the backup manifest/configuration.
+- [x] Documentation states that the database dump still contains sensitive user data and authentication hashes.
+- [x] Backup files have restrictive permissions.
+- [x] Backup creation and outcome are audited.
+- [x] Restore instructions are tested on a clean environment.
+- [x] Documentation requires external encryption and protection of the backup directory.
 
 ## Exit Gate
 
