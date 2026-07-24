@@ -6,7 +6,9 @@ monorepo with a Quarkus backend, Angular frontend, and PostgreSQL persistence la
 ## Prerequisites
 
 - JDK 21 or newer (the build targets Java 21)
-- Docker-compatible daemon for PostgreSQL development and integration tests
+- Docker-compatible daemon with Docker Compose v2 for PostgreSQL development, integration tests,
+  and the production-like environment
+- OpenSSL or another secure random generator for disposable Compose secrets
 - Node.js 24.15 or newer
 - npm 11.12.1
 
@@ -42,7 +44,21 @@ export GLACIER_IMAGE_FILESYSTEM_ROOT=/tmp/glacier-notes-dev-images
 ~~~
 
 The API listens on `http://localhost:8080`. PostgreSQL starts automatically in Docker, and the
-readiness endpoint is available at `http://localhost:9000/q/health/ready`.
+management interface is available only on port 9000. Readiness is
+`http://localhost:9000/q/health/ready`, and metrics are exposed at
+`http://localhost:9000/q/metrics` while metrics are enabled.
+
+Backups are disabled by default. To exercise the M11 backup dashboard in development, set these
+additional variables before starting Quarkus:
+
+~~~bash
+export GLACIER_BACKUP_ENABLED=true
+export GLACIER_BACKUP_DIRECTORY=/tmp/glacier-notes-dev-backups
+export GLACIER_BUILD_IDENTIFIER=local-dev
+~~~
+
+Use only a disposable directory for development backups. Backup archives contain user data and
+authentication hashes.
 
 ### Start the frontend
 
@@ -73,9 +89,11 @@ database is discarded when the backend stops.
 ./mvnw verify
 cd frontend
 npm ci
+npm run test:repository
 npm run check
 npm run build:production
 npm run test:ci
+npm audit --omit=dev --audit-level=high
 ```
 
 `./mvnw -pl backend generate-sources` regenerates the Java contract and committed
@@ -97,9 +115,11 @@ for format limits, job states, cleanup, and compatibility guidance.
 ## Production-like local environment
 
 Use Docker Compose when testing the compiled, same-origin application rather than live development
-servers. Create local secrets, then build and start the complete environment:
+servers. Copy the non-secret configuration template, create local secrets, then build and start the
+complete environment:
 
 ~~~bash
+cp .env.example .env
 mkdir -p deployment/secrets
 openssl rand -base64 36 > deployment/secrets/database-password.txt
 openssl rand -base64 36 > deployment/secrets/bootstrap-token.txt
@@ -109,11 +129,20 @@ docker compose up --build --wait
 ~~~
 
 Open `http://127.0.0.1:8080` and use the generated bootstrap token to create the administrator.
-The management endpoint is `http://127.0.0.1:9000/q/health/ready`. Stop the environment without
-deleting its data by running `docker compose down`. See
-[deployment/README.md](deployment/README.md) for configuration, SMTP, secret rotation, and backup
-instructions. Running `docker compose down --volumes` permanently removes the local database and
-application volumes.
+The management endpoints are `http://127.0.0.1:9000/q/health/ready` and
+`http://127.0.0.1:9000/q/metrics`; keep port 9000 private.
+
+To test administrator-created backups, set `GLACIER_BACKUP_ENABLED=true` and a recognizable
+`GLACIER_BUILD_IDENTIFIER` in `.env` before starting Compose. Leave
+`GLACIER_BACKUP_DIRECTORY=/var/lib/glacier-notes/backups` at its default unless another writable
+container path is intentional; Compose mounts the persistent `backup_data` volume at the configured
+path. After bootstrap, open `/admin/backups`. Backup and clean-restore procedures are documented in
+[docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md).
+
+Stop the environment without deleting its data by running `docker compose down`. See
+[deployment/README.md](deployment/README.md) for all configuration, SMTP, management-interface, and
+secret-rotation details. Running `docker compose down --volumes` permanently removes the local
+database and application volumes.
 
 ## IntelliJ IDEA development setup
 
@@ -146,7 +175,10 @@ Create these configurations under **Run | Edit Configurations**:
 - **Backend — Maven:** working directory is the repository root; command line is
   `-pl backend quarkus:dev`. Add environment variables
   `GLACIER_BOOTSTRAP_TOKEN=local-bootstrap-token-development-only-2026` and
-  `GLACIER_SECURITY_SESSION_SECRET=local-session-secret-development-only-2026`.
+  `GLACIER_SECURITY_SESSION_SECRET=local-session-secret-development-only-2026`. To test backups from
+  the IDE, also add `GLACIER_BACKUP_ENABLED=true`,
+  `GLACIER_BACKUP_DIRECTORY=/tmp/glacier-notes-idea-backups`, and
+  `GLACIER_BUILD_IDENTIFIER=intellij-dev`.
 - **Frontend — npm:** package file is `frontend/package.json`, command is `run`, and script is
   `start`.
 - **Backend debugger — Remote JVM Debug:** attach to `localhost:5005` after starting the backend.
@@ -155,7 +187,7 @@ Create these configurations under **Run | Edit Configurations**:
 - **Backend verification — Maven:** working directory is the repository root; command line is
   `verify`.
 - **Frontend verification — npm:** create configurations for `check`, `build:production`, and
-  `test:ci`.
+  `test:ci`; add `test:repository` when validating repository metadata and operational runbooks.
 
 Start Docker before the backend configuration. A Compound configuration can launch **Backend** and
 **Frontend** together. If generated Java types appear unresolved, rerun `generate-sources` and use
