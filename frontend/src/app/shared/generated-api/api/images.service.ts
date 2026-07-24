@@ -116,9 +116,6 @@ export class ImagesService extends BaseService {
 
         let localVarHeaders = this.defaultHeaders;
 
-        // authentication (csrfHeader) required
-        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
-
         // authentication (sessionCookie) required
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
@@ -168,9 +165,6 @@ export class ImagesService extends BaseService {
 
         let localVarHeaders = this.defaultHeaders;
 
-        // authentication (csrfHeader) required
-        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
-
         // authentication (sessionCookie) required
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
@@ -219,9 +213,6 @@ export class ImagesService extends BaseService {
         }
 
         let localVarHeaders = this.defaultHeaders;
-
-        // authentication (csrfHeader) required
-        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
 
         // authentication (sessionCookie) required
 

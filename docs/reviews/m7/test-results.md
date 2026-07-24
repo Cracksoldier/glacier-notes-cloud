@@ -25,3 +25,18 @@ record credentials, tokens, cookies, user content, image bytes, or unredacted lo
 - Frontend non-regression gates passed: `npm run check` (83 files), `npm run test:ci` (23 tests),
   and `npm run build:production` (2.814 seconds). The production build retained the existing bundle
   budget warnings.
+
+## 2026-07-24 S3 policy remediation
+
+- `sg docker -c './mvnw -pl backend -Dtest=SecretProviderTest,SecretPolicyTest,SmtpStartupValidatorTest,RequestBodyLimitPolicyTest,S3StoragePolicyTest,PingResourceTest,RequestBodyLimitTest test'`
+  passed 16 tests in 20.9 seconds. S3 policy tests verified bounded call/attempt timeouts, supported
+  server-side encryption values, and encryption on `PutObject` requests.
+- `sg docker -c './mvnw -pl backend -Dtest=AuthenticationResourceTest,SetupResourceTest,ImageResourceTest,PostgresqlImageResourceTest,S3ImageResourceTest,TransferResourceTest test'`
+  passed 15 tests in 43.526 seconds, including the MinIO/S3 profile.
+- `docker compose config --quiet` passed with the S3 encryption and timeout variables wired into the
+  application service.
+- `sg docker -c './mvnw verify'` passed all 68 backend tests in 1 minute 19 seconds. Safe reports are
+  under `backend/target/surefire-reports/`.
+
+The S3 client now enforces explicit API-call and attempt bounds, and deployment configuration passes
+the validated `AES256` or `aws:kms` server-side-encryption policy through to uploads.

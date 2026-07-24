@@ -47,7 +47,7 @@ public class SecretProvider {
     }
 
     private Optional<String> nonBlank(String value) {
-        return value.isEmpty() ? Optional.empty() : Optional.of(value);
+        return value.isBlank() ? Optional.empty() : Optional.of(value);
     }
 
     private String stripTerminalNewline(String value) {

@@ -1,6 +1,7 @@
 package com.glaciernotes.cloud.application.setup;
 
 import com.glaciernotes.cloud.configuration.SecretProvider;
+import com.glaciernotes.cloud.configuration.SecretPolicy;
 import com.glaciernotes.cloud.persistence.repository.BootstrapRateLimiter;
 import com.glaciernotes.cloud.persistence.repository.BootstrapTransaction;
 import com.glaciernotes.cloud.security.ClientKeyHasher;
@@ -92,8 +93,7 @@ public class BootstrapService {
     }
 
     private String validSecret(String secret) {
-        if (secret == null || secret.length() < 32 || secret.length() > 512
-            || secret.codePoints().anyMatch(Character::isWhitespace)) {
+        if (!SecretPolicy.valid(secret)) {
             throw SetupFailure.unavailable();
         }
         return secret;

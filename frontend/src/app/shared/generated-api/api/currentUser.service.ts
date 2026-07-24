@@ -207,9 +207,6 @@ export class CurrentUserService extends BaseService {
 
         let localVarHeaders = this.defaultHeaders;
 
-        // authentication (csrfHeader) required
-        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
-
         // authentication (sessionCookie) required
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
@@ -265,9 +262,6 @@ export class CurrentUserService extends BaseService {
 
         let localVarHeaders = this.defaultHeaders;
 
-        // authentication (csrfHeader) required
-        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
-
         // authentication (sessionCookie) required
 
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
@@ -322,9 +316,6 @@ export class CurrentUserService extends BaseService {
     public getCurrentUserStorage(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
-
-        // authentication (csrfHeader) required
-        localVarHeaders = this.configuration.addCredentialToHeaders('csrfHeader', 'X-CSRF-Token', localVarHeaders);
 
         // authentication (sessionCookie) required
 

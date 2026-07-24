@@ -28,4 +28,13 @@ describe('XSRF configuration', () => {
     expect(request.request.headers.get('X-CSRF-Token')).toBe('csrf-test-value');
     request.flush(null);
   });
+
+  it('does not model CSRF as required on authenticated reads', () => {
+    TestBed.inject(SessionsService).listSessions().subscribe();
+
+    const request = TestBed.inject(HttpTestingController).expectOne('/api/v1/me/sessions');
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.has('X-CSRF-Token')).toBe(false);
+    request.flush([]);
+  });
 });

@@ -1,6 +1,7 @@
 package com.glaciernotes.cloud.security;
 
 import com.glaciernotes.cloud.configuration.SecretProvider;
+import com.glaciernotes.cloud.configuration.SecretPolicy;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import javax.crypto.Mac;
@@ -19,8 +20,10 @@ public class SessionTokenService {
 
     public SessionTokenService(SecretProvider secretProvider) {
         secret = secretProvider.sessionSecret()
-            .filter(value -> value.length() >= 32)
-            .orElseThrow(() -> new IllegalStateException("A session secret of at least 32 characters is required"))
+            .filter(SecretPolicy::valid)
+            .orElseThrow(() -> new IllegalStateException(
+                "A 32-512 character session secret without whitespace is required"
+            ))
             .getBytes(StandardCharsets.UTF_8);
     }
 

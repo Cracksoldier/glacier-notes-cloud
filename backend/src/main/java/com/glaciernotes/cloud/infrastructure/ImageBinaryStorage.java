@@ -36,6 +36,7 @@ public class ImageBinaryStorage implements BinaryAssetStorage {
     private final DataSource dataSource;
     private String backend;
     private S3Client s3;
+    private S3StoragePolicy s3Policy;
 
     @Inject
     public ImageBinaryStorage(GlacierConfiguration configuration, DataSource dataSource) {
@@ -58,7 +59,9 @@ public class ImageBinaryStorage implements BinaryAssetStorage {
 
     private void initializeS3() {
         var value = configuration.images().s3();
+        s3Policy = S3StoragePolicy.from(value);
         var builder = S3Client.builder().region(Region.of(value.region()))
+            .overrideConfiguration(s3Policy.clientOverrideConfiguration())
             .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(value.pathStyle()).build());
         value.endpoint().filter(v -> !v.isBlank()).ifPresent(v -> builder.endpointOverride(URI.create(v)));
         String access = secret(value.accessKeyFile(), "S3 access key");
@@ -120,8 +123,7 @@ public class ImageBinaryStorage implements BinaryAssetStorage {
 
     private void storeS3(String key, Path content, String type) {
         var builder = PutObjectRequest.builder().bucket(configuration.images().s3().bucket()).key(key).contentType(type);
-        configuration.images().s3().serverSideEncryption().filter(v -> !v.isBlank())
-            .ifPresent(builder::serverSideEncryption);
+        s3Policy.applyEncryption(builder);
         try { s3.putObject(builder.build(), RequestBody.fromFile(content)); }
         catch (RuntimeException exception) { throw new ImageStorageException(exception); }
     }

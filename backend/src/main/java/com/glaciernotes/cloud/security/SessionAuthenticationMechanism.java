@@ -1,5 +1,6 @@
 package com.glaciernotes.cloud.security;
 
+import com.glaciernotes.cloud.api.CorrelationIds;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.AuthenticationRequest;
@@ -11,12 +12,9 @@ import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.Set;
-import java.util.UUID;
-import java.util.regex.Pattern;
 
 @ApplicationScoped
 public class SessionAuthenticationMechanism implements HttpAuthenticationMechanism {
-    private static final Pattern VALID_CORRELATION_ID = Pattern.compile("[A-Za-z0-9._-]{1,128}");
     @Override
     public Uni<SecurityIdentity> authenticate(
         RoutingContext context,
@@ -37,9 +35,7 @@ public class SessionAuthenticationMechanism implements HttpAuthenticationMechani
     @Override
     public Uni<Boolean> sendChallenge(RoutingContext context) {
         var incoming = context.request().getHeader("X-Correlation-ID");
-        var correlationId = incoming != null && VALID_CORRELATION_ID.matcher(incoming).matches()
-            ? incoming
-            : UUID.randomUUID().toString();
+        var correlationId = CorrelationIds.resolve(incoming);
         var problem = new JsonObject()
             .put("type", "https://glacier-notes.example/problems/auth-session-expired")
             .put("title", "Authentication Required")

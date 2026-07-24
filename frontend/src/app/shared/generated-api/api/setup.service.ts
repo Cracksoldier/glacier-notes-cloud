@@ -66,9 +66,6 @@ export class SetupService extends BaseService {
             localVarHeaders = localVarHeaders.set('X-Bootstrap-Token', String(xBootstrapToken));
         }
 
-        // authentication (bootstrapToken) required
-        localVarHeaders = this.configuration.addCredentialToHeaders('bootstrapToken', 'X-Bootstrap-Token', localVarHeaders);
-
         const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
             'application/json',
             'application/problem+json'

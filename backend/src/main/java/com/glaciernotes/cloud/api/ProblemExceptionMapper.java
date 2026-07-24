@@ -38,17 +38,22 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
         if (exception instanceof ContentFailure failure && failure.conflictOwner() != null) {
             try { content.recordConflictSnapshot(failure.conflictOwner(), failure.conflictNoteId()); }
             catch (RuntimeException snapshotFailure) {
-                LOG.warnf("Could not record conflict snapshot correlationId=%s", correlationId);
+                LOG.warnf(
+                    snapshotFailure,
+                    "Could not record conflict snapshot correlationId=%s",
+                    correlationId
+                );
             }
         }
         if (description.status() >= 500 && !(exception instanceof SetupFailure)
             && !(exception instanceof AuthenticationFailure)
             && !(exception instanceof LifecycleFailure)
-            && !(exception instanceof ContentFailure)) {
+            && !(exception instanceof ContentFailure)
+            && !(exception instanceof ImageFailure)) {
             LOG.errorf(
-                "Unhandled request failure correlationId=%s exception=%s",
-                correlationId,
-                exception.getClass().getName()
+                exception,
+                "Unhandled request failure correlationId=%s",
+                correlationId
             );
         }
 
@@ -130,14 +135,46 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
                 "You are not permitted to perform this action.", List.of(), 0
             );
         }
+        if (status >= 400 && status < 500) {
+            return describeClientError(status);
+        }
         return new Description(
             status,
-            status == 404 ? "Not Found" : status >= 500 ? "Internal Server Error" : "Request Failed",
-            status == 404 ? "ENTITY_NOT_FOUND" : "INTERNAL_ERROR",
-            status >= 500 ? "The request could not be completed." : "The requested resource is unavailable.",
+            "Internal Server Error",
+            "INTERNAL_ERROR",
+            "The request could not be completed.",
             List.of(),
             0
         );
+    }
+
+    private Description describeClientError(int status) {
+        return switch (status) {
+            case 400 -> clientError(status, "Bad Request", "REQUEST_INVALID",
+                "The request could not be understood.");
+            case 404 -> clientError(status, "Not Found", "ENTITY_NOT_FOUND",
+                "The requested resource is unavailable.");
+            case 405 -> clientError(status, "Method Not Allowed", "METHOD_NOT_ALLOWED",
+                "The requested method is not supported for this resource.");
+            case 406 -> clientError(status, "Not Acceptable", "NOT_ACCEPTABLE",
+                "The requested response format is not available.");
+            case 409 -> clientError(status, "Conflict", "REQUEST_CONFLICT",
+                "The request conflicts with the current resource state.");
+            case 413 -> clientError(status, "Request Too Large", "REQUEST_TOO_LARGE",
+                "The request body exceeds the permitted size.");
+            case 415 -> clientError(status, "Unsupported Media Type", "UNSUPPORTED_MEDIA_TYPE",
+                "The request media type is not supported.");
+            case 422 -> clientError(status, "Validation Failed", "VALIDATION_FAILED",
+                "The request contains invalid values.");
+            case 429 -> clientError(status, "Too Many Requests", "RATE_LIMITED",
+                "Too many requests were received.");
+            default -> clientError(status, "Request Rejected", "REQUEST_REJECTED",
+                "The request was rejected.");
+        };
+    }
+
+    private Description clientError(int status, String title, String code, String detail) {
+        return new Description(status, title, code, detail, List.of(), 0);
     }
 
     private Description describeSetupFailure(SetupFailure failure) {

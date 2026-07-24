@@ -62,14 +62,24 @@ use `SameSite=Lax` and `Path=/`.
 | `GLACIER_S3_PATH_STYLE` | Force path-style addressing for MinIO and compatible providers |
 | `GLACIER_S3_ACCESS_KEY_FILE`, `GLACIER_S3_SECRET_KEY_FILE` | Read-only credential files for S3 storage |
 | `GLACIER_S3_SERVER_SIDE_ENCRYPTION` | Optional `AES256` or `aws:kms` object encryption setting |
+| `GLACIER_S3_API_CALL_TIMEOUT_SECONDS`, `GLACIER_S3_API_CALL_ATTEMPT_TIMEOUT_SECONDS` | Total and per-attempt S3 timeouts; defaults `30` and `10` |
 | `GLACIER_TRANSFER_MAXIMUM_UPLOAD_BYTES` | Maximum portable import upload; default 1.5 GiB |
 | `GLACIER_TRANSFER_MAXIMUM_DECODED_IMAGE_BYTES` | Maximum combined decoded image data per import; default 1 GiB |
 | `GLACIER_TRANSFER_RETENTION_HOURS` | Lifetime of staged imports and downloadable exports; default 24 hours |
+| `GLACIER_HTTP_DEFAULT_MAXIMUM_BODY_BYTES` | Maximum ordinary API body; default 10 MiB |
+| `GLACIER_HTTP_MULTIPART_OVERHEAD_BYTES` | Multipart envelope allowance added to image and transfer file limits; default 1 MiB |
+| `GLACIER_HTTP_ABSOLUTE_MAXIMUM_BODY_BYTES` | Server hard ceiling; default 1537 MiB |
 
 Image uploads accept PNG, JPEG, and WebP and are normalized before storage. The administration UI
 controls the stored-image limit, per-user quota, accepted types, and orphan grace period. The raw
 processing envelope remains 40 MB and 40 megapixels. S3 objects must be private; Glacier streams
-authorized objects and does not use public or presigned URLs.
+authorized objects and does not use public or presigned URLs. S3 call and attempt timeouts must be
+positive, and the attempt timeout cannot exceed the total timeout.
+
+Ordinary API requests are limited to 10 MiB. Image and portable-import routes receive their
+configured file limit plus the multipart overhead allowance. The absolute HTTP ceiling must cover
+all three route limits; startup fails if it is smaller. When increasing the portable-import limit,
+increase `GLACIER_HTTP_ABSOLUTE_MAXIMUM_BODY_BYTES` by at least the configured overhead as well.
 
 The selected backend is recorded in PostgreSQL. Once an image exists, changing
 `GLACIER_IMAGE_BACKEND` intentionally prevents startup because M7 does not provide backend
@@ -93,8 +103,10 @@ SMTP is optional. With SMTP disabled, administrators receive copyable invitation
 links in the dashboard; user-requested password resets remain neutral no-ops. To enable delivery,
 create a password file outside the repository, set its host path in `GLACIER_SMTP_PASSWORD_FILE`, and
 set `GLACIER_SMTP_ENABLED=true` plus the SMTP variables above. The password is bind-mounted read-only
-and is not exposed through the administration API. Ensure `GLACIER_PUBLIC_BASE_URL` is the browser
-origin users can reach before issuing links.
+and is not exposed through the administration API. Username and password must either both be set or
+both be absent; unauthenticated SMTP remains supported. Password-file spaces and tabs are preserved,
+while its terminal line ending is removed. Ensure `GLACIER_PUBLIC_BASE_URL` is the browser origin
+users can reach before issuing links.
 
 For a reverse proxy, keep the application and management ports on loopback or a private Docker
 network, terminate TLS at the proxy, and forward only port 8080. Enable and restrict Quarkus forwarded

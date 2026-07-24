@@ -18,6 +18,8 @@ public interface GlacierConfiguration {
 
     Smtp smtp();
 
+    HttpLimits http();
+
     Images images();
 
     Transfer transfer();
@@ -68,9 +70,27 @@ public interface GlacierConfiguration {
         @WithDefault("false")
         boolean enabled();
 
+        Optional<String> username();
+
+        Optional<String> password();
+
         Optional<String> senderName();
 
         Optional<String> senderAddress();
+    }
+
+    interface HttpLimits {
+        @WithDefault("10485760")
+        long defaultMaximumBodyBytes();
+
+        @WithDefault("1048576")
+        long multipartOverheadBytes();
+
+        @WithDefault("1611661312")
+        long absoluteMaximumBodyBytes();
+
+        @WithDefault("${java.io.tmpdir}/glacier-notes-uploads")
+        Path uploadsDirectory();
     }
 
     interface Images {
@@ -91,6 +111,8 @@ public interface GlacierConfiguration {
             Optional<Path> accessKeyFile();
             Optional<Path> secretKeyFile();
             Optional<String> serverSideEncryption();
+            @WithDefault("30") int apiCallTimeoutSeconds();
+            @WithDefault("10") int apiCallAttemptTimeoutSeconds();
         }
     }
 

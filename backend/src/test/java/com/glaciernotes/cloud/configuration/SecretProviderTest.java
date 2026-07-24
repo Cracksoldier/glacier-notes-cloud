@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SecretProviderTest {
     @TempDir
@@ -35,6 +36,16 @@ class SecretProviderTest {
         ));
 
         assertEquals("environment-bootstrap-secret-value", provider.bootstrapToken().orElseThrow());
+    }
+
+    @Test
+    void whitespaceOnlyValuesAreTreatedAsAbsent() {
+        var provider = new SecretProvider(configuration(
+            Optional.empty(),
+            Optional.of(" \t ")
+        ));
+
+        assertTrue(provider.bootstrapToken().isEmpty());
     }
 
     private GlacierConfiguration configuration(Optional<Path> tokenFile, Optional<String> token) {
@@ -128,10 +139,15 @@ class SecretProviderTest {
             public Smtp smtp() {
                 return new Smtp() {
                     @Override public boolean enabled() { return false; }
+                    @Override public Optional<String> username() { return Optional.empty(); }
+                    @Override public Optional<String> password() { return Optional.empty(); }
                     @Override public Optional<String> senderName() { return Optional.empty(); }
                     @Override public Optional<String> senderAddress() { return Optional.empty(); }
                 };
             }
+
+            @Override
+            public HttpLimits http() { return null; }
 
             @Override
             public Images images() { return null; }

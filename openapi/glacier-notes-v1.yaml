@@ -61,8 +61,7 @@ paths:
       tags: [Setup]
       summary: Create the first administrator and initialize the instance
       operationId: createInitialAdministrator
-      security:
-        - bootstrapToken: []
+      security: []
       parameters:
         - $ref: '#/components/parameters/BootstrapToken'
       requestBody:
@@ -127,6 +126,9 @@ paths:
           $ref: '#/components/responses/ProblemResponse'
   /api/v1/auth/logout:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Authentication]
       summary: Revoke the current session
       operationId: logout
@@ -277,6 +279,9 @@ paths:
               schema: { $ref: '#/components/schemas/UserProfile' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     patch:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Current User]
       summary: Update the current user's username or display name
       operationId: updateCurrentUserProfile
@@ -296,6 +301,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/me/password:
     put:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Current User]
       summary: Change the current user's password and revoke all sessions
       operationId: changeCurrentUserPassword
@@ -311,6 +319,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/me/email-change:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Current User]
       summary: Request verification of a new email address
       operationId: requestCurrentUserEmailChange
@@ -340,6 +351,9 @@ paths:
               schema: { $ref: '#/components/schemas/UserSettings' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     patch:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Current User]
       summary: Update synchronized current-user preferences
       operationId: updateCurrentUserSettings
@@ -358,6 +372,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/me/deletion:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Current User]
       summary: Irreversibly request deletion of the current account
       operationId: deleteCurrentUser
@@ -390,6 +407,9 @@ paths:
         default:
           $ref: '#/components/responses/ProblemResponse'
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Sessions]
       summary: Revoke all sessions except the current one
       operationId: revokeOtherSessions
@@ -404,6 +424,9 @@ paths:
           $ref: '#/components/responses/ProblemResponse'
   /api/v1/me/sessions/{sessionId}:
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Sessions]
       summary: Revoke one of the current user's sessions
       operationId: revokeSession
@@ -427,6 +450,9 @@ paths:
           $ref: '#/components/responses/ProblemResponse'
   /api/v1/exports:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Transfers]
       summary: Queue an owned portable export
       operationId: createExport
@@ -458,6 +484,9 @@ paths:
               schema: { $ref: '#/components/schemas/TransferJob' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Transfers]
       summary: Cancel an owned export
       operationId: cancelExport
@@ -482,6 +511,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/imports:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Transfers]
       summary: Upload and queue inspection of an owned portable import
       operationId: createImport
@@ -517,6 +549,9 @@ paths:
               schema: { $ref: '#/components/schemas/TransferJob' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Transfers]
       summary: Cancel an owned import
       operationId: cancelImport
@@ -525,6 +560,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/imports/{jobId}/apply:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Transfers]
       summary: Apply an inspected owned import
       operationId: applyImport
@@ -564,6 +602,9 @@ paths:
     parameters:
       - $ref: '#/components/parameters/UserId'
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Upload and blindly inspect a portable import for a target user
       operationId: createAdminImport
@@ -599,6 +640,9 @@ paths:
               schema: { $ref: '#/components/schemas/TransferJob' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Cancel a blind administrative import
       operationId: cancelAdminImport
@@ -607,6 +651,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/imports/{jobId}/apply:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Apply an inspected blind administrative import
       operationId: applyAdminImport
@@ -663,6 +710,9 @@ paths:
         default:
           $ref: '#/components/responses/ProblemResponse'
     patch:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Change safe user identity or role fields
       operationId: updateUser
@@ -687,6 +737,9 @@ paths:
           $ref: '#/components/responses/ProblemResponse'
   /api/v1/admin/users/{userId}/activate:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Reactivate a deactivated user
       operationId: activateUser
@@ -696,6 +749,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/users/{userId}/deactivate:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Deactivate a user and revoke sessions
       operationId: deactivateUser
@@ -706,6 +762,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/users/{userId}/unlock:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Unlock a temporarily locked user
       operationId: unlockUser
@@ -715,6 +774,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/users/{userId}/password-reset:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Generate a copyable password-reset link
       operationId: createAdministrativePasswordReset
@@ -729,6 +791,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/users/{userId}/sessions:
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Revoke all sessions for a user
       operationId: revokeUserSessions
@@ -738,6 +803,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/users/{userId}/deletion:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Schedule retained or immediate user deletion
       operationId: scheduleUserDeletion
@@ -758,6 +826,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/users/{userId}/deletion/restore:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Restore an account before retained deletion is due
       operationId: restoreUserDeletion
@@ -788,6 +859,9 @@ paths:
                 $ref: '#/components/schemas/InvitationPage'
         default: { $ref: '#/components/responses/ProblemResponse' }
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Create and deliver an invitation
       operationId: createInvitation
@@ -810,6 +884,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/invitations/{invitationId}/resend:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Regenerate and redeliver an invitation
       operationId: resendInvitation
@@ -825,6 +902,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/invitations/{invitationId}:
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Revoke a pending invitation
       operationId: revokeInvitation
@@ -845,6 +925,9 @@ paths:
               schema: { $ref: '#/components/schemas/AdminSettings' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     patch:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Administration]
       summary: Update lifecycle settings managed in M4
       operationId: updateAdminSettings
@@ -876,6 +959,9 @@ paths:
                 items: { $ref: '#/components/schemas/NotebookView' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notebooks]
       summary: Create a notebook
       operationId: createNotebook
@@ -907,6 +993,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/notebooks/reorder:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notebooks]
       summary: Replace the complete notebook display order
       operationId: reorderNotebooks
@@ -942,6 +1031,9 @@ paths:
         '404': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     patch:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notebooks]
       summary: Rename or recolor an owned notebook
       operationId: updateNotebook
@@ -961,6 +1053,9 @@ paths:
         '422': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notebooks]
       summary: Delete a non-default notebook transactionally
       operationId: deleteNotebook
@@ -1002,6 +1097,9 @@ paths:
         '422': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notes]
       summary: Create a text or checklist note
       operationId: createNote
@@ -1046,6 +1144,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/images:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Images]
       summary: Upload and normalize an owned image
       operationId: uploadImage
@@ -1088,6 +1189,9 @@ paths:
         '503': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Images]
       summary: Delete an unreferenced owned image immediately
       operationId: deleteImage
@@ -1146,6 +1250,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/notes/trash:
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notes]
       summary: Permanently delete all owned trashed notes
       operationId: emptyTrash
@@ -1172,6 +1279,9 @@ paths:
         '404': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     patch:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notes]
       summary: Update an owned note aggregate
       operationId: updateNote
@@ -1191,6 +1301,9 @@ paths:
         '422': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notes]
       summary: Permanently delete an owned trashed note
       operationId: purgeNote
@@ -1206,6 +1319,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/notes/{noteId}/trash:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notes]
       summary: Move an owned note to trash
       operationId: trashNote
@@ -1226,6 +1342,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/notes/{noteId}/restore:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notes]
       summary: Restore an owned trashed note
       operationId: restoreNote
@@ -1246,6 +1365,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/notes/{noteId}/move:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notes]
       summary: Move an owned note to another owned notebook
       operationId: moveNote
@@ -1266,6 +1388,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/notes/{noteId}/convert:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notes]
       summary: Convert between text and checklist note types
       operationId: convertNote
@@ -1304,6 +1429,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/notes/{noteId}/versions/snapshot:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notes]
       summary: Snapshot meaningful editor state when the editor closes
       operationId: snapshotNoteVersion
@@ -1336,6 +1464,9 @@ paths:
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/notes/{noteId}/versions/{versionId}/restore:
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Notes]
       summary: Restore editable state from an owned retained version
       operationId: restoreNoteVersion
@@ -1372,6 +1503,9 @@ paths:
                 items: { $ref: '#/components/schemas/LabelView' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Labels]
       summary: Create a label
       operationId: createLabel
@@ -1393,6 +1527,9 @@ paths:
     parameters:
       - $ref: '#/components/parameters/LabelId'
     patch:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Labels]
       summary: Rename an owned label
       operationId: updateLabel
@@ -1412,6 +1549,9 @@ paths:
         '422': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
     delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
       tags: [Labels]
       summary: Delete a label and its note assignments
       operationId: deleteLabel
@@ -1437,11 +1577,6 @@ components:
       in: header
       name: X-CSRF-Token
       description: Required on state-changing cookie-authenticated requests.
-    bootstrapToken:
-      type: apiKey
-      in: header
-      name: X-Bootstrap-Token
-      description: One-time deployment secret used only while the instance is uninitialized.
   parameters:
     BootstrapToken:
       name: X-Bootstrap-Token
@@ -2282,4 +2417,3 @@ components:
           type: string
 security:
   - sessionCookie: []
-    csrfHeader: []

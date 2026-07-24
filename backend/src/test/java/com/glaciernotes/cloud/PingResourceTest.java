@@ -54,4 +54,29 @@ class PingResourceTest {
             .body("errorCode", equalTo("ENTITY_NOT_FOUND"))
             .body("correlationId", equalTo("missing-route-test"));
     }
+
+    @Test
+    void genericClientErrorsUseSpecificSafeProblemCodes() {
+        given()
+            .header(CorrelationId.HEADER, "method-error-test")
+        .when()
+            .post("/api/v1/ping")
+        .then()
+            .statusCode(405)
+            .contentType("application/problem+json")
+            .body("errorCode", equalTo("METHOD_NOT_ALLOWED"))
+            .body("correlationId", equalTo("method-error-test"));
+
+        given()
+            .header(CorrelationId.HEADER, "media-error-test")
+            .contentType("text/plain")
+            .body("not-json")
+        .when()
+            .post("/api/v1/auth/login")
+        .then()
+            .statusCode(415)
+            .contentType("application/problem+json")
+            .body("errorCode", equalTo("UNSUPPORTED_MEDIA_TYPE"))
+            .body("correlationId", equalTo("media-error-test"));
+    }
 }
