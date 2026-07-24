@@ -21,3 +21,10 @@ and do not record credentials, tokens, cookies, user content, or unredacted logs
 
 Authenticated SMTP now fails startup unless both credentials are present; unauthenticated SMTP
 remains supported.
+
+## 2026-07-24 Batch 3 async remediation
+
+Admin settings coverage proved both the disabled form and the direct save guard after an initial GET
+failure. The complete frontend suite passed 41 tests. See the
+[Batch 3 test record](../remediation/batch-3/test-results.md) for regression-first and full-gate
+evidence.

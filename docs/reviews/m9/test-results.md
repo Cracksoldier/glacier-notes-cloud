@@ -35,3 +35,10 @@ unredacted logs.
 Ordinary API mutations now use a conservative 10 MiB body limit. Image and portable-transfer
 uploads receive separate limits derived from their configured payload maxima plus multipart
 overhead, while the global limit remains only an absolute ceiling.
+
+## 2026-07-24 Batch 3 async remediation
+
+Regression tests covered failed admin cancellation, cancel/restart isolation, late-created export
+and import cleanup, and closing a live job from the error state. The final deployment run passed the
+portable transfer workflow in both browser projects. See the
+[Batch 3 test record](../remediation/batch-3/test-results.md).

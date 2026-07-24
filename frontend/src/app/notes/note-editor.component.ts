@@ -114,6 +114,7 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private itemSequence = 0;
   private conflictDraft: Omit<NoteUpdate, 'version'> | null = null;
   private meaningfulChanges = false;
+  private historyOperationSequence = 0;
 
   private readonly beforeUnload = (event: BeforeUnloadEvent): void => {
     if (this.dirty || this.saving) event.preventDefault();
@@ -250,18 +251,27 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   protected async close(): Promise<void> {
     if (this.closing) return;
     this.closing = true;
-    const saved = await this.flush();
-    if (saved) {
-      const note = this.note();
-      try {
-        if (note && this.meaningfulChanges) await this.store.snapshotEditorNote(note);
+    try {
+      const saved = await this.flush();
+      if (saved) {
+        const note = this.note();
+        if (note && this.meaningfulChanges) {
+          try {
+            await this.store.snapshotEditorNote(note);
+          } catch (error) {
+            this.problems.report(error);
+          }
+        }
         this.store.closeEditor();
-        await this.store.refresh();
-      } catch (error) {
-        this.fail(error);
+        try {
+          await this.store.refresh();
+        } catch (error) {
+          this.problems.report(error);
+        }
       }
+    } finally {
+      this.closing = false;
     }
-    this.closing = false;
   }
 
   protected async retry(): Promise<void> {
@@ -303,19 +313,23 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!(await this.flush())) return;
     const note = this.note();
     if (!note) return;
+    const operation = ++this.historyOperationSequence;
     this.historyOpen.set(true);
     this.historyLoading.set(true);
     this.selectedVersion.set(null);
     try {
       const page = await this.store.listNoteVersions(note.id);
+      if (!this.activeHistory(operation)) return;
       this.versions.set(page.items);
       this.historyCursor.set(page.page.nextCursor ?? null);
-      if (page.items[0]) await this.selectVersion(page.items[0].id);
+      if (page.items[0]) await this.selectVersion(page.items[0].id, operation);
     } catch (error) {
-      this.fail(error);
-      this.historyOpen.set(false);
+      if (this.activeHistory(operation)) {
+        this.fail(error);
+        this.historyOpen.set(false);
+      }
     } finally {
-      this.historyLoading.set(false);
+      if (this.activeHistory(operation)) this.historyLoading.set(false);
     }
   }
 
@@ -323,28 +337,34 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const note = this.note();
     const cursor = this.historyCursor();
     if (!note || !cursor || this.historyLoading()) return;
+    const operation = ++this.historyOperationSequence;
     this.historyLoading.set(true);
     try {
       const page = await this.store.listNoteVersions(note.id, cursor);
+      if (!this.activeHistory(operation)) return;
       this.versions.update((items) => [...items, ...page.items]);
       this.historyCursor.set(page.page.nextCursor ?? null);
     } catch (error) {
-      this.fail(error);
+      if (this.activeHistory(operation)) this.fail(error);
     } finally {
-      this.historyLoading.set(false);
+      if (this.activeHistory(operation)) this.historyLoading.set(false);
     }
   }
 
-  protected async selectVersion(versionId: string): Promise<void> {
+  protected async selectVersion(
+    versionId: string,
+    operation = ++this.historyOperationSequence,
+  ): Promise<void> {
     const note = this.note();
     if (!note) return;
     this.historyLoading.set(true);
     try {
-      this.selectedVersion.set(await this.store.getNoteVersion(note.id, versionId));
+      const selected = await this.store.getNoteVersion(note.id, versionId);
+      if (this.activeHistory(operation)) this.selectedVersion.set(selected);
     } catch (error) {
-      this.fail(error);
+      if (this.activeHistory(operation)) this.fail(error);
     } finally {
-      this.historyLoading.set(false);
+      if (this.activeHistory(operation)) this.historyLoading.set(false);
     }
   }
 
@@ -352,16 +372,23 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const note = this.note();
     const version = this.selectedVersion();
     if (!note || !version || !window.confirm('Restore this version as the editable note?')) return;
+    const operation = ++this.historyOperationSequence;
     this.historyLoading.set(true);
     try {
-      this.applyNote(await this.store.restoreNoteVersion(note, version.id));
+      const restored = await this.store.restoreNoteVersion(note, version.id);
+      if (!this.activeHistory(operation)) return;
+      this.applyNote(restored);
       this.historyOpen.set(false);
       this.meaningfulChanges = true;
     } catch (error) {
-      this.fail(error);
+      if (this.activeHistory(operation)) this.fail(error);
     } finally {
-      this.historyLoading.set(false);
+      if (this.activeHistory(operation)) this.historyLoading.set(false);
     }
+  }
+
+  private activeHistory(operation: number): boolean {
+    return operation === this.historyOperationSequence;
   }
 
   protected versionBody(version: NoteVersion): string {
@@ -556,6 +583,13 @@ export class NoteEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       event.preventDefault();
       if (this.lightbox()) {
         this.lightbox.set(null);
+        return;
+      }
+      if (this.historyOpen()) {
+        ++this.historyOperationSequence;
+        this.historyOpen.set(false);
+        this.historyLoading.set(false);
+        this.selectedVersion.set(null);
         return;
       }
       void this.close();

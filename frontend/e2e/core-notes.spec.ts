@@ -25,6 +25,9 @@ test('a user completes the non-image core note workflow', async ({ page }, testI
   await page.getByLabel('Password').fill(password!);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.locator('app-notes-shell')).toBeVisible();
+  await page.reload();
+  await expect(page.locator('app-notes-shell')).toBeVisible();
+  await expect(page).toHaveURL(/\/notes(?:\/|$)/);
 
   await openNavigation();
   await page.getByRole('button', { name: 'New notebook' }).click();

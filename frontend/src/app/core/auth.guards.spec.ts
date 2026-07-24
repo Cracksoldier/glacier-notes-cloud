@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { type ActivatedRouteSnapshot, Router, type RouterStateSnapshot } from '@angular/router';
+import { firstValueFrom, isObservable, Observable, of, Subject } from 'rxjs';
 
 import { AuthenticatedUserRoleEnum } from '../shared/generated-api/model/authenticatedUser';
 import type { SessionContext } from '../shared/generated-api/model/sessionContext';
@@ -9,16 +10,21 @@ import { AuthStore } from './auth.store';
 
 describe('authentication route guards', () => {
   const session = signal<SessionContext | null>(null);
+  const restored = signal(true);
+  const ensureRestored = vi.fn(() => of(false));
   const router = {
     createUrlTree: vi.fn((commands: string[]) => commands),
   };
 
   beforeEach(() => {
     session.set(null);
+    restored.set(true);
+    ensureRestored.mockReset();
+    ensureRestored.mockReturnValue(of(false));
     router.createUrlTree.mockClear();
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthStore, useValue: { session } },
+        { provide: AuthStore, useValue: { session, restored, ensureRestored } },
         { provide: Router, useValue: router },
       ],
     });
@@ -38,6 +44,30 @@ describe('authentication route guards', () => {
 
     session.set(context(AuthenticatedUserRoleEnum.Admin));
     expect(run(adminGuard)).toBe(true);
+  });
+
+  it('waits for initial session restoration before deciding a protected deep link', async () => {
+    restored.set(false);
+    const restoration = new Subject<boolean>();
+    ensureRestored.mockReturnValue(restoration);
+
+    const result = run(authGuard);
+
+    expect(isObservable(result)).toBe(true);
+    const decision = firstValueFrom(result as Observable<boolean>);
+    let settled = false;
+    const observedDecision = decision.then((value) => {
+      settled = true;
+      return value;
+    });
+    session.set(context(AuthenticatedUserRoleEnum.User));
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    restoration.next(true);
+    restoration.complete();
+
+    await expect(observedDecision).resolves.toBe(true);
+    expect(router.createUrlTree).not.toHaveBeenCalled();
   });
 
   function run(guard: typeof authGuard) {

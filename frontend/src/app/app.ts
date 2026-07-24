@@ -62,7 +62,7 @@ export class App {
           this.applicationState.set('setup');
           return;
         }
-        this.auth.restore().subscribe((authenticated) => {
+        this.auth.ensureRestored().subscribe((authenticated) => {
           this.applicationState.set('ready');
           if (authenticated) void this.preferences.load().catch(() => undefined);
           if (authenticated && this.router.url === '/login') {

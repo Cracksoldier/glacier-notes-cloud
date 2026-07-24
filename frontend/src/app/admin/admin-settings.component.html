@@ -3,6 +3,9 @@
   Leave domains empty to allow invitations to any valid email address. Enter one exact domain per
   line.
 </p>
+@if (loading()) {
+<p role="status">Loading instance settings…</p>
+}
 <form (ngSubmit)="save()">
   <label
     >Allowed email domains<textarea name="domains" rows="6" [(ngModel)]="domains"></textarea></label
@@ -140,7 +143,9 @@
       Prevent reuse of previous passwords</label
     >
   </fieldset>
-  <button type="submit">Save settings</button>
+  <button type="submit" [disabled]="!loaded() || saving()">
+    {{ saving() ? 'Saving…' : 'Save settings' }}
+  </button>
 </form>
 @if (message()) {
 <p role="status">{{ message() }}</p>

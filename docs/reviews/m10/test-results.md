@@ -23,3 +23,10 @@ unredacted logs.
   `backend/target/surefire-reports/`.
 - `npm run check`, `npm run test:ci`, and `npm run build:production` passed; 23 frontend tests ran,
   and the production build emitted only the existing bundle budget warnings.
+
+## 2026-07-24 Batch 3 async remediation
+
+Preference tests proved concurrent-load coalescing, GET/PATCH serialization, and queue recovery
+after a 30-second request timeout. The complete frontend suite passed 41 tests and production
+dependency audit found no vulnerabilities. See the
+[Batch 3 test record](../remediation/batch-3/test-results.md).

@@ -37,6 +37,7 @@ export class NotesStore {
   readonly others = computed(() => this.notes().filter((note) => !note.pinned));
 
   private requestSequence = 0;
+  private readonly noteMutationQueues = new Map<string, Promise<void>>();
 
   async initialize(): Promise<void> {
     try {
@@ -48,7 +49,6 @@ export class NotesStore {
       this.labels.set(labels);
     } catch (error) {
       this.problems.report(error);
-      throw error;
     }
   }
 
@@ -56,6 +56,8 @@ export class NotesStore {
     const sequence = ++this.requestSequence;
     this.view.set(view);
     this.searchQuery.set('');
+    this.nextCursor.set(null);
+    this.loadingMore.set(false);
     this.loading.set(true);
     try {
       const page = await this.api.listNotes(view);
@@ -87,6 +89,8 @@ export class NotesStore {
     const sequence = ++this.requestSequence;
     this.searchQuery.set(normalized);
     this.searchFilters.set(filters);
+    this.nextCursor.set(null);
+    this.loadingMore.set(false);
     this.loading.set(true);
     try {
       const page = await this.api.searchNotes(normalized, filters);
@@ -110,20 +114,22 @@ export class NotesStore {
     const view = this.view();
     const cursor = this.nextCursor();
     if (!view || !cursor || this.loadingMore()) return;
+    const sequence = this.requestSequence;
     this.loadingMore.set(true);
     try {
       const page = this.searching()
         ? await this.api.searchNotes(this.searchQuery(), this.searchFilters(), cursor)
         : await this.api.listNotes(view, cursor);
+      if (sequence !== this.requestSequence) return;
       this.notes.update((current) => [
         ...current,
         ...page.items.filter((item) => !current.some((existing) => existing.id === item.id)),
       ]);
       this.nextCursor.set(page.page.nextCursor ?? null);
     } catch (error) {
-      this.problems.report(error);
+      if (sequence === this.requestSequence) this.problems.report(error);
     } finally {
-      this.loadingMore.set(false);
+      if (sequence === this.requestSequence) this.loadingMore.set(false);
     }
   }
 
@@ -310,21 +316,23 @@ export class NotesStore {
     await this.refreshAfterMutation();
   }
 
-  async toggleChecklistItem(summary: NoteSummary, itemId: string): Promise<void> {
-    try {
-      const note = await this.api.getNote(summary.id);
-      await this.api.updateNote(note.id, {
-        ...this.updateFrom(note),
-        checklistItems: note.checklistItems.map((item) => ({
-          id: item.id,
-          text: item.text,
-          checked: item.id === itemId ? !item.checked : item.checked,
-        })),
-      });
-      await this.refreshAfterMutation();
-    } catch (error) {
-      this.problems.report(error);
-    }
+  toggleChecklistItem(summary: NoteSummary, itemId: string): Promise<void> {
+    return this.enqueueNoteMutation(summary.id, async () => {
+      try {
+        const note = await this.api.getNote(summary.id);
+        await this.api.updateNote(note.id, {
+          ...this.updateFrom(note),
+          checklistItems: note.checklistItems.map((item) => ({
+            id: item.id,
+            text: item.text,
+            checked: item.id === itemId ? !item.checked : item.checked,
+          })),
+        });
+        await this.refreshAfterMutation();
+      } catch (error) {
+        this.problems.report(error);
+      }
+    });
   }
 
   async togglePin(summary: NoteSummary): Promise<void> {
@@ -342,22 +350,28 @@ export class NotesStore {
     await this.mutateSummary(summary, (note) => ({ ...this.updateFrom(note), color }));
   }
 
-  async moveNote(summary: NoteSummary, notebookId: string): Promise<void> {
-    try {
-      await this.api.moveNote(summary.id, notebookId, summary.version);
-      await this.refreshAfterMutation();
-    } catch (error) {
-      this.problems.report(error);
-    }
+  moveNote(summary: NoteSummary, notebookId: string): Promise<void> {
+    return this.enqueueNoteMutation(summary.id, async () => {
+      try {
+        const note = await this.api.getNote(summary.id);
+        await this.api.moveNote(note.id, notebookId, note.version);
+        await this.refreshAfterMutation();
+      } catch (error) {
+        this.problems.report(error);
+      }
+    });
   }
 
-  async trashNote(summary: NoteSummary): Promise<void> {
-    try {
-      await this.api.trashNote(summary.id, summary.version);
-      await this.refreshAfterMutation();
-    } catch (error) {
-      this.problems.report(error);
-    }
+  trashNote(summary: NoteSummary): Promise<void> {
+    return this.enqueueNoteMutation(summary.id, async () => {
+      try {
+        const note = await this.api.getNote(summary.id);
+        await this.api.trashNote(note.id, note.version);
+        await this.refreshAfterMutation();
+      } catch (error) {
+        this.problems.report(error);
+      }
+    });
   }
 
   async restoreNote(summary: NoteSummary): Promise<void> {
@@ -391,13 +405,28 @@ export class NotesStore {
     summary: NoteSummary,
     update: (note: ContentNote) => NoteUpdate,
   ): Promise<void> {
-    try {
-      const note = await this.api.getNote(summary.id);
-      await this.api.updateNote(note.id, update(note));
-      await this.refreshAfterMutation();
-    } catch (error) {
-      this.problems.report(error);
-    }
+    return this.enqueueNoteMutation(summary.id, async () => {
+      try {
+        const note = await this.api.getNote(summary.id);
+        await this.api.updateNote(note.id, update(note));
+        await this.refreshAfterMutation();
+      } catch (error) {
+        this.problems.report(error);
+      }
+    });
+  }
+
+  private enqueueNoteMutation(id: string, mutation: () => Promise<void>): Promise<void> {
+    const previous = this.noteMutationQueues.get(id) ?? Promise.resolve();
+    const operation = previous.catch(() => undefined).then(mutation);
+    const settled = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.noteMutationQueues.set(id, settled);
+    return operation.finally(() => {
+      if (this.noteMutationQueues.get(id) === settled) this.noteMutationQueues.delete(id);
+    });
   }
 
   private updateFrom(note: ContentNote): NoteUpdate {

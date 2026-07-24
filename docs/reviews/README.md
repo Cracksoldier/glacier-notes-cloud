@@ -63,3 +63,9 @@ dated runs; do not replace an earlier failure with a later success.
 | R7 | M8 | `ec36449..2cf76f3` | Completed | 6 | [Summary](m8/R7-M8-summary.md), [raw JSONL](m8/R7-M8.jsonl), [test results](m8/test-results.md) |
 | R8 | M9 | `2cf76f3..0f02251` | Completed | 14 | [Summary](m9/R8-M9-summary.md), [raw JSONL](m9/R8-M9.jsonl), [test results](m9/test-results.md) |
 | R9 | M10 | `0f02251..ea3cce3` | Completed | 8 | [Summary](m10/R9-M10-summary.md), [raw JSONL](m10/R9-M10.jsonl), [test results](m10/test-results.md) |
+
+## Remediation Reviews
+
+| Batch | Scope | Base | Result | Evidence |
+|---|---|---|---|---|
+| Batch 3 | Frontend asynchronous state and lifecycle findings from R2, R3, R5, R7, R8, and R9 | `b5bbb0a` | 10 original concerns resolved; 6 valid new comments addressed; 1 false positive | [Summary](remediation/batch-3/B3-FRONTEND-ASYNC-summary.md), [raw JSONL](remediation/batch-3/B3-FRONTEND-ASYNC.jsonl), [test results](remediation/batch-3/test-results.md) |

@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 
 import { CurrentUserService } from '../shared/generated-api/api/currentUser.service';
 import type { UserSettings } from '../shared/generated-api/model/userSettings';
@@ -11,6 +11,8 @@ import {
 import { I18nService } from './i18n.service';
 import { ThemeService } from './theme.service';
 
+const REQUEST_TIMEOUT_MS = 30_000;
+
 @Injectable({ providedIn: 'root' })
 export class PreferencesService {
   private readonly api = inject(CurrentUserService);
@@ -18,11 +20,28 @@ export class PreferencesService {
   private readonly i18n = inject(I18nService);
 
   readonly value = signal<UserSettings | null>(null);
+  private queue: Promise<void> = Promise.resolve();
+  private loading: Promise<UserSettings> | null = null;
 
   async load(): Promise<UserSettings> {
-    const value = await firstValueFrom(this.api.getCurrentUserSettings());
-    this.apply(value);
-    return value;
+    if (this.loading) return this.loading;
+    const operation = this.enqueue(async () => {
+      const value = await firstValueFrom(
+        this.api.getCurrentUserSettings().pipe(timeout(REQUEST_TIMEOUT_MS)),
+      );
+      this.apply(value);
+      return value;
+    });
+    this.loading = operation;
+    operation.then(
+      () => {
+        if (this.loading === operation) this.loading = null;
+      },
+      () => {
+        if (this.loading === operation) this.loading = null;
+      },
+    );
+    return operation;
   }
 
   async update(update: {
@@ -47,9 +66,22 @@ export class PreferencesService {
             ? UserSettingsUpdateLanguageEnum.De
             : UserSettingsUpdateLanguageEnum.En,
     };
-    const value = await firstValueFrom(this.api.updateCurrentUserSettings(request));
-    this.apply(value);
-    return value;
+    return this.enqueue(async () => {
+      const value = await firstValueFrom(
+        this.api.updateCurrentUserSettings(request).pipe(timeout(REQUEST_TIMEOUT_MS)),
+      );
+      this.apply(value);
+      return value;
+    });
+  }
+
+  private enqueue<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.queue.then(operation, operation);
+    this.queue = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
   }
 
   private apply(value: UserSettings): void {

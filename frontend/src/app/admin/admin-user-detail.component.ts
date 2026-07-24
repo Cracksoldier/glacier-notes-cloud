@@ -33,6 +33,7 @@ export class AdminUserDetailComponent {
   email = '';
   displayName = '';
   role: AdminUserUpdateRoleEnum = AdminUserUpdateRoleEnum.User;
+  private importOperationSequence = 0;
 
   constructor() {
     this.load();
@@ -144,57 +145,85 @@ export class AdminUserDetailComponent {
 
   async inspectImport(file: File | null): Promise<void> {
     if (!file) return;
+    const operation = ++this.importOperationSequence;
     this.importBusy.set(true);
     this.error.set('');
     try {
       const created = await firstValueFrom(this.api.createAdminImport(this.id, file));
-      const inspected = await this.poll(created);
+      if (!this.activeImport(operation)) return;
+      const inspected = await this.poll(operation, created);
+      if (!inspected || !this.activeImport(operation)) return;
       this.importJob.set(inspected);
       if (inspected.state === 'READY' && !inspected.hasConflicts) {
         await this.applyImport(ImportApplyRequestStrategyEnum.Preserve);
       }
     } catch (failure) {
-      this.fail(failure as { error?: { detail?: string } });
+      if (this.activeImport(operation)) {
+        this.fail(failure as { error?: { detail?: string } });
+      }
     } finally {
-      this.importBusy.set(false);
+      if (this.activeImport(operation)) this.importBusy.set(false);
     }
   }
 
   async applyImport(strategy: ImportApplyRequestStrategyEnum): Promise<void> {
     const current = this.importJob();
     if (!current) return;
+    const operation = ++this.importOperationSequence;
     this.importBusy.set(true);
     try {
       const queued = await firstValueFrom(this.api.applyAdminImport(current.id, { strategy }));
-      const completed = await this.poll(queued);
+      if (!this.activeImport(operation)) return;
+      const completed = await this.poll(operation, queued);
+      if (!completed || !this.activeImport(operation)) return;
       this.importJob.set(completed);
       if (completed.state === 'SUCCEEDED') {
         this.message.set('Blind import completed and was recorded in the audit log.');
         this.load();
       }
     } catch (failure) {
-      this.fail(failure as { error?: { detail?: string } });
+      if (this.activeImport(operation)) {
+        this.fail(failure as { error?: { detail?: string } });
+      }
     } finally {
-      this.importBusy.set(false);
+      if (this.activeImport(operation)) this.importBusy.set(false);
     }
   }
 
   async cancelImport(): Promise<void> {
+    const operation = ++this.importOperationSequence;
     const current = this.importJob();
-    if (current) await firstValueFrom(this.api.cancelAdminImport(current.id));
-    this.importJob.set(null);
-    this.importBusy.set(false);
+    this.importBusy.set(true);
+    this.error.set('');
+    try {
+      if (current) await firstValueFrom(this.api.cancelAdminImport(current.id));
+      if (this.activeImport(operation)) this.importJob.set(null);
+    } catch (failure) {
+      if (this.activeImport(operation)) {
+        this.fail(failure as { error?: { detail?: string } });
+      }
+    } finally {
+      if (this.activeImport(operation)) this.importBusy.set(false);
+    }
   }
 
-  private async poll(initial: TransferJob): Promise<TransferJob> {
+  private async poll(operation: number, initial: TransferJob): Promise<TransferJob | null> {
+    if (!this.activeImport(operation)) return null;
     let current = initial;
     this.importJob.set(current);
-    while (['QUEUED', 'RUNNING'].includes(current.state)) {
+    while (this.activeImport(operation) && ['QUEUED', 'RUNNING'].includes(current.state)) {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      current = await firstValueFrom(this.api.getAdminImport(current.id));
+      if (!this.activeImport(operation)) return null;
+      const loaded = await firstValueFrom(this.api.getAdminImport(current.id));
+      if (!this.activeImport(operation)) return null;
+      current = loaded;
       this.importJob.set(current);
     }
-    return current;
+    return this.activeImport(operation) ? current : null;
+  }
+
+  private activeImport(operation: number): boolean {
+    return operation === this.importOperationSequence;
   }
 
   copy(value: string): void {

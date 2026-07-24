@@ -39,7 +39,7 @@ export class TransferDialogComponent {
   exportScope: ExportRequestScopeEnum = ExportRequestScopeEnum.All;
   exportNotebook = '';
   exportNote = '';
-  private stopped = false;
+  private operationSequence = 0;
 
   protected async exportData(): Promise<void> {
     const request: ExportRequest = { scope: this.exportScope };
@@ -47,10 +47,17 @@ export class TransferDialogComponent {
       request.resourceId = this.exportNotebook;
     if (this.exportScope === ExportRequestScopeEnum.Note) request.resourceId = this.exportNote;
     if (this.exportScope !== ExportRequestScopeEnum.All && !request.resourceId) return;
-    this.begin('Preparing export…');
+    const operation = this.begin('Preparing export…');
     try {
       const created = await firstValueFrom(this.api.createExport(request));
-      const completed = await this.poll(created, (id) => firstValueFrom(this.api.getExport(id)));
+      if (!this.active(operation)) {
+        await this.cancelJob(created);
+        return;
+      }
+      const completed = await this.poll(operation, created, (id) =>
+        firstValueFrom(this.api.getExport(id)),
+      );
+      if (!completed || !this.active(operation)) return;
       if (completed.state !== 'SUCCEEDED' || !completed.downloadUrl) return this.fail(completed);
       const anchor = document.createElement('a');
       anchor.href = completed.downloadUrl;
@@ -59,84 +66,109 @@ export class TransferDialogComponent {
       this.exported.set(true);
       this.step.set('menu');
     } catch (failure) {
-      this.failRequest(failure);
+      if (this.active(operation)) this.failRequest(failure);
     }
   }
 
   protected async inspect(file: File | null): Promise<void> {
     if (!file) return;
-    this.begin('Inspecting import…');
+    const operation = this.begin('Inspecting import…');
     try {
       const created = await firstValueFrom(this.api.createImport(file));
-      const inspected = await this.poll(created, (id) => firstValueFrom(this.api.getImport(id)));
+      if (!this.active(operation)) {
+        await this.cancelJob(created);
+        return;
+      }
+      const inspected = await this.poll(operation, created, (id) =>
+        firstValueFrom(this.api.getImport(id)),
+      );
+      if (!inspected || !this.active(operation)) return;
       if (inspected.state !== 'READY') return this.fail(inspected);
       this.job.set(inspected);
       if (inspected.hasConflicts) this.step.set('conflict');
       else await this.apply(ImportApplyRequestStrategyEnum.Preserve);
     } catch (failure) {
-      this.failRequest(failure);
+      if (this.active(operation)) this.failRequest(failure);
     }
   }
 
   protected async apply(strategy: ImportApplyRequestStrategyEnum): Promise<void> {
     const current = this.job();
     if (!current) return;
-    this.begin('Applying import…');
+    const operation = this.begin('Applying import…');
     try {
       const queued = await firstValueFrom(this.api.applyImport(current.id, { strategy }));
-      const completed = await this.poll(queued, (id) => firstValueFrom(this.api.getImport(id)));
+      if (!this.active(operation)) return;
+      const completed = await this.poll(operation, queued, (id) =>
+        firstValueFrom(this.api.getImport(id)),
+      );
+      if (!completed || !this.active(operation)) return;
       if (completed.state !== 'SUCCEEDED') return this.fail(completed);
       this.job.set(completed);
       this.step.set('done');
       this.imported.emit();
     } catch (failure) {
-      this.failRequest(failure);
+      if (this.active(operation)) this.failRequest(failure);
     }
   }
 
   protected async cancel(): Promise<void> {
-    this.stopped = true;
+    ++this.operationSequence;
     const current = this.job();
-    if (current) {
-      const request =
-        current.kind === 'EXPORT'
-          ? this.api.cancelExport(current.id)
-          : this.api.cancelImport(current.id);
-      try {
-        await firstValueFrom(request);
-      } catch {
-        // The job may already have reached a terminal state.
-      }
-    }
     this.step.set('menu');
     this.job.set(null);
+    if (current) {
+      await this.cancelJob(current);
+    }
   }
 
   protected close(): void {
-    this.stopped = true;
-    if (['working', 'conflict'].includes(this.step())) void this.cancel();
+    ++this.operationSequence;
+    const current = this.job();
+    if (current && ['working', 'conflict', 'error'].includes(this.step()))
+      void this.cancelJob(current);
     this.closed.emit();
   }
 
-  private begin(message: string): void {
-    this.stopped = false;
+  private begin(message: string): number {
+    const operation = ++this.operationSequence;
     this.action.set(message);
     this.errors.set([]);
     this.step.set('working');
+    return operation;
   }
 
   private async poll(
+    operation: number,
     initial: TransferJob,
     load: (id: string) => Promise<TransferJob>,
-  ): Promise<TransferJob> {
+  ): Promise<TransferJob | null> {
+    if (!this.active(operation)) return null;
     let current = initial;
     this.job.set(current);
-    while (!this.stopped && ['QUEUED', 'RUNNING'].includes(current.state)) {
+    while (this.active(operation) && ['QUEUED', 'RUNNING'].includes(current.state)) {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      current = await load(current.id);
+      if (!this.active(operation)) return null;
+      const loaded = await load(current.id);
+      if (!this.active(operation)) return null;
+      current = loaded;
       this.job.set(current);
     }
-    return current;
+    return this.active(operation) ? current : null;
+  }
+
+  private active(operation: number): boolean {
+    return operation === this.operationSequence;
+  }
+
+  private async cancelJob(job: TransferJob): Promise<void> {
+    const request =
+      job.kind === 'EXPORT' ? this.api.cancelExport(job.id) : this.api.cancelImport(job.id);
+    try {
+      await firstValueFrom(request);
+    } catch {
+      // The job may already have reached a terminal state.
+    }
   }
 
   private fail(job: TransferJob): void {

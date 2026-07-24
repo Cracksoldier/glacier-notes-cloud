@@ -25,8 +25,16 @@ test('search, history, and two-tab conflict recovery work together', async ({ co
   await page.getByLabel('Note title').fill(originalTitle);
   await page.getByLabel('Note content').fill(`Searchable ${marker}`);
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+  const refreshedNotes = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      response.request().method() === 'GET' &&
+      url.pathname === '/api/v1/notes' &&
+      response.ok()
+    );
+  });
   await page.getByRole('button', { name: 'Save and close' }).click();
-  await expect(page.locator('app-note-editor')).not.toBeVisible();
+  await Promise.all([expect(page.locator('app-note-editor')).not.toBeVisible(), refreshedNotes]);
 
   await page.getByPlaceholder('Search notes…').fill(marker);
   await expect(page.getByRole('heading', { name: `Search: ${marker}` })).toBeVisible();
