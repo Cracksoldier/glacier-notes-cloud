@@ -1,0 +1,1 @@
+{"nodes": [{"id": "docs_adr_0001_monorepo_and_boundaries_decision", "label": "Monorepo with Independent Angular/Quarkus Builds", "file_type": "rationale", "source_file": "docs/adr/0001-monorepo-and-boundaries.md", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

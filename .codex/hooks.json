@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/andreas/miniconda3/bin/graphify hook-check"
+          }
+        ]
+      }
+    ]
+  }
+}

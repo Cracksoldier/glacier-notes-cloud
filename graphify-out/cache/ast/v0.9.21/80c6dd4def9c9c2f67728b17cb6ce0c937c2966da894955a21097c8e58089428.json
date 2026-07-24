@@ -1,0 +1,1 @@
+{"nodes": [{"id": "pkg_com_glaciernotes_glacier_notes_cloud", "label": "com.glaciernotes:glacier-notes-cloud", "file_type": "code", "type": "package", "ecosystem": "maven", "source_file": "pom.xml", "source_location": "L1", "version": "0.1.0"}], "edges": []}
