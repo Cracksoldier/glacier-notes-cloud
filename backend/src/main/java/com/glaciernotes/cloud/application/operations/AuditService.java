@@ -143,6 +143,7 @@ public class AuditService {
 
     private String csv(String value) {
         String safe = value == null ? "" : value;
+        if (!safe.isEmpty() && "=+-@".indexOf(safe.charAt(0)) >= 0) safe = "'" + safe;
         return "\"" + safe.replace("\"", "\"\"") + "\"";
     }
 

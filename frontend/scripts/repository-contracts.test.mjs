@@ -40,3 +40,24 @@ test('repository-facing frontend metadata uses Glacier Notes commands and names'
   assert.doesNotMatch(readme, /\bng e2e\b/);
   assert.match(contributorGuide, /frontend\/src\/app\/shared\/generated-api/);
 });
+
+test('the configured backup directory and persistent volume target stay aligned', () => {
+  const compose = readFileSync(resolve(repositoryRoot, 'compose.yaml'), 'utf8');
+
+  assert.match(
+    compose,
+    /GLACIER_BACKUP_DIRECTORY: \$\{GLACIER_BACKUP_DIRECTORY:-\/var\/lib\/glacier-notes\/backups\}/,
+  );
+  assert.match(
+    compose,
+    /backup_data:\$\{GLACIER_BACKUP_DIRECTORY:-\/var\/lib\/glacier-notes\/backups\}/,
+  );
+});
+
+test('the filesystem restore runbook provides an executable image-volume restore', () => {
+  const runbook = readFileSync(resolve(repositoryRoot, 'docs/BACKUP_RESTORE.md'), 'utf8');
+
+  assert.match(runbook, /docker compose run --rm --no-deps/);
+  assert.match(runbook, /\/restore\/images\/\. \/var\/lib\/glacier-notes\/images\//);
+  assert.match(runbook, /chown -R 10001:10001 \/var\/lib\/glacier-notes\/images/);
+});

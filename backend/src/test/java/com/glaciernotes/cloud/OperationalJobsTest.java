@@ -11,6 +11,7 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -58,6 +59,45 @@ class OperationalJobsTest {
     }
 
     @Test
+    void staleRunCannotReleaseANewerLeaseFromTheSameInstance() {
+        var firstRun = leases.acquire("fenced-test-job", Duration.ofMinutes(5));
+        assertNotNull(firstRun);
+        QuarkusTransaction.requiringNew().run(() -> entityManager.createNativeQuery("""
+            update job_locks set locked_until=:expired where job_name='fenced-test-job'
+            """).setParameter("expired", Instant.EPOCH).executeUpdate());
+
+        var secondRun = leases.acquire("fenced-test-job", Duration.ofMinutes(5));
+        assertNotNull(secondRun);
+        leases.finish("fenced-test-job", firstRun, null);
+
+        assertNull(leases.acquire("fenced-test-job", Duration.ofMinutes(5)));
+        leases.finish("fenced-test-job", secondRun, null);
+    }
+
+    @Test
+    void matchingRunCanRenewItsLease() {
+        var run = leases.acquire("renewed-test-job", Duration.ofMinutes(5));
+        assertNotNull(run);
+
+        assertTrue(leases.renew("renewed-test-job", run, Duration.ofMinutes(5)));
+        assertFalse(leases.renew("renewed-test-job", UUID.randomUUID(), Duration.ofMinutes(5)));
+        leases.finish("renewed-test-job", run, null);
+    }
+
+    @Test
+    void historicalFailureDoesNotMakeTheJobSubsystemUnavailable() {
+        QuarkusTransaction.requiringNew().run(() -> entityManager.createNativeQuery("""
+            insert into scheduled_job_runs(
+              job_name,run_id,state,started_at,completed_at,error_category,updated_at
+            ) values ('failed-test-job',:run,'FAILED',:now,:now,'ExpectedFailure',:now)
+            """).setParameter("run", UUID.randomUUID()).setParameter("now", Instant.now())
+            .executeUpdate());
+
+        assertTrue(leases.healthy());
+        assertEquals(1, leases.recentFailureCount());
+    }
+
+    @Test
     void backgroundAuditEventsExcludeSensitiveMetadata() {
         audit.recordBackground("BACKGROUND_TEST", null, "job", UUID.randomUUID(), "SUCCESS",
             "background-test", Map.of("password", "do-not-store", "detail", "completed"));
@@ -82,5 +122,15 @@ class OperationalJobsTest {
 
         assertTrue(audit.list("EXPIRED_BACKGROUND_TEST", null, null, null, null, 10)
             .getItems().isEmpty());
+    }
+
+    @Test
+    void csvAuditExportNeutralizesSpreadsheetFormulas() throws Exception {
+        audit.recordBackground("=2+2", null, "job", UUID.randomUUID(), "SUCCESS",
+            "formula-export-test", Map.of());
+
+        var export = audit.export("csv", "=2+2", null, null, null);
+
+        assertTrue(Files.readString(export.toPath()).contains("\"'=2+2\""));
     }
 }

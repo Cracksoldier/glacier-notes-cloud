@@ -23,25 +23,27 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @ApplicationScoped
 public class BackupService {
     private static final Logger LOG = Logger.getLogger(BackupService.class);
+    private static final Duration DUMP_TIMEOUT = Duration.ofMinutes(30);
     private final EntityManager entityManager;
     private final GlacierConfiguration configuration;
     private final IdGenerator ids;
@@ -50,12 +52,13 @@ public class BackupService {
     private final BinaryAssetStorage storage;
     private final ObjectMapper objectMapper;
     private final AgroalDataSource dataSource;
+    private final BackupJobStatusService status;
     private final String applicationVersion;
 
     public BackupService(EntityManager entityManager, GlacierConfiguration configuration,
                          IdGenerator ids, TimeProvider time, LifecycleService lifecycle,
                          BinaryAssetStorage storage, ObjectMapper objectMapper,
-                         AgroalDataSource dataSource,
+                         AgroalDataSource dataSource, BackupJobStatusService status,
                          @ConfigProperty(name = "quarkus.application.version", defaultValue = "0.1.0")
                          String applicationVersion) {
         this.entityManager = entityManager;
@@ -66,6 +69,7 @@ public class BackupService {
         this.storage = storage;
         this.objectMapper = objectMapper;
         this.dataSource = dataSource;
+        this.status = status;
         this.applicationVersion = applicationVersion;
     }
 
@@ -113,7 +117,6 @@ public class BackupService {
         return rows.getFirst().id();
     }
 
-    @Transactional
     public void execute(UUID id) {
         Path temporary = null;
         try {
@@ -129,6 +132,7 @@ public class BackupService {
             restrictive(target);
             complete(id, target.getFileName().toString(), Files.size(target), checksum(target));
         } catch (Exception failure) {
+            if (failure instanceof InterruptedException) Thread.currentThread().interrupt();
             LOG.errorf(failure, "Backup job failed jobId=%s category=%s", id,
                 failure.getClass().getSimpleName());
             fail(id, failure.getClass().getSimpleName());
@@ -137,16 +141,12 @@ public class BackupService {
         }
     }
 
-    @Transactional
     void complete(UUID id, String output, long size, String checksum) {
-        var entity = entityManager.find(BackupJobEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        entity.succeeded(time.now(), output, size, checksum);
+        status.complete(id, output, size, checksum);
     }
 
-    @Transactional
     void fail(UUID id, String category) {
-        var entity = entityManager.find(BackupJobEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity != null) entity.failed(time.now(), category.substring(0, Math.min(64, category.length())));
+        status.fail(id, category);
     }
 
     private void dumpDatabase(Path output) throws IOException, InterruptedException {
@@ -156,14 +156,36 @@ public class BackupService {
         String url = jdbc.startsWith("jdbc:") ? jdbc.substring(5) : jdbc;
         var process = new ProcessBuilder("pg_dump", "--format=custom", "--no-owner", "--no-privileges",
             "--file=" + output, "--dbname=" + url, "--username=" + factory.principal().getName())
-            .redirectErrorStream(true);
+            .redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD);
         String password = System.getenv("GLACIER_DATABASE_PASSWORD");
         if (password != null) process.environment().put("PGPASSWORD", password);
-        Process running = process.start();
-        try (InputStream processOutput = running.getInputStream()) {
-            processOutput.transferTo(OutputStream.nullOutputStream());
+        awaitDump(process.start(), DUMP_TIMEOUT);
+    }
+
+    void awaitDump(Process running, Duration timeout) throws IOException, InterruptedException {
+        try {
+            if (!running.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+                terminate(running);
+                throw new IOException("pg_dump timed out");
+            }
+        } catch (InterruptedException interrupted) {
+            terminate(running);
+            throw interrupted;
         }
-        if (running.waitFor() != 0) throw new IOException("pg_dump failed");
+        if (running.exitValue() != 0) throw new IOException("pg_dump failed");
+    }
+
+    private void terminate(Process running) {
+        running.destroy();
+        try {
+            if (!running.waitFor(5, TimeUnit.SECONDS)) {
+                running.destroyForcibly();
+                running.waitFor(5, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException interrupted) {
+            running.destroyForcibly();
+            Thread.currentThread().interrupt();
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -44,5 +44,7 @@ CREATE TABLE scheduled_job_runs (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE job_locks ADD COLUMN run_id UUID;
+
 CREATE INDEX ix_audit_type_occurred ON audit_events(event_type, occurred_at DESC, id);
 CREATE INDEX ix_audit_result_occurred ON audit_events(result, occurred_at DESC, id);

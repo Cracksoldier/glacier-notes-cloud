@@ -39,7 +39,7 @@ services:
       GLACIER_PUBLIC_BASE_URL: ${GLACIER_PUBLIC_BASE_URL:-http://localhost:8080}
       GLACIER_METRICS_ENABLED: ${GLACIER_METRICS_ENABLED:-true}
       GLACIER_BACKUP_ENABLED: ${GLACIER_BACKUP_ENABLED:-false}
-      GLACIER_BACKUP_DIRECTORY: /var/lib/glacier-notes/backups
+      GLACIER_BACKUP_DIRECTORY: ${GLACIER_BACKUP_DIRECTORY:-/var/lib/glacier-notes/backups}
       GLACIER_BUILD_IDENTIFIER: ${GLACIER_BUILD_IDENTIFIER:-local}
       GLACIER_SMTP_ENABLED: ${GLACIER_SMTP_ENABLED:-false}
       GLACIER_SMTP_HOST: ${GLACIER_SMTP_HOST:-localhost}
@@ -81,7 +81,7 @@ services:
       - /tmp:size=256m,mode=1777
     volumes:
       - image_data:/var/lib/glacier-notes/images
-      - backup_data:/var/lib/glacier-notes/backups
+      - backup_data:${GLACIER_BACKUP_DIRECTORY:-/var/lib/glacier-notes/backups}
       - transfer_data:/var/lib/glacier-notes/transfers
       - type: bind
         source: ${GLACIER_SMTP_PASSWORD_FILE:-/dev/null}

@@ -27,6 +27,7 @@ import java.util.UUID;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
@@ -87,7 +88,7 @@ public class AdministrationResource implements AdministrationApi {
             .imageStorageBackend(AdminStatus.ImageStorageBackendEnum.fromValue(imageStorage.backend()))
             .imageStorage(imageStorage.healthy() ? AdminStatus.ImageStorageEnum.UP : AdminStatus.ImageStorageEnum.DOWN)
             .smtp(email.status()).backupEnabled(backups.enabled()).metricsEnabled(metricsEnabled)
-            .jobsHealthy(jobs.healthy());
+            .jobsHealthy(jobs.recentFailureCount() == 0);
     }
 
     @Override
@@ -169,6 +170,7 @@ public class AdministrationResource implements AdministrationApi {
     }
 
     @Override
+    @Transactional
     public AdminSettings updateInstanceLogo(InputStream file) {
         logo.replace(file);
         audit.record("INSTANCE_LOGO_CHANGED", actor(), null, "INSTANCE_SETTINGS", null,
@@ -177,6 +179,7 @@ public class AdministrationResource implements AdministrationApi {
     }
 
     @Override
+    @Transactional
     public void deleteInstanceLogo() {
         logo.delete();
         audit.record("INSTANCE_LOGO_CHANGED", actor(), null, "INSTANCE_SETTINGS", null,
@@ -184,6 +187,7 @@ public class AdministrationResource implements AdministrationApi {
     }
 
     @Override
+    @Transactional
     public SmtpStatus testSmtp() {
         if (!email.configured()) throw com.glaciernotes.cloud.application.operations.OperationalFailure.smtpNotConfigured();
         String recipient = entityManager.createQuery(
@@ -211,6 +215,7 @@ public class AdministrationResource implements AdministrationApi {
     }
 
     @Override
+    @Transactional
     public BackupJob createBackup() {
         BackupJob job = backups.create(actor());
         audit.record("BACKUP_INITIATED", actor(), null, "BACKUP", job.getId(), "SUCCESS",

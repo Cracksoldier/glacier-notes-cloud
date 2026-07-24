@@ -60,6 +60,17 @@ existing database or image volume. Preserve the original archive until validatio
 3. For the `FILESYSTEM` backend, copy `restore/images/` into a clean `image_data` volume while
    preserving the paths below `images/`. PostgreSQL-backed image bytes are already in the dump. For
    S3, upload the verified objects to the configured private bucket before starting Glacier Notes.
+   From the repository root, restore the Compose volume before the application starts:
+
+   ```bash
+   docker compose run --rm --no-deps --user 0:0 --entrypoint sh \
+     --volume ./restore/images:/restore/images:ro app \
+     -c 'cp -a /restore/images/. /var/lib/glacier-notes/images/ &&
+       chown -R 10001:10001 /var/lib/glacier-notes/images'
+   ```
+
+   The helper uses the app service's `image_data` mount, preserves the archive's relative paths, and
+   gives the restored objects to the unprivileged application user.
 
 4. Configure the same `GLACIER_IMAGE_BACKEND`, supply new or restored deployment secrets, then start
    and validate the application:

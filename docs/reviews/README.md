@@ -1,6 +1,6 @@
 # Structured Review Evidence
 
-This directory stores durable evidence from the M0–M10 CodeRabbit review program. Each review gets
+This directory stores durable evidence from the M0–M11 CodeRabbit review program. Each review gets
 its own milestone directory so the raw tool output, human disposition, and later test evidence remain
 traceable to one immutable source range.
 
@@ -63,6 +63,7 @@ dated runs; do not replace an earlier failure with a later success.
 | R7 | M8 | `ec36449..2cf76f3` | Completed | 6 | [Summary](m8/R7-M8-summary.md), [raw JSONL](m8/R7-M8.jsonl), [test results](m8/test-results.md) |
 | R8 | M9 | `2cf76f3..0f02251` | Completed | 14 | [Summary](m9/R8-M9-summary.md), [raw JSONL](m9/R8-M9.jsonl), [test results](m9/test-results.md) |
 | R9 | M10 | `0f02251..ea3cce3` | Completed | 8 | [Summary](m10/R9-M10-summary.md), [raw JSONL](m10/R9-M10.jsonl), [test results](m10/test-results.md) |
+| R10 | M11 | `94ed527..255b7e3` | Completed | 10 | [Summary](m11/R10-M11-summary.md), [raw JSONL](m11/R10-M11.jsonl), [test results](m11/test-results.md) |
 
 ## Remediation Reviews
 
