@@ -38,12 +38,15 @@ class LifecycleResourceTest {
     @AfterEach
     void reset() throws SQLException {
         try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+            statement.executeUpdate("delete from external_storage_operations");
             statement.executeUpdate("delete from audit_events");
             statement.executeUpdate("delete from endpoint_rate_limits");
             statement.executeUpdate("delete from login_rate_limits");
             statement.executeUpdate("delete from security_tokens");
             statement.executeUpdate("delete from invitations");
             statement.executeUpdate("delete from user_settings");
+            statement.executeUpdate("delete from transfer_jobs");
+            statement.executeUpdate("delete from image_assets");
             statement.executeUpdate("delete from notebooks");
             statement.executeUpdate("delete from user_sessions");
             statement.executeUpdate("delete from app_users");
@@ -244,6 +247,30 @@ class LifecycleResourceTest {
     @Test
     void retainedDeletionCanBeRestoredAndImmediateDeletionIsDestructive() throws SQLException {
         insertCompleteUser(USER_ID, "member", "member@example.com", "USER");
+        UUID imageId = UUID.randomUUID();
+        UUID transferId = UUID.randomUUID();
+        try (var connection = dataSource.getConnection()) {
+            try (var statement = connection.prepareStatement("""
+                insert into image_assets(owner_id,id,mime_type,byte_size,width,height,content_hash,
+                  storage_backend,storage_key,orphaned_at)
+                values (?,?, 'image/jpeg',10,1,1,'hash','FILESYSTEM','../unsafe-account-image',current_timestamp)
+                """)) {
+                statement.setObject(1, USER_ID);
+                statement.setObject(2, imageId);
+                statement.executeUpdate();
+            }
+            try (var statement = connection.prepareStatement("""
+                insert into transfer_jobs(id,job_kind,phase,state,requested_by,target_user_id,
+                  temporary_path,created_at,completed_at,expires_at)
+                values (?,'IMPORT','INSPECT','SUCCEEDED',?,?,'/tmp/glacier-unsafe-account-transfer',
+                  current_timestamp,current_timestamp,current_timestamp + interval '1 hour')
+                """)) {
+                statement.setObject(1, transferId);
+                statement.setObject(2, USER_ID);
+                statement.setObject(3, USER_ID);
+                statement.executeUpdate();
+            }
+        }
         var member = login("member", PASSWORD);
         var admin = login("admin", PASSWORD);
 
@@ -268,6 +295,8 @@ class LifecycleResourceTest {
             assertEquals(0, count(statement, "select count(*) from user_settings where user_id='" + USER_ID + "'"));
             assertEquals(1, count(statement, "select count(*) from app_users where id='" + USER_ID
                 + "' and status='DELETED' and username like 'deleted-%'"));
+            assertEquals(2, count(statement, "select count(*) from external_storage_operations "
+                + "where owner_id='" + USER_ID + "'"));
         }
     }
 

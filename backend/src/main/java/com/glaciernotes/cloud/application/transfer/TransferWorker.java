@@ -1,6 +1,5 @@
 package com.glaciernotes.cloud.application.transfer;
 
-import com.glaciernotes.cloud.application.port.BinaryAssetStorage;
 import com.glaciernotes.cloud.persistence.entity.TransferJobEntity;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.scheduler.Scheduled;
@@ -19,13 +18,10 @@ public class TransferWorker {
     private final PortableTransferCodec codec;
     private final TransferInspector inspector;
     private final TransferApplyService applier;
-    private final TransferService transfers;
-    private final BinaryAssetStorage storage;
 
     public TransferWorker(TransferJobStore jobs, PortableTransferCodec codec, TransferInspector inspector,
-                          TransferApplyService applier, TransferService transfers, BinaryAssetStorage storage) {
+                          TransferApplyService applier) {
         this.jobs = jobs; this.codec = codec; this.inspector = inspector; this.applier = applier;
-        this.transfers = transfers; this.storage = storage;
     }
 
     void recover(@Observes StartupEvent ignored) { jobs.recoverRunning(); }
@@ -50,17 +46,15 @@ public class TransferWorker {
             } else {
                 var inspected = inspector.inspect(path, job.targetUserId(), cancellation);
                 if (!inspected.errors().isEmpty()) throw new IllegalStateException(inspected.errors().getFirst());
-                var result = applier.apply(id, path, job.targetUserId(), job.importStrategy(),
+                applier.apply(id, path, job.targetUserId(), job.importStrategy(),
                     inspected.inspection(), cancellation);
-                result.previousStorageKeys().forEach(this::quietDelete);
-                transfers.delete(job.temporaryPath());
                 jobs.completeImport(id, job.byteSize() == null ? 0 : job.byteSize(), "background-transfer");
             }
         } catch (Canceled canceled) {
-            transfers.delete(job.temporaryPath()); jobs.canceled(id);
+            jobs.canceled(id);
         } catch (Exception failure) {
-            transfers.delete(job.temporaryPath());
-            String message = failure instanceof PortableTransferCodec.FormatException ? failure.getMessage()
+            String message = failure instanceof PortableTransferCodec.FormatException && failure.getMessage() != null
+                ? failure.getMessage()
                 : failure instanceof IOException ? "The portable file could not be processed."
                 : failure.getMessage() == null ? "The transfer failed." : failure.getMessage();
             jobs.failed(id, List.of(message.substring(0, Math.min(512, message.length()))));
@@ -73,7 +67,6 @@ public class TransferWorker {
     }
 
     @Scheduled(every = "1h", delayed = "2m", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
-    void cleanup() { jobs.expire().forEach(job -> transfers.delete(job.temporaryPath())); }
-    private void quietDelete(String key) { if (key != null) try { storage.delete(key); } catch (RuntimeException ignored) {} }
+    void cleanup() { jobs.expire(); }
     private static final class Canceled extends RuntimeException {}
 }

@@ -1,8 +1,10 @@
 package com.glaciernotes.cloud.application.image;
 
 import com.glaciernotes.cloud.application.port.BinaryAssetStorage;
+import com.glaciernotes.cloud.application.storage.ExternalStorageOperations;
 import com.glaciernotes.cloud.domain.IdGenerator;
 import com.glaciernotes.cloud.domain.OwnerId;
+import com.glaciernotes.cloud.domain.SystemContentScope;
 import com.glaciernotes.cloud.domain.TimeProvider;
 import com.glaciernotes.cloud.generated.model.ImageMetadata;
 import com.glaciernotes.cloud.generated.model.StorageUsage;
@@ -31,49 +33,54 @@ public class ImageService {
     private final IdGenerator ids;
     private final TimeProvider clock;
     private final EntityManager entityManager;
+    private final ExternalStorageOperations operations;
+    private final ImageWriteTransactions writes;
 
     public ImageService(ImageAssetRepository repository, ImageProcessor processor,
                         BinaryAssetStorage storage, IdGenerator ids, TimeProvider clock,
-                        EntityManager entityManager) {
+                        EntityManager entityManager, ExternalStorageOperations operations,
+                        ImageWriteTransactions writes) {
         this.repository = repository; this.processor = processor; this.storage = storage;
         this.ids = ids; this.clock = clock; this.entityManager = entityManager;
+        this.operations = operations; this.writes = writes;
     }
 
     @Transactional
     public void validateBackend(@Observes StartupEvent ignored) {
         InstanceStateEntity state = entityManager.find(InstanceStateEntity.class, (short) 1, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         String selected = state.imageStorageBackend();
-        long assets = ((Number) entityManager.createNativeQuery("select count(*) from image_assets").getSingleResult()).longValue();
+        long assets = ((Number) entityManager.createNativeQuery("select count(*) from image_assets").getSingleResult()).longValue()
+            + operations.pendingBinaryOperations();
         if (selected != null && !selected.equals(storage.backend()) && assets > 0) {
             throw new IllegalStateException("Image backend is immutable after the first upload; migrate assets before changing GLACIER_IMAGE_BACKEND");
         }
         if (!storage.backend().equals(selected)) state.selectImageStorageBackend(storage.backend(), clock.now());
     }
 
-    @Transactional
     public ImageMetadata upload(OwnerId owner, Path upload, String originalName) {
-        repository.lockOwner(owner);
         var settings = repository.settings();
         try (var processed = processor.process(upload, settings.maximumImageBytes())) {
-            if (!settings.allowedUploadTypes().contains(processed.sourceMimeType()))
-                throw ImageFailure.invalid("IMAGE_TYPE_UNSUPPORTED", "This image type is disabled by the administrator.");
-            long used = repository.usedBytes(owner);
-            if (used + processed.byteSize() + processed.thumbnailByteSize() > settings.perUserStorageQuotaBytes()) throw ImageFailure.quota();
             UUID id = ids.nextId();
             String prefix = "assets/" + id + "/" + UUID.randomUUID();
             String key = prefix + "-image";
             String thumbnailKey = prefix + "-thumbnail";
-            boolean mainStored = false;
+            UUID reservationId = ids.nextId();
+            long reservedBytes = processed.byteSize() + processed.thumbnailByteSize();
+            boolean reserved = false;
             try {
-                storage.store(key, processed.main(), processed.byteSize(), processed.mimeType()); mainStored = true;
+                writes.prepareUpload(owner, reservationId, storage.backend(), key, thumbnailKey,
+                    processed.sourceMimeType(), reservedBytes);
+                reserved = true;
+                storage.store(key, processed.main(), processed.byteSize(), processed.mimeType());
                 storage.store(thumbnailKey, processed.thumbnail(), processed.thumbnailByteSize(), processed.mimeType());
                 var asset = new ImageAssetEntity(owner.value(), id, processed.mimeType(), cleanName(originalName),
                     processed.byteSize(), processed.width(), processed.height(), processed.hash(), storage.backend(), key,
                     processed.mimeType(), processed.thumbnailByteSize(), processed.thumbnailWidth(), processed.thumbnailHeight(),
                     thumbnailKey, clock.now());
-                repository.persist(asset); repository.flush(); return metadata(asset);
+                writes.finalizeUpload(owner, reservationId, asset);
+                return metadata(asset);
             } catch (RuntimeException failure) {
-                if (mainStored) quietDelete(key); quietDelete(thumbnailKey);
+                if (reserved) operations.expedite(reservationId);
                 if (failure instanceof ImageFailure imageFailure) throw imageFailure;
                 throw ImageFailure.unavailable();
             }
@@ -93,9 +100,9 @@ public class ImageService {
     public void delete(OwnerId owner, UUID id) {
         ImageAssetEntity asset = require(owner, id, true);
         if (repository.referenced(owner, id)) throw ImageFailure.referenced();
-        try { storage.delete(asset.storageKey()); storage.delete(asset.thumbnailStorageKey()); }
-        catch (ImageStorageException failure) { throw ImageFailure.unavailable(); }
-        repository.remove(asset);
+        operations.enqueueBinaryDelete(owner, asset.storageBackend(),
+            asset.storageKey(), asset.thumbnailStorageKey());
+        repository.remove(owner, asset);
     }
 
     public StorageUsage usage(OwnerId owner) {
@@ -109,9 +116,12 @@ public class ImageService {
         Number locked = (Number) entityManager.createNativeQuery("select pg_try_advisory_xact_lock(7197007)::int").getSingleResult();
         if (locked.intValue() == 0) return;
         int grace = repository.settings().imageOrphanGraceHours();
-        for (ImageAssetEntity asset : repository.garbage(clock.now().minus(grace, ChronoUnit.HOURS))) {
-            try { storage.delete(asset.storageKey()); storage.delete(asset.thumbnailStorageKey()); repository.remove(asset); }
-            catch (RuntimeException ignored) { /* retry on the next scheduled pass */ }
+        for (ImageAssetEntity asset : repository.garbage(SystemContentScope.BACKGROUND_MAINTENANCE,
+                clock.now().minus(grace, ChronoUnit.HOURS))) {
+            OwnerId owner = new OwnerId(asset.key().ownerId());
+            operations.enqueueBinaryDelete(owner, asset.storageBackend(),
+                asset.storageKey(), asset.thumbnailStorageKey());
+            repository.remove(owner, asset);
         }
     }
 
@@ -129,6 +139,5 @@ public class ImageService {
         String clean = value.replaceAll("[\\r\\n]", "");
         return clean.substring(0, Math.min(512, clean.length()));
     }
-    private void quietDelete(String key) { try { storage.delete(key); } catch (RuntimeException ignored) {} }
     public record Download(BinaryAssetStorage.StoredObject object, String mimeType, String etag) {}
 }

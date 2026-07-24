@@ -1,6 +1,7 @@
 package com.glaciernotes.cloud.persistence.repository;
 
 import com.glaciernotes.cloud.domain.OwnerId;
+import com.glaciernotes.cloud.domain.SystemContentScope;
 import com.glaciernotes.cloud.persistence.entity.ImageAssetEntity;
 import com.glaciernotes.cloud.persistence.entity.InstanceSettingsEntity;
 import com.glaciernotes.cloud.persistence.entity.OwnedEntityId;
@@ -41,8 +42,15 @@ public class ImageAssetRepository {
             .setParameter("owner", owner.value()).getSingleResult()).longValue();
     }
 
-    public void persist(ImageAssetEntity asset) { entityManager.persist(asset); }
-    public void remove(ImageAssetEntity asset) { entityManager.remove(asset); }
+    public void persist(OwnerId owner, ImageAssetEntity asset) {
+        requireOwner(owner, asset);
+        entityManager.persist(asset);
+    }
+
+    public void remove(OwnerId owner, ImageAssetEntity asset) {
+        requireOwner(owner, asset);
+        entityManager.remove(asset);
+    }
 
     public boolean referenced(OwnerId owner, UUID id) {
         return ((Number) entityManager.createNativeQuery("""
@@ -51,12 +59,31 @@ public class ImageAssetRepository {
             """).setParameter("owner", owner.value()).setParameter("id", id).getSingleResult()).longValue() > 0;
     }
 
-    public List<ImageAssetEntity> garbage(Instant cutoff) {
-        return entityManager.createQuery("select i from ImageAssetEntity i where i.orphanedAt is not null " +
-            "and i.orphanedAt < :cutoff order by i.orphanedAt", ImageAssetEntity.class)
-            .setParameter("cutoff", cutoff).setMaxResults(100).getResultList().stream()
-            .filter(i -> !referenced(new OwnerId(i.key().ownerId()), i.id())).toList();
+    public List<ImageAssetEntity> garbage(SystemContentScope scope, Instant cutoff) {
+        if (scope != SystemContentScope.BACKGROUND_MAINTENANCE) {
+            throw new IllegalArgumentException("System-wide image access requires maintenance scope");
+        }
+        return entityManager.createNativeQuery("""
+            select i.* from image_assets i
+            where i.orphaned_at is not null and i.orphaned_at < :cutoff
+              and not exists (
+                select 1 from note_image_references r
+                where r.owner_id=i.owner_id and r.image_id=i.id
+              )
+              and not exists (
+                select 1 from note_version_image_references r
+                where r.owner_id=i.owner_id and r.image_id=i.id
+              )
+            order by i.orphaned_at,i.owner_id,i.id
+            limit 100
+            """, ImageAssetEntity.class).setParameter("cutoff", cutoff).getResultList();
     }
 
     public void flush() { entityManager.flush(); }
+
+    private void requireOwner(OwnerId owner, ImageAssetEntity asset) {
+        if (!asset.key().ownerId().equals(owner.value())) {
+            throw new IllegalArgumentException("Image asset owner does not match repository scope");
+        }
+    }
 }

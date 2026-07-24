@@ -10,3 +10,14 @@ legacy checklist relocation through `REPLACE_BY_ID`, configured image-size bound
 Playwright runs, and download cleanup races. Do not replace earlier failures with later successes,
 and do not record credentials, tokens, cookies, imported content, exports, database dumps, or
 unredacted logs.
+
+## 2026-07-24 durable-transfer remediation
+
+- `sg docker -c './mvnw -pl backend -Dtest=TransferResourceTest,LifecycleResourceTest,PostgresqlImageResourceTest test'`
+  passed 10 tests in 37.548 seconds. Both portable-transfer workflows completed with journaled image
+  replacement and terminal-state temporary-file cleanup; the PostgreSQL image workflow also passed.
+- `sg docker -c './mvnw verify'` passed all 57 backend tests in 1 minute 12 seconds. Import image
+  reservations, deterministic retry keys, transfer state transitions, and the V10 reconciliation
+  migration were exercised. Safe reports are under `backend/target/surefire-reports/`.
+- `npm run check`, `npm run test:ci`, and `npm run build:production` passed with 23 frontend tests;
+  the production build reported only the existing bundle budget warnings.

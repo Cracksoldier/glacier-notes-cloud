@@ -142,8 +142,7 @@ public class TransferService {
     }
 
     public void cancel(UUID id, UUID actor, String kind, boolean admin) {
-        var job = jobs.requestCancel(id, actor, kind, admin);
-        if (!job.state().equals("RUNNING")) delete(job.temporaryPath());
+        jobs.requestCancel(id, actor, kind, admin);
     }
 
     public TransferJobEntity downloadable(UUID id, UUID actor) {

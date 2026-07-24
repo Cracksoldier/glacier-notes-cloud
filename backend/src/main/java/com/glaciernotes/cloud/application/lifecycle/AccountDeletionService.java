@@ -1,7 +1,8 @@
 package com.glaciernotes.cloud.application.lifecycle;
 
-import com.glaciernotes.cloud.application.port.BinaryAssetStorage;
+import com.glaciernotes.cloud.application.storage.ExternalStorageOperations;
 import com.glaciernotes.cloud.domain.IdGenerator;
+import com.glaciernotes.cloud.domain.OwnerId;
 import com.glaciernotes.cloud.domain.TimeProvider;
 import com.glaciernotes.cloud.generated.model.AdminDeletionRequest;
 import com.glaciernotes.cloud.persistence.entity.AuditEventEntity;
@@ -16,8 +17,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -26,15 +25,15 @@ import java.util.UUID;
 @ApplicationScoped
 public class AccountDeletionService {
     private final EntityManager entityManager;
-    private final BinaryAssetStorage storage;
+    private final ExternalStorageOperations storageOperations;
     private final SessionRepository sessions;
     private final TimeProvider time;
     private final IdGenerator ids;
 
-    public AccountDeletionService(EntityManager entityManager, BinaryAssetStorage storage,
+    public AccountDeletionService(EntityManager entityManager, ExternalStorageOperations storageOperations,
                                   SessionRepository sessions, TimeProvider time, IdGenerator ids) {
         this.entityManager = entityManager;
-        this.storage = storage;
+        this.storageOperations = storageOperations;
         this.sessions = sessions;
         this.time = time;
         this.ids = ids;
@@ -101,17 +100,17 @@ public class AccountDeletionService {
         var images = entityManager.createQuery(
                 "select i from ImageAssetEntity i where i.key.ownerId = :owner", ImageAssetEntity.class)
             .setParameter("owner", userId).getResultList();
-        images.forEach(image -> {
-            storage.delete(image.storageKey());
-            if (image.thumbnailStorageKey() != null) storage.delete(image.thumbnailStorageKey());
-        });
+        OwnerId owner = new OwnerId(userId);
+        images.forEach(image -> storageOperations.enqueueBinaryDelete(owner, image.storageBackend(),
+            image.storageKey(), image.thumbnailStorageKey()));
 
         @SuppressWarnings("unchecked")
-        List<String> paths = entityManager.createNativeQuery("""
-            select temporary_path from transfer_jobs
+        List<Object[]> paths = entityManager.createNativeQuery("""
+            select id,temporary_path from transfer_jobs
             where (requested_by = :userId or target_user_id = :userId) and temporary_path is not null
             """).setParameter("userId", userId).getResultList();
-        paths.forEach(this::deleteTemporaryFile);
+        paths.forEach(row -> storageOperations.enqueueTransferFileDelete(owner,
+            (UUID) row[0], (String) row[1]));
 
         execute("delete from transfer_jobs where requested_by = :userId or target_user_id = :userId", userId);
         execute("delete from user_sessions where user_id = :userId", userId);
@@ -169,14 +168,6 @@ public class AccountDeletionService {
 
     private void execute(String sql, UUID userId) {
         entityManager.createNativeQuery(sql).setParameter("userId", userId).executeUpdate();
-    }
-
-    private void deleteTemporaryFile(String value) {
-        try {
-            Files.deleteIfExists(Path.of(value));
-        } catch (java.io.IOException failure) {
-            throw new IllegalStateException("Could not delete account transfer data", failure);
-        }
     }
 
     private void audit(String type, UUID actor, UUID target, String correlationId, Map<String, String> metadata) {

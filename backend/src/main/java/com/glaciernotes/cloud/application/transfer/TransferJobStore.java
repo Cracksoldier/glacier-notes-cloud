@@ -1,6 +1,8 @@
 package com.glaciernotes.cloud.application.transfer;
 
+import com.glaciernotes.cloud.application.storage.ExternalStorageOperations;
 import com.glaciernotes.cloud.domain.IdGenerator;
+import com.glaciernotes.cloud.domain.OwnerId;
 import com.glaciernotes.cloud.domain.TimeProvider;
 import com.glaciernotes.cloud.persistence.entity.AuditEventEntity;
 import com.glaciernotes.cloud.persistence.entity.TransferJobEntity;
@@ -20,9 +22,11 @@ public class TransferJobStore {
     private final EntityManager em;
     private final TimeProvider clock;
     private final IdGenerator ids;
+    private final ExternalStorageOperations operations;
 
-    public TransferJobStore(EntityManager em, TimeProvider clock, IdGenerator ids) {
-        this.em = em; this.clock = clock; this.ids = ids;
+    public TransferJobStore(EntityManager em, TimeProvider clock, IdGenerator ids,
+                            ExternalStorageOperations operations) {
+        this.em = em; this.clock = clock; this.ids = ids; this.operations = operations;
     }
 
     @Transactional public void persist(TransferJobEntity job) { em.persist(job); }
@@ -66,10 +70,19 @@ public class TransferJobStore {
     public void completeImport(UUID id, long size, String correlationId) {
         TransferJobEntity job = require(id);
         job.succeeded(size, clock.now());
+        enqueueTemporaryFile(job);
         if (job.blindAdmin()) auditAdminImport(job, correlationId);
     }
-    @Transactional public void failed(UUID id, List<String> errors) { require(id).failed(errors, clock.now()); }
-    @Transactional public void canceled(UUID id) { require(id).canceled(clock.now()); }
+    @Transactional public void failed(UUID id, List<String> errors) {
+        TransferJobEntity job = require(id);
+        job.failed(errors, clock.now());
+        enqueueTemporaryFile(job);
+    }
+    @Transactional public void canceled(UUID id) {
+        TransferJobEntity job = require(id);
+        job.canceled(clock.now());
+        enqueueTemporaryFile(job);
+    }
     @Transactional
     public boolean cancelRequested(UUID id) {
         return (Boolean) em.createNativeQuery("select cancel_requested from transfer_jobs where id=:id")
@@ -91,6 +104,7 @@ public class TransferJobStore {
     public TransferJobEntity requestCancel(UUID id, UUID actor, String kind, boolean admin) {
         TransferJobEntity job = requireForUser(id, actor, kind, admin);
         job.requestCancel(clock.now());
+        if (job.state().equals("CANCELED")) enqueueTemporaryFile(job);
         return job;
     }
 
@@ -105,7 +119,10 @@ public class TransferJobStore {
         List<TransferJobEntity> jobs = em.createQuery("select j from TransferJobEntity j where j.expiresAt <= :now " +
                 "and j.state not in ('EXPIRED', 'RUNNING')", TransferJobEntity.class)
             .setParameter("now", clock.now()).getResultList();
-        jobs.forEach(job -> job.expired(clock.now()));
+        jobs.forEach(job -> {
+            job.expired(clock.now());
+            enqueueTemporaryFile(job);
+        });
         return jobs;
     }
 
@@ -114,5 +131,12 @@ public class TransferJobStore {
             job.requestedBy(), job.targetUserId(), "USER", job.targetUserId(), clock.now(),
             correlationId == null ? "background-transfer" : correlationId,
             Map.of("jobId", job.id().toString())));
+    }
+
+    private void enqueueTemporaryFile(TransferJobEntity job) {
+        if (job.temporaryPath() != null) {
+            operations.enqueueTransferFileDelete(new OwnerId(job.targetUserId()),
+                job.id(), job.temporaryPath());
+        }
     }
 }

@@ -55,6 +55,7 @@ class TransferResourceTest {
                 while (rows.next()) Files.deleteIfExists(Path.of(rows.getString(1)));
             }
             try (var statement = connection.createStatement()) {
+                statement.executeUpdate("delete from external_storage_operations");
                 statement.executeUpdate("delete from transfer_jobs");
                 statement.executeUpdate("delete from user_sessions");
                 statement.executeUpdate("delete from notes");

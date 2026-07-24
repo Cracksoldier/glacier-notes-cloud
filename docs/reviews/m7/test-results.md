@@ -9,3 +9,19 @@ every database/object-store boundary, S3 timeout/encryption checks, PostgreSQL p
 blocked-prefix garbage collection, request-size boundaries, concurrent upload UI state, and
 keyboard-only lightbox behavior. Do not replace earlier failed runs with later results, and do not
 record credentials, tokens, cookies, user content, image bytes, or unredacted logs.
+
+## 2026-07-24 durable-storage remediation
+
+- `./mvnw -pl backend -Dtest=ExternalStorageOperationsTest,DatabaseSchemaTest,OwnershipRepositoryTest,ImageResourceTest test`
+  failed before test discovery because the Docker daemon was unavailable. No application tests ran.
+- After Docker was started,
+  `sg docker -c './mvnw -pl backend -Dtest=ExternalStorageOperationsTest,DatabaseSchemaTest,OwnershipRepositoryTest,ImageResourceTest test'`
+  passed 12 tests in 23.726 seconds using PostgreSQL Dev Services and the filesystem image backend.
+  It covered the V10 schema, reservation leases and quota accounting, safe transfer cleanup,
+  owner mutation scope, blocked-prefix garbage selection, and asynchronous binary removal.
+- `sg docker -c './mvnw verify'` passed the complete 57-test backend suite in 1 minute 12 seconds.
+  Filesystem, PostgreSQL, and MinIO/S3 image profiles all passed, including eventual physical
+  deletion. Safe reports are under `backend/target/surefire-reports/`.
+- Frontend non-regression gates passed: `npm run check` (83 files), `npm run test:ci` (23 tests),
+  and `npm run build:production` (2.814 seconds). The production build retained the existing bundle
+  budget warnings.

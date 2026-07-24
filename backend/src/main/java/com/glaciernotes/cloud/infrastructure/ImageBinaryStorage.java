@@ -106,7 +106,12 @@ public class ImageBinaryStorage implements BinaryAssetStorage {
     private void storeDatabase(String key, Path content, long length, String type) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(
-                 "insert into image_asset_blobs(storage_key, content, content_length, content_type) values (?, ?, ?, ?)" );
+                 """
+                 insert into image_asset_blobs(storage_key, content, content_length, content_type)
+                 values (?, ?, ?, ?)
+                 on conflict(storage_key) do update set content=excluded.content,
+                   content_length=excluded.content_length,content_type=excluded.content_type
+                 """ );
              InputStream input = Files.newInputStream(content)) {
             statement.setString(1, key); statement.setBinaryStream(2, input, length);
             statement.setLong(3, length); statement.setString(4, type); statement.executeUpdate();
@@ -144,21 +149,41 @@ public class ImageBinaryStorage implements BinaryAssetStorage {
     }
 
     private StoredObject loadDatabase(String key) {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet result = null;
         try {
-            Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(
+            connection = dataSource.getConnection();
+            statement = connection.prepareStatement(
                 "select content, content_length, content_type from image_asset_blobs where storage_key = ?");
             statement.setString(1, key);
-            ResultSet result = statement.executeQuery();
-            if (!result.next()) { result.close(); statement.close(); connection.close(); throw new ImageStorageException("Stored image is missing"); }
+            result = statement.executeQuery();
+            if (!result.next()) throw new ImageStorageException("Stored image is missing");
             InputStream stream = result.getBinaryStream(1);
-            return new StoredObject(new java.io.FilterInputStream(stream) {
+            Connection ownedConnection = connection;
+            PreparedStatement ownedStatement = statement;
+            ResultSet ownedResult = result;
+            StoredObject stored = new StoredObject(new java.io.FilterInputStream(stream) {
                 @Override public void close() throws IOException {
-                    try { super.close(); result.close(); statement.close(); connection.close(); }
+                    try { super.close(); ownedResult.close(); ownedStatement.close(); ownedConnection.close(); }
                     catch (SQLException exception) { throw new IOException(exception); }
                 }
             }, result.getLong(2), result.getString(3));
-        } catch (SQLException exception) { throw new ImageStorageException(exception); }
+            connection = null;
+            statement = null;
+            result = null;
+            return stored;
+        } catch (SQLException | RuntimeException exception) {
+            close(result);
+            close(statement);
+            close(connection);
+            if (exception instanceof ImageStorageException storageException) throw storageException;
+            throw new ImageStorageException(exception);
+        }
+    }
+
+    private void close(AutoCloseable resource) {
+        if (resource != null) try { resource.close(); } catch (Exception ignored) {}
     }
 
     @Override

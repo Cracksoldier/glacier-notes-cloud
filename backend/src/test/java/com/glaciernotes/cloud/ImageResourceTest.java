@@ -1,6 +1,7 @@
 package com.glaciernotes.cloud;
 
 import com.glaciernotes.cloud.application.port.PasswordVerifier;
+import com.glaciernotes.cloud.application.port.BinaryAssetStorage;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -21,6 +22,7 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @QuarkusTest
 class ImageResourceTest {
@@ -32,6 +34,7 @@ class ImageResourceTest {
 
     @Inject DataSource dataSource;
     @Inject PasswordVerifier passwordVerifier;
+    @Inject BinaryAssetStorage imageStorage;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -41,6 +44,7 @@ class ImageResourceTest {
     @AfterEach
     void reset() throws SQLException {
         try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+            statement.executeUpdate("delete from external_storage_operations");
             statement.executeUpdate("delete from user_sessions");
             statement.executeUpdate("delete from notes");
             statement.executeUpdate("delete from image_assets");
@@ -57,6 +61,7 @@ class ImageResourceTest {
             .body("width", equalTo(900)).body("height", equalTo(600))
             .body("thumbnailWidth", equalTo(480)).body("byteSize", greaterThan(0));
         String id = upload.jsonPath().getString("id");
+        String storageKey = storageKey(UUID.fromString(id));
 
         read(alice).get("/api/v1/images/{id}", id).then().statusCode(200)
             .contentType("image/jpeg").header("Cache-Control", equalTo("private, max-age=86400"));
@@ -80,6 +85,7 @@ class ImageResourceTest {
             """).patch("/api/v1/notes/{id}", noteId).then().statusCode(200).body("imageIds.size()", equalTo(0));
         write(alice).delete("/api/v1/images/{id}", id).then().statusCode(204);
         read(alice).get("/api/v1/images/{id}", id).then().statusCode(404);
+        awaitPhysicalDeletion(storageKey);
 
         write(alice).multiPart("file", "fake.png", "not-an-image".getBytes(), "image/png")
             .post("/api/v1/images").then().statusCode(422).body("errorCode", equalTo("IMAGE_TYPE_UNSUPPORTED"));
@@ -120,6 +126,32 @@ class ImageResourceTest {
                 statement.setObject(1, id); statement.setObject(2, notebook); statement.executeUpdate();
             }
         }
+    }
+
+    private String storageKey(UUID id) throws SQLException {
+        try (var connection = dataSource.getConnection();
+             var statement = connection.prepareStatement(
+                 "select storage_key from image_assets where owner_id=? and id=?")) {
+            statement.setObject(1, ALICE);
+            statement.setObject(2, id);
+            try (var result = statement.executeQuery()) {
+                result.next();
+                return result.getString(1);
+            }
+        }
+    }
+
+    private void awaitPhysicalDeletion(String key) throws InterruptedException {
+        for (int attempt = 0; attempt < 50; attempt++) {
+            try (var ignored = imageStorage.load(key).stream()) {
+                Thread.sleep(100);
+            } catch (RuntimeException failure) {
+                return;
+            } catch (java.io.IOException failure) {
+                throw new IllegalStateException(failure);
+            }
+        }
+        assertThrows(RuntimeException.class, () -> imageStorage.load(key));
     }
 
     private record Session(String session, String csrf) {}

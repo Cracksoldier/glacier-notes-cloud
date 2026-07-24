@@ -3,6 +3,8 @@ package com.glaciernotes.cloud.application.transfer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.glaciernotes.cloud.application.image.ImageProcessor;
 import com.glaciernotes.cloud.application.port.BinaryAssetStorage;
+import com.glaciernotes.cloud.application.storage.ExternalStorageOperations;
+import com.glaciernotes.cloud.domain.OwnerId;
 import com.glaciernotes.cloud.domain.IdGenerator;
 import com.glaciernotes.cloud.domain.TimeProvider;
 import com.glaciernotes.cloud.persistence.entity.TombstoneEntity;
@@ -37,23 +39,25 @@ public class TransferApplyService {
     private final BinaryAssetStorage storage;
     private final IdGenerator ids;
     private final TimeProvider clock;
+    private final ExternalStorageOperations operations;
 
     public TransferApplyService(PortableTransferCodec codec, EntityManager em, ImageProcessor images,
-                                BinaryAssetStorage storage, IdGenerator ids, TimeProvider clock) {
+                                BinaryAssetStorage storage, IdGenerator ids, TimeProvider clock,
+                                ExternalStorageOperations operations) {
         this.codec = codec; this.em = em; this.images = images; this.storage = storage;
-        this.ids = ids; this.clock = clock;
+        this.ids = ids; this.clock = clock; this.operations = operations;
     }
 
     @Transactional
-    public Result apply(UUID jobId, Path input, UUID owner, String strategy,
-                        PortableTransferCodec.Inspection inspection,
-                        PortableTransferCodec.Cancellation cancellation) throws IOException {
+    public void apply(UUID jobId, Path input, UUID owner, String strategy,
+                      PortableTransferCodec.Inspection inspection,
+                      PortableTransferCodec.Cancellation cancellation) throws IOException {
         em.createNativeQuery("select id from app_users where id=:owner for update")
             .setParameter("owner", owner).getSingleResult();
         if (strategy.equals("PRESERVE") && targetConflicts(owner, inspection))
             throw new IllegalStateException("The target content changed after inspection; inspect the file again.");
         IdMap mapping = new IdMap(jobId, strategy);
-        List<String> newKeys = new ArrayList<>(); List<String> previousKeys = new ArrayList<>();
+        List<UUID> reservations = new ArrayList<>();
         try {
             boolean exactRestore = strategy.equals("PRESERVE") && "all".equals(inspection.header().scopeKind)
                 && inspection.header().defaultNotebookId != null && pristine(owner);
@@ -62,7 +66,8 @@ public class TransferApplyService {
             codec.forEach(input, "notebooks", node -> notebook(owner, node, mapping, exactRestore,
                 inspection.header().defaultNotebookId, cancellation));
             codec.forEach(input, "labels", node -> label(owner, node, mapping, cancellation));
-            codec.forEach(input, "images", node -> image(jobId, owner, node, mapping, newKeys, previousKeys, cancellation));
+            codec.forEach(input, "images",
+                node -> image(jobId, owner, node, mapping, reservations, cancellation));
             codec.forEach(input, "notes", node -> note(owner, node, mapping, cancellation));
             long used = ((Number) em.createNativeQuery("select coalesce(sum(byte_size + coalesce(thumbnail_byte_size,0)),0) from image_assets where owner_id=:owner")
                 .setParameter("owner", owner).getSingleResult()).longValue();
@@ -70,9 +75,9 @@ public class TransferApplyService {
                 .getSingleResult()).longValue();
             if (used > quota) throw new IllegalStateException("The import exceeds the target user's storage quota.");
             em.flush();
-            return new Result(List.copyOf(previousKeys));
         } catch (RuntimeException | IOException failure) {
-            newKeys.forEach(this::quietDelete); throw failure;
+            reservations.forEach(operations::expedite);
+            throw failure;
         }
     }
 
@@ -106,11 +111,12 @@ public class TransferApplyService {
         clearTombstone(owner, "LABEL", id);
     }
 
-    private void image(UUID jobId, UUID owner, JsonNode node, IdMap map, List<String> newKeys,
-                       List<String> previousKeys, PortableTransferCodec.Cancellation cancel) {
+    private void image(UUID jobId, UUID owner, JsonNode node, IdMap map, List<UUID> reservations,
+                       PortableTransferCodec.Cancellation cancel) {
         cancel.check(); UUID id = map.image(uuid(node, "id"));
         @SuppressWarnings("unchecked") List<Object[]> old = em.createNativeQuery(
-                "select storage_key,thumbnail_storage_key from image_assets where owner_id=:owner and id=:id")
+                "select storage_key,thumbnail_storage_key,storage_backend,byte_size,coalesce(thumbnail_byte_size,0) "
+                    + "from image_assets where owner_id=:owner and id=:id")
             .setParameter("owner", owner).setParameter("id", id).getResultList();
         Path decoded = null;
         try {
@@ -123,13 +129,16 @@ public class TransferApplyService {
                 if (!allowed.contains(processed.sourceMimeType())) throw new IllegalStateException("An imported image type is disabled by the administrator.");
                 String prefix = "assets/" + id + "/import-" + jobId;
                 String main = prefix + "-image"; String thumb = prefix + "-thumbnail";
-                if (!old.isEmpty()) {
-                    String oldMain = (String) old.getFirst()[0]; String oldThumb = (String) old.getFirst()[1];
-                    if (oldMain != null && !oldMain.equals(main)) previousKeys.add(oldMain);
-                    if (oldThumb != null && !oldThumb.equals(thumb)) previousKeys.add(oldThumb);
-                }
-                storage.store(main, processed.main(), processed.byteSize(), processed.mimeType()); newKeys.add(main);
-                storage.store(thumb, processed.thumbnail(), processed.thumbnailByteSize(), processed.mimeType()); newKeys.add(thumb);
+                long oldBytes = old.isEmpty() ? 0
+                    : ((Number) old.getFirst()[3]).longValue() + ((Number) old.getFirst()[4]).longValue();
+                long newBytes = processed.byteSize() + processed.thumbnailByteSize();
+                UUID reservationId = UUID.nameUUIDFromBytes(
+                    ("binary-reservation:" + jobId + ":" + id).getBytes(StandardCharsets.UTF_8));
+                operations.reserveBinary(new OwnerId(owner), reservationId, jobId, storage.backend(),
+                    main, thumb, Math.max(0, newBytes - oldBytes));
+                reservations.add(reservationId);
+                storage.store(main, processed.main(), processed.byteSize(), processed.mimeType());
+                storage.store(thumb, processed.thumbnail(), processed.thumbnailByteSize(), processed.mimeType());
                 Instant now = clock.now();
                 em.createNativeQuery("""
                     insert into image_assets(owner_id,id,mime_type,original_file_name,byte_size,width,height,
@@ -153,6 +162,15 @@ public class TransferApplyService {
                     .setParameter("thumbMime", processed.mimeType()).setParameter("thumbBytes", processed.thumbnailByteSize())
                     .setParameter("thumbWidth", processed.thumbnailWidth()).setParameter("thumbHeight", processed.thumbnailHeight())
                     .setParameter("thumbKey", thumb).setParameter("now", now).executeUpdate();
+                if (!old.isEmpty()) {
+                    String oldMain = (String) old.getFirst()[0];
+                    String oldThumb = (String) old.getFirst()[1];
+                    String oldBackend = (String) old.getFirst()[2];
+                    if (!main.equals(oldMain) || !thumb.equals(oldThumb)) {
+                        operations.enqueueBinaryDelete(new OwnerId(owner), oldBackend, oldMain, oldThumb);
+                    }
+                }
+                operations.completeReservation(reservationId);
                 clearTombstone(owner, "IMAGE_ASSET", id);
             }
         } catch (IOException failure) { throw new IllegalStateException("Could not stage an imported image", failure); }
@@ -265,10 +283,6 @@ public class TransferApplyService {
     private Instant instant(JsonNode node, String field) { return Instant.parse(node.path(field).textValue()); }
     private Instant optionalInstant(JsonNode node, String field) { return node.path(field).isTextual() ? Instant.parse(node.path(field).textValue()) : null; }
     private String storedColor(JsonNode node) { return node.path("color").isTextual() ? node.path("color").textValue().toUpperCase(Locale.ROOT) : null; }
-    private void quietDelete(String key) { if (key != null) try { storage.delete(key); } catch (RuntimeException ignored) {} }
-
-    public record Result(List<String> previousStorageKeys) {}
-
     private static final class IdMap {
         private final UUID job; private final boolean copy;
         private final Map<UUID, UUID> notebooks = new java.util.HashMap<>();
