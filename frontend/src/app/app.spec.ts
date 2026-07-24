@@ -67,4 +67,26 @@ describe('App', () => {
       'Create your administrator',
     );
   });
+
+  it('shows safe setup failure detail and its correlation reference', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    TestBed.inject(HttpTestingController).expectOne('/api/v1/setup/status').flush(
+      {
+        type: 'about:blank',
+        title: 'Service unavailable',
+        status: 503,
+        errorCode: 'SERVICE_UNAVAILABLE',
+        detail: 'The instance status could not be loaded safely.',
+        correlationId: 'setup-status-reference',
+      },
+      { status: 503, statusText: 'Service Unavailable' },
+    );
+    fixture.detectChanges();
+
+    const alert = fixture.nativeElement.querySelector('[role="alert"]') as HTMLElement | null;
+    expect(alert?.textContent).toContain('The instance status could not be loaded safely.');
+    expect(alert?.textContent).toContain('setup-status-reference');
+  });
 });

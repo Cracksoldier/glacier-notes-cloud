@@ -5,7 +5,7 @@
 `openapi/glacier-notes-v1.yaml` is the canonical HTTP contract. The Quarkus backend lives in
 `backend/`; code is under `src/main/java`, Flyway migrations under `src/main/resources/db/migration`,
 and tests under `src/test/java`. Angular code is in `frontend/src/app`, static assets in `public`, and
-generated API code in `src/app/shared/generated-api`. Keep operational artifacts in `deployment/`,
+generated API code in `frontend/src/app/shared/generated-api`. Keep operational artifacts in `deployment/`,
 ADRs in `docs/adr`, and desktop samples in `compatibility-fixtures/`.
 
 ## Build, Test, and Development Commands

@@ -22,16 +22,17 @@ export class ProblemService {
       return 'The server could not be reached. Your changes are still in this browser.';
     }
     const problem = this.problem(error.error);
+    let message: string;
     if (error.status === 404) {
-      return 'This item is no longer available.';
+      message = 'This item is no longer available.';
+    } else if (error.status === 409) {
+      message = problem?.detail || 'This item changed in another session.';
+    } else if (problem?.validationErrors?.length) {
+      message = problem.validationErrors.map((item) => item.message).join(' ');
+    } else {
+      message = problem?.detail || problem?.title || `The request failed (${error.status}).`;
     }
-    if (error.status === 409) {
-      return problem?.detail || 'This item changed in another session.';
-    }
-    if (problem?.validationErrors?.length) {
-      return problem.validationErrors.map((item) => item.message).join(' ');
-    }
-    return problem?.detail || problem?.title || `The request failed (${error.status}).`;
+    return problem?.correlationId ? `${message} Reference: ${problem.correlationId}` : message;
   }
 
   report(error: unknown): void {

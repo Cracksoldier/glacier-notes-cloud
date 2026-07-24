@@ -47,6 +47,14 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - name: Verify repository and generated-client metadata
+        run: npm run test:repository
+      - name: Build the generated Angular package independently
+        run: |
+          generated_dir="$(mktemp -d)"
+          cp -R src/app/shared/generated-api/. "$generated_dir/"
+          npm --prefix "$generated_dir" install --ignore-scripts --package-lock=false
+          npm --prefix "$generated_dir" run build
       - name: Reject Prettier
         run: test ! -e .prettierrc && ! npm ls prettier --depth=0
       - run: npm run check

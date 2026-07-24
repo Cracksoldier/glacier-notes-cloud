@@ -1,4 +1,4 @@
-# @glacier-notes/cloud-api@1.0.0
+# @glacier-notes/cloud-api@0.1.0
 
 Canonical contract for Glacier Notes Cloud. Operations are added before their implementing milestone. UUIDs use RFC 4122 form and timestamps are ISO-8601 UTC. 
 
@@ -24,7 +24,7 @@ Navigate to the folder of your consuming project and run one of next commands.
 _published:_
 
 ```console
-npm install @glacier-notes/cloud-api@1.0.0 --save
+npm install @glacier-notes/cloud-api@0.1.0 --save
 ```
 
 _without publishing (not recommended):_

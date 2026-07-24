@@ -1,59 +1,42 @@
-# Frontend
+# Glacier Notes Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.7.
+The Angular application consumes the generated client in
+`src/app/shared/generated-api`. Change the canonical OpenAPI document first and regenerate from the
+repository root; never edit generated files directly.
 
-## Development server
+## Development
 
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Install the locked dependency tree and start the proxied development server:
 
 ```bash
-ng generate component component-name
+npm ci
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Open `http://localhost:4200/`. The backend must be available through the development proxy described
+in the root setup guide.
+
+## Quality Gates
 
 ```bash
-ng generate --help
+npm run check
+npm run build:production
+npm run test:ci
+npm run test:repository
 ```
 
-## Building
+Biome is the only formatter and general-purpose frontend linter. Apply safe formatting and lint
+fixes with `npm run check:write`.
 
-To build the project run:
+## Browser Tests
+
+Run Playwright against a configured Glacier Notes deployment:
 
 ```bash
-ng build
+GLACIER_E2E_BASE_URL=http://127.0.0.1:8080 \
+GLACIER_E2E_USERNAME=member \
+GLACIER_E2E_PASSWORD=development-only-password \
+npm run test:e2e
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+See the root `README.md` for Docker Compose startup, test-account preparation, and IntelliJ setup.

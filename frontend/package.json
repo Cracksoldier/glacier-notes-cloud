@@ -14,7 +14,8 @@
     "check:write": "biome check --write .",
     "build:production": "ng build --configuration production",
     "test:ci": "ng test --watch=false",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:repository": "node scripts/repository-contracts.test.mjs"
   },
   "private": true,
   "packageManager": "npm@11.12.1",

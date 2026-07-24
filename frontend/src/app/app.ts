@@ -5,6 +5,7 @@ import { filter } from 'rxjs';
 import { AuthStore } from './core/auth.store';
 import { I18nService } from './core/i18n.service';
 import { PreferencesService } from './core/preferences.service';
+import { ProblemService } from './core/problem.service';
 import { SetupComponent } from './setup/setup.component';
 import { SetupService } from './shared/generated-api/api/setup.service';
 
@@ -22,9 +23,11 @@ export class App {
   protected readonly auth = inject(AuthStore);
   protected readonly i18n = inject(I18nService);
   private readonly preferences = inject(PreferencesService);
+  private readonly problems = inject(ProblemService);
 
   protected readonly applicationState = signal<ApplicationState>('loading');
   protected readonly notesActive = signal(false);
+  protected readonly setupError = signal<string | null>(null);
 
   constructor() {
     this.notesActive.set(this.router.url.startsWith('/notes'));
@@ -41,6 +44,7 @@ export class App {
   }
 
   protected retry(): void {
+    this.setupError.set(null);
     this.applicationState.set('loading');
     this.loadSetupStatus();
   }
@@ -72,7 +76,10 @@ export class App {
           }
         });
       },
-      error: () => this.applicationState.set('error'),
+      error: (error) => {
+        this.setupError.set(this.problems.message(error));
+        this.applicationState.set('error');
+      },
     });
   }
 

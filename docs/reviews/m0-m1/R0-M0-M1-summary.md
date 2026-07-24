@@ -74,3 +74,21 @@ Revalidated on 2026-07-24 against base `c28f701`.
 
 Implementation, regression-first, full-suite, deployment, and finished-diff review evidence is in
 the [Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).
+
+## Batch 6 Remediation Update
+
+Revalidated on 2026-07-24 against base `1efb805`.
+
+| Original finding | Final status |
+|---|---|
+| Both generated `git_push.sh` findings | **Resolved.** The generator cleans stale output and an explicit supporting-file allowlist omits the publisher. |
+| Exploded arrays are not repeated by `query.params.ts#toString` | **Resolved.** The canonical template preserves repeated keys and covers scalar and array record shapes. |
+| Generated package tooling ranges are incompatible | **Resolved.** Angular 22-compatible TypeScript, ng-packagr, and RxJS ranges are generated and independently compiled in CI. |
+| Historical startup error drops safe detail and correlation ID | **Resolved.** The current setup-status failure maps and displays both safe detail and reference. |
+| Contributor path, browser title, and frontend README are stale | **Resolved.** Repository-facing metadata now names the correct path, product, and supported commands. |
+| TSV separator is spaces | **Resolved.** The canonical generator template emits a tab. |
+| Generated repository URL is a placeholder | **Resolved.** Maven generator metadata supplies the repository coordinates. |
+| Generated package omits `@angular/common` peer | **Resolved.** The package template includes matching Angular common/core peers. |
+
+Regression-first, full-suite, deployment, and one-pass finished-diff review evidence is in the
+[Batch 6 record](../remediation/batch-6/B6-GENERATED-FOUNDATION-summary.md).
