@@ -152,3 +152,14 @@ All four confirmed R5 findings remain relevant; the one false positive remains r
 4. Fix modal focus behavior and stable upload identities with keyboard and overlapping-upload tests.
 5. Add backend-specific failure injection, body-boundary, cleanup-starvation, and concurrency tests,
    then retain the unresolved R0–R5 Major groups in the remediation backlog.
+
+## Batch 4 Remediation Update
+
+Revalidated on 2026-07-24 against base `c28f701`.
+
+| Original finding | Final status |
+|---|---|
+| Image-setting audit metadata is misclassified | **Resolved.** Instance-settings changes now use the canonical `instance-settings` audit area, with resource-level regression coverage. |
+
+Implementation and full-suite evidence is in the
+[Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).

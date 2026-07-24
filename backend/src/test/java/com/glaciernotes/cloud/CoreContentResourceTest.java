@@ -128,6 +128,27 @@ class CoreContentResourceTest {
     }
 
     @Test
+    void rejectsNoteBodiesAndChecklistsBeyondTheCanonicalContractLimits() {
+        Session alice = login("alice");
+        String oversizedContent = "x".repeat(8 * 1024 * 1024 + 1);
+        write(alice).body("""
+            {"noteType":"TEXT","title":"Oversized","content":"%s"}
+            """.formatted(oversizedContent)).post("/api/v1/notes").then()
+            .statusCode(400);
+
+        StringBuilder checklist = new StringBuilder("[");
+        for (int index = 0; index < 1_001; index++) {
+            if (index > 0) checklist.append(',');
+            checklist.append("{\"text\":\"Item ").append(index).append("\",\"checked\":false}");
+        }
+        checklist.append(']');
+        write(alice).body("""
+            {"noteType":"CHECKLIST","title":"Oversized","content":"","checklistItems":%s}
+            """.formatted(checklist)).post("/api/v1/notes").then()
+            .statusCode(400);
+    }
+
+    @Test
     void supportsLabelsChecklistReplacementFilteringPaginationAndAdminIsolation() throws SQLException {
         Session alice = login("alice");
         Session bob = login("bob");

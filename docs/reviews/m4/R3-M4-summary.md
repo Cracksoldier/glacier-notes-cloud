@@ -106,3 +106,14 @@ remain rejected.
 3. Mask lifecycle bearer-token fields and make reset submission single-flight.
 4. Add focused lifecycle/admin tests and correct the canonical username constraints.
 5. Continue tracking the unresolved R0–R2 security, ownership, and contract groups separately.
+
+## Batch 4 Remediation Update
+
+Revalidated on 2026-07-24 against base `c28f701`.
+
+| Original finding | Final status |
+|---|---|
+| Admin-update and invitation usernames omit the canonical pattern | **Resolved.** Both request schemas now use the same accepted-character pattern as identity normalization and invitation acceptance. |
+
+Contract regeneration and boundary-test evidence is in the
+[Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).

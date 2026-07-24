@@ -67,3 +67,16 @@ limits rather than one permissive global cap. R6's four false positives remain r
 4. Correct or narrow the checklist trigger's `note_id` update behavior and test both affected notes.
 5. Keep the unresolved Major groups from R0–R6 in the remediation backlog; in particular, do not
    let M8 search pagination obscure the existing stale-`loadMore()` race.
+
+## Batch 4 Remediation Update
+
+Revalidated on 2026-07-24 against base `c28f701`.
+
+| Original finding | Final status |
+|---|---|
+| Legacy note-version hashes remain nullable | **Resolved.** V11 deterministically backfills legacy hashes and enforces `NOT NULL`; an isolated V10-to-V11 migration test preserves existing history. |
+| Checklist relocation refreshes only the new note | **Resolved.** The trigger refreshes both old and new note keys, and the behavioral test proves the exact two resulting search documents. |
+| Nullable latest-hash stream row | **Resolved with the migration concern.** The database invariant excludes null hash rows. |
+
+Migration and PostgreSQL behavior evidence is in the
+[Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).

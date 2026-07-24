@@ -85,3 +85,15 @@ the management-bind finding remains a false positive in the documented deploymen
 3. Centralize strict secret validation and retain the M2 problem-mapper work.
 4. Add the small UI/configuration regressions and record executed verification in
    `test-results.md`.
+
+## Batch 4 Remediation Update
+
+Revalidated on 2026-07-24 against base `c28f701`.
+
+| Original finding | Final status |
+|---|---|
+| Successful session responses omit the correlation header | **Resolved.** The canonical successful response definitions now declare `X-Correlation-ID`. |
+| Malformed public URL produces an unclear exception | **Resolved.** URI parsing failures now become explicit configuration `IllegalStateException`s. |
+
+Implementation and verification evidence is in the
+[Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).

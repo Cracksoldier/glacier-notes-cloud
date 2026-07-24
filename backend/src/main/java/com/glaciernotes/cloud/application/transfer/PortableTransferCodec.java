@@ -1,20 +1,23 @@
 package com.glaciernotes.cloud.application.transfer;
 
+import com.fasterxml.jackson.core.Base64Variants;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.Base64Variants;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.glaciernotes.cloud.application.port.BinaryAssetStorage;
 import com.glaciernotes.cloud.configuration.GlacierConfiguration;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -45,12 +48,20 @@ public class PortableTransferCodec {
     private final BinaryAssetStorage storage;
     private final GlacierConfiguration.Transfer limits;
 
+    @Inject
     public PortableTransferCodec(ObjectMapper source, DataSource dataSource,
                                  BinaryAssetStorage storage, GlacierConfiguration configuration) {
-        this.dataSource = dataSource; this.storage = storage; this.limits = configuration.transfer();
+        this(source, dataSource, storage, configuration.transfer());
+    }
+
+    PortableTransferCodec(ObjectMapper source, DataSource dataSource,
+                          BinaryAssetStorage storage, GlacierConfiguration.Transfer limits) {
+        this.dataSource = dataSource; this.storage = storage; this.limits = limits;
+        encodedBase64Limit(limits.maximumImageBytes());
         JsonFactory factory = JsonFactory.builder().streamReadConstraints(StreamReadConstraints.builder()
             .maxNestingDepth(limits.maximumJsonDepth())
-            .maxStringLength(limits.maximumStringLength()).build()).build();
+            .maxStringLength(limits.maximumStringLength())
+            .build()).build();
         this.mapper = new ObjectMapper(factory);
     }
 
@@ -61,7 +72,7 @@ public class PortableTransferCodec {
         var checklistItems = new HashSet<UUID>(); var references = new ArrayList<References>();
         long[] decoded = {0}; long[] notebookCount = {0}; long[] noteCount = {0};
         long[] labelCount = {0}; long[] imageCount = {0}; long[] checklistCount = {0};
-        Header header = read(input, (field, value) -> {
+        Header header = read(input, (field, value, decodedImage) -> {
             cancellation.check();
             switch (field) {
                 case "notebooks" -> {
@@ -142,10 +153,11 @@ public class PortableTransferCodec {
                     String mime = text(node, "mimeType", true, 64, "image", errors);
                     if (mime != null && !IMAGE_TYPES.contains(mime)) error(errors, "image: unsupported MIME type");
                     text(node, "fileName", false, 512, "image", errors);
-                    String base64 = text(node, "base64", true, 14_000_000, "image", errors);
-                    long bytes = decodedLength(base64);
-                    if (bytes < 0 || bytes > limits.maximumImageBytes()) error(errors, "image: invalid or oversized base64 data");
-                    else decoded[0] += bytes;
+                    if (decodedImage == null || decodedImage.content() == null || decodedImage.bytes() == 0) {
+                        error(errors, "image: base64 is required");
+                    } else {
+                        decoded[0] += decodedImage.bytes();
+                    }
                 }
                 default -> { }
             }
@@ -195,7 +207,18 @@ public class PortableTransferCodec {
                             throw new FormatException(field + " must be an array.");
                         }
                         while (parser.nextToken() != JsonToken.END_ARRAY) {
-                            consumer.accept(field, mapper.readTree(parser));
+                            if ("images".equals(field)) {
+                                DecodedImage image = readImage(parser);
+                                try {
+                                    consumer.accept(field, image.metadata(), image);
+                                } finally {
+                                    if (image.content() != null) {
+                                        Files.deleteIfExists(image.content());
+                                    }
+                                }
+                            } else {
+                                consumer.accept(field, mapper.readTree(parser), null);
+                            }
                         }
                     }
                     default -> parser.skipChildren();
@@ -209,7 +232,66 @@ public class PortableTransferCodec {
     }
 
     public void forEach(Path input, String field, Consumer<JsonNode> consumer) throws IOException {
-        read(input, (name, value) -> { if (name.equals(field)) consumer.accept(value); });
+        read(input, (name, value, image) -> { if (name.equals(field)) consumer.accept(value); });
+    }
+
+    public void forEachImage(Path input, Consumer<DecodedImage> consumer) throws IOException {
+        read(input, (name, value, image) -> {
+            if ("images".equals(name)) {
+                consumer.accept(image);
+            }
+        });
+    }
+
+    private DecodedImage readImage(JsonParser parser) throws IOException {
+        if (parser.currentToken() != JsonToken.START_OBJECT) {
+            throw new FormatException("image must be an object.");
+        }
+        ObjectNode metadata = mapper.createObjectNode();
+        Path content = null;
+        long bytes = -1;
+        try {
+            while (parser.nextToken() != JsonToken.END_OBJECT) {
+                if (parser.currentToken() != JsonToken.FIELD_NAME) {
+                    throw new FormatException("image fields are malformed.");
+                }
+                String field = parser.currentName();
+                JsonToken token = parser.nextToken();
+                if ("base64".equals(field)) {
+                    if (content != null) {
+                        throw new FormatException("image: base64 must occur exactly once.");
+                    }
+                    if (token != JsonToken.VALUE_STRING) {
+                        throw new FormatException("image: base64 must be a string.");
+                    }
+                    content = Files.createTempFile("glacier-import-image-", ".bin");
+                    try (var output = new LimitedOutputStream(
+                        Files.newOutputStream(content), limits.maximumImageBytes()
+                    )) {
+                        parser.readBinaryValue(Base64Variants.MIME_NO_LINEFEEDS, output);
+                        bytes = output.count();
+                    } catch (IOException | IllegalArgumentException invalid) {
+                        throw new FormatException(
+                            "image: base64 is invalid or exceeds the image limit.", invalid
+                        );
+                    }
+                } else if (Set.of("id", "mimeType", "fileName").contains(field)) {
+                    metadata.set(field, mapper.readTree(parser));
+                } else {
+                    parser.skipChildren();
+                }
+            }
+            return new DecodedImage(metadata, content, bytes);
+        } catch (IOException | RuntimeException failure) {
+            if (content != null) {
+                try {
+                    Files.deleteIfExists(content);
+                } catch (IOException cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            throw failure;
+        }
     }
 
     private void parseScope(JsonNode value, Header header) {
@@ -369,11 +451,22 @@ public class PortableTransferCodec {
         return result;
     }
     private void duplicate(Set<UUID> values, UUID id, String type, List<String> errors) { if (id != null && !values.add(id)) error(errors, type + ": duplicate id"); }
-    private long decodedLength(String value) {
-        if (value == null || value.isEmpty() || value.length() % 4 != 0) return -1;
-        int padding = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
-        for (int i = 0; i < value.length() - padding; i++) { char c = value.charAt(i); if (!(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '+' || c == '/')) return -1; }
-        return (long) value.length() / 4 * 3 - padding;
+    static int encodedBase64Limit(long maximumBytes) {
+        if (maximumBytes < 0) {
+            throw new IllegalStateException("The maximum image size must not be negative");
+        }
+        final long encoded;
+        try {
+            encoded = Math.multiplyExact(Math.addExact(maximumBytes, 2) / 3, 4);
+        } catch (ArithmeticException overflow) {
+            throw new IllegalStateException(
+                "The maximum encoded image size exceeds parser capacity", overflow
+            );
+        }
+        if (encoded > Integer.MAX_VALUE) {
+            throw new IllegalStateException("The maximum encoded image size exceeds parser capacity");
+        }
+        return Math.toIntExact(encoded);
     }
     private void requireLimit(long value, long maximum, String name, List<String> errors) { if (value > maximum) error(errors, name + " exceed the import limit"); }
     private void error(List<String> errors, String value) { if (errors.size() < 100) errors.add(value); }
@@ -381,10 +474,53 @@ public class PortableTransferCodec {
     public interface Cancellation { void check(); }
     public static final class FormatException extends IOException {
         public FormatException(String message) { super(message); }
+        public FormatException(String message, Throwable cause) { super(message, cause); }
     }
-    private interface FieldConsumer { void accept(String field, JsonNode node); }
+    private interface FieldConsumer {
+        void accept(String field, JsonNode node, DecodedImage image) throws IOException;
+    }
     private interface RowConsumer { void accept(ResultSet row) throws SQLException, IOException; }
+    private static final class LimitedOutputStream extends OutputStream {
+        private final OutputStream delegate;
+        private final long maximum;
+        private long count;
+
+        private LimitedOutputStream(OutputStream delegate, long maximum) {
+            this.delegate = delegate;
+            this.maximum = maximum;
+        }
+
+        @Override
+        public void write(int value) throws IOException {
+            requireCapacity(1);
+            delegate.write(value);
+            count++;
+        }
+
+        @Override
+        public void write(byte[] values, int offset, int length) throws IOException {
+            requireCapacity(length);
+            delegate.write(values, offset, length);
+            count += length;
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
+
+        private long count() {
+            return count;
+        }
+
+        private void requireCapacity(int additional) throws IOException {
+            if (additional < 0 || count > maximum - additional) {
+                throw new IOException("Decoded image exceeds the configured limit.");
+            }
+        }
+    }
     private record References(UUID note, UUID notebook, Set<UUID> labels, Set<UUID> images) {}
+    public record DecodedImage(JsonNode metadata, Path content, long bytes) {}
     public static final class Header { String format; int schemaVersion = -1; Instant exportedAt; String scopeKind; UUID scopeId; UUID defaultNotebookId; }
     public record Inspection(Map<String, Long> counts, long decodedImageBytes, List<String> errors,
                              Set<UUID> notebookIds, Set<UUID> noteIds, Set<UUID> labelIds,

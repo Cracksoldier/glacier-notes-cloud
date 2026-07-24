@@ -63,7 +63,12 @@ public class CookieManager {
         var configured = settings.publicBaseUrl() == null || settings.publicBaseUrl().isBlank()
             ? configuredPublicBaseUrl
             : settings.publicBaseUrl();
-        var scheme = URI.create(configured).getScheme();
+        final String scheme;
+        try {
+            scheme = URI.create(configured).getScheme();
+        } catch (IllegalArgumentException invalid) {
+            throw new IllegalStateException("The public base URL must be a valid HTTP or HTTPS URI", invalid);
+        }
         if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
             throw new IllegalStateException("The public base URL must use HTTP or HTTPS");
         }

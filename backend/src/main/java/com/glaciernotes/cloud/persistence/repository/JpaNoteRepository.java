@@ -48,8 +48,9 @@ public class JpaNoteRepository implements NoteRepository {
 
     @Override
     @Transactional
-    public Note save(Note note) {
-        var key = new OwnedEntityId(note.ownerId().value(), note.id());
+    public Note save(OwnerId ownerId, Note note) {
+        requireOwner(ownerId, note.ownerId());
+        var key = new OwnedEntityId(ownerId.value(), note.id());
         var entity = entityManager.find(NoteEntity.class, key);
         if (entity == null) {
             entity = new NoteEntity(note);
@@ -60,5 +61,10 @@ public class JpaNoteRepository implements NoteRepository {
         entityManager.flush();
         return entity.toDomain();
     }
-}
 
+    private static void requireOwner(OwnerId scope, OwnerId entityOwner) {
+        if (!scope.equals(entityOwner)) {
+            throw new IllegalArgumentException("Owner scope does not match entity owner");
+        }
+    }
+}

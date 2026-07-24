@@ -69,3 +69,4 @@ dated runs; do not replace an earlier failure with a later success.
 | Batch | Scope | Base | Result | Evidence |
 |---|---|---|---|---|
 | Batch 3 | Frontend asynchronous state and lifecycle findings from R2, R3, R5, R7, R8, and R9 | `b5bbb0a` | 10 original concerns resolved; 6 valid new comments addressed; 1 false positive | [Summary](remediation/batch-3/B3-FRONTEND-ASYNC-summary.md), [raw JSONL](remediation/batch-3/B3-FRONTEND-ASYNC.jsonl), [test results](remediation/batch-3/test-results.md) |
+| Batch 4 | Persistence ownership, schema integrity, pagination, and API/transfer contracts from R0, R2, R3, R4, R6, R7, and R8 | `c28f701` | 14 original concerns resolved; 4 valid new comments addressed | [Summary](remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md), [raw JSONL](remediation/batch-4/B4-PERSISTENCE-CONTRACTS.jsonl), [test results](remediation/batch-4/test-results.md) |

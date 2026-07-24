@@ -1,6 +1,12 @@
 package com.glaciernotes.cloud;
 
 import com.glaciernotes.cloud.application.port.PasswordVerifier;
+import com.glaciernotes.cloud.api.ExportsResource;
+import com.glaciernotes.cloud.api.TransfersResource;
+import com.glaciernotes.cloud.generated.model.ExportRequest;
+import com.glaciernotes.cloud.generated.model.ImportApplyRequest;
+import com.glaciernotes.cloud.generated.model.TransferJob;
+import com.glaciernotes.cloud.persistence.entity.TransferJobEntity;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -22,7 +28,9 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -142,6 +150,38 @@ class TransferResourceTest {
         poll(admin, "/api/v1/admin/imports/" + id, "SUCCEEDED");
         assertTrue(count("select count(*) from notes where owner_id=?", ALICE) == 1);
         assertTrue(count("select count(*) from audit_events where actor_user_id=? and event_type='ADMIN_IMPORT_APPLIED'", ADMIN) == 1);
+    }
+
+    @Test
+    void transferFactoriesAndResourcesEnforceTheCanonicalContract() throws Exception {
+        Instant now = Instant.parse("2026-07-24T12:00:00Z");
+        UUID id = UUID.randomUUID();
+        UUID user = UUID.randomUUID();
+
+        assertThrows(IllegalArgumentException.class, () ->
+            TransferJobEntity.export(id, user, "ALL", UUID.randomUUID(), "/tmp/export", now, now.plusSeconds(60))
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+            TransferJobEntity.export(id, user, "NOTE", null, "/tmp/export", now, now.plusSeconds(60))
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+            TransferJobEntity.export(id, user, null, null, "/tmp/export", now, now.plusSeconds(60))
+        );
+        assertEquals(
+            TransferJob.class,
+            ExportsResource.class.getMethod("create", ExportRequest.class).getReturnType()
+        );
+        assertEquals(TransferJob.class, ExportsResource.class.getMethod("get", UUID.class).getReturnType());
+        assertEquals(
+            TransferJob.class,
+            TransfersResource.class.getMethod("createImport", org.jboss.resteasy.reactive.multipart.FileUpload.class)
+                .getReturnType()
+        );
+        assertEquals(TransferJob.class, TransfersResource.class.getMethod("imported", UUID.class).getReturnType());
+        assertEquals(
+            TransferJob.class,
+            TransfersResource.class.getMethod("apply", UUID.class, ImportApplyRequest.class).getReturnType()
+        );
     }
 
     private Response poll(Session session, String endpoint, String expected) throws InterruptedException {

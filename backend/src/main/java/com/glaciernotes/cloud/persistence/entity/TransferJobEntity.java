@@ -46,6 +46,12 @@ public class TransferJobEntity {
 
     public static TransferJobEntity export(UUID id, UUID userId, String scope, UUID scopeId,
                                            String path, Instant now, Instant expiresAt) {
+        if (scope == null
+            || !List.of("ALL", "NOTEBOOK", "NOTE").contains(scope)
+            || ("ALL".equals(scope) && scopeId != null)
+            || (!"ALL".equals(scope) && scopeId == null)) {
+            throw new IllegalArgumentException("Export scope and resource id do not match");
+        }
         var job = base(id, "EXPORT", "GENERATE", userId, userId, false, path, now, expiresAt);
         job.scopeKind = scope;
         job.scopeEntityId = scopeId;

@@ -11,6 +11,5 @@ public interface NotebookRepository {
 
     List<Notebook> list(OwnerId ownerId);
 
-    Notebook save(Notebook notebook);
+    Notebook save(OwnerId ownerId, Notebook notebook);
 }
-

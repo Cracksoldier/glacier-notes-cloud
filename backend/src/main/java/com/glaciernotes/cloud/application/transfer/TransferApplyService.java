@@ -14,12 +14,10 @@ import jakarta.transaction.Transactional;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -66,8 +64,8 @@ public class TransferApplyService {
             codec.forEach(input, "notebooks", node -> notebook(owner, node, mapping, exactRestore,
                 inspection.header().defaultNotebookId, cancellation));
             codec.forEach(input, "labels", node -> label(owner, node, mapping, cancellation));
-            codec.forEach(input, "images",
-                node -> image(jobId, owner, node, mapping, reservations, cancellation));
+            codec.forEachImage(input,
+                image -> image(jobId, owner, image, mapping, reservations, cancellation));
             codec.forEach(input, "notes", node -> note(owner, node, mapping, cancellation));
             long used = ((Number) em.createNativeQuery("select coalesce(sum(byte_size + coalesce(thumbnail_byte_size,0)),0) from image_assets where owner_id=:owner")
                 .setParameter("owner", owner).getSingleResult()).longValue();
@@ -111,70 +109,68 @@ public class TransferApplyService {
         clearTombstone(owner, "LABEL", id);
     }
 
-    private void image(UUID jobId, UUID owner, JsonNode node, IdMap map, List<UUID> reservations,
+    private void image(UUID jobId, UUID owner, PortableTransferCodec.DecodedImage image,
+                       IdMap map, List<UUID> reservations,
                        PortableTransferCodec.Cancellation cancel) {
+        JsonNode node = image.metadata();
         cancel.check(); UUID id = map.image(uuid(node, "id"));
         @SuppressWarnings("unchecked") List<Object[]> old = em.createNativeQuery(
                 "select storage_key,thumbnail_storage_key,storage_backend,byte_size,coalesce(thumbnail_byte_size,0) "
                     + "from image_assets where owner_id=:owner and id=:id")
             .setParameter("owner", owner).setParameter("id", id).getResultList();
-        Path decoded = null;
-        try {
-            decoded = Files.createTempFile("glacier-import-image-", ".bin");
-            Files.write(decoded, Base64.getDecoder().decode(node.path("base64").textValue()));
-            long maximum = ((Number) em.createNativeQuery("select maximum_image_bytes from instance_settings where singleton_key=1").getSingleResult()).longValue();
-            try (var processed = images.process(decoded, maximum)) {
-                @SuppressWarnings("unchecked") List<String> allowed = em.createNativeQuery(
-                    "select unnest(allowed_upload_types) from instance_settings where singleton_key=1").getResultList();
-                if (!allowed.contains(processed.sourceMimeType())) throw new IllegalStateException("An imported image type is disabled by the administrator.");
-                String prefix = "assets/" + id + "/import-" + jobId;
-                String main = prefix + "-image"; String thumb = prefix + "-thumbnail";
-                long oldBytes = old.isEmpty() ? 0
-                    : ((Number) old.getFirst()[3]).longValue() + ((Number) old.getFirst()[4]).longValue();
-                long newBytes = processed.byteSize() + processed.thumbnailByteSize();
-                UUID reservationId = UUID.nameUUIDFromBytes(
-                    ("binary-reservation:" + jobId + ":" + id).getBytes(StandardCharsets.UTF_8));
-                operations.reserveBinary(new OwnerId(owner), reservationId, jobId, storage.backend(),
-                    main, thumb, Math.max(0, newBytes - oldBytes));
-                reservations.add(reservationId);
-                storage.store(main, processed.main(), processed.byteSize(), processed.mimeType());
-                storage.store(thumb, processed.thumbnail(), processed.thumbnailByteSize(), processed.mimeType());
-                Instant now = clock.now();
-                em.createNativeQuery("""
-                    insert into image_assets(owner_id,id,mime_type,original_file_name,byte_size,width,height,
-                      content_hash,storage_backend,storage_key,thumbnail_mime_type,thumbnail_byte_size,
-                      thumbnail_width,thumbnail_height,thumbnail_storage_key,orphaned_at,created_at,updated_at,version)
-                    values (:owner,:id,:mime,:name,:bytes,:width,:height,:hash,:backend,:key,:thumbMime,
-                      :thumbBytes,:thumbWidth,:thumbHeight,:thumbKey,:now,:now,:now,0)
-                    on conflict(owner_id,id) do update set mime_type=excluded.mime_type,
-                      original_file_name=excluded.original_file_name,byte_size=excluded.byte_size,
-                      width=excluded.width,height=excluded.height,content_hash=excluded.content_hash,
-                      storage_backend=excluded.storage_backend,storage_key=excluded.storage_key,
-                      thumbnail_mime_type=excluded.thumbnail_mime_type,thumbnail_byte_size=excluded.thumbnail_byte_size,
-                      thumbnail_width=excluded.thumbnail_width,thumbnail_height=excluded.thumbnail_height,
-                      thumbnail_storage_key=excluded.thumbnail_storage_key,updated_at=excluded.updated_at,
-                      version=image_assets.version+1
-                    """).setParameter("owner", owner).setParameter("id", id).setParameter("mime", processed.mimeType())
-                    .setParameter("name", node.path("fileName").isTextual() ? node.path("fileName").textValue() : null)
-                    .setParameter("bytes", processed.byteSize()).setParameter("width", processed.width())
-                    .setParameter("height", processed.height()).setParameter("hash", processed.hash())
-                    .setParameter("backend", storage.backend()).setParameter("key", main)
-                    .setParameter("thumbMime", processed.mimeType()).setParameter("thumbBytes", processed.thumbnailByteSize())
-                    .setParameter("thumbWidth", processed.thumbnailWidth()).setParameter("thumbHeight", processed.thumbnailHeight())
-                    .setParameter("thumbKey", thumb).setParameter("now", now).executeUpdate();
-                if (!old.isEmpty()) {
-                    String oldMain = (String) old.getFirst()[0];
-                    String oldThumb = (String) old.getFirst()[1];
-                    String oldBackend = (String) old.getFirst()[2];
-                    if (!main.equals(oldMain) || !thumb.equals(oldThumb)) {
-                        operations.enqueueBinaryDelete(new OwnerId(owner), oldBackend, oldMain, oldThumb);
-                    }
+        long maximum = ((Number) em.createNativeQuery(
+            "select maximum_image_bytes from instance_settings where singleton_key=1"
+        ).getSingleResult()).longValue();
+        try (var processed = images.process(image.content(), maximum)) {
+            @SuppressWarnings("unchecked") List<String> allowed = em.createNativeQuery(
+                "select unnest(allowed_upload_types) from instance_settings where singleton_key=1").getResultList();
+            if (!allowed.contains(processed.sourceMimeType())) throw new IllegalStateException("An imported image type is disabled by the administrator.");
+            String prefix = "assets/" + id + "/import-" + jobId;
+            String main = prefix + "-image"; String thumb = prefix + "-thumbnail";
+            long oldBytes = old.isEmpty() ? 0
+                : ((Number) old.getFirst()[3]).longValue() + ((Number) old.getFirst()[4]).longValue();
+            long newBytes = processed.byteSize() + processed.thumbnailByteSize();
+            UUID reservationId = UUID.nameUUIDFromBytes(
+                ("binary-reservation:" + jobId + ":" + id).getBytes(StandardCharsets.UTF_8));
+            operations.reserveBinary(new OwnerId(owner), reservationId, jobId, storage.backend(),
+                main, thumb, Math.max(0, newBytes - oldBytes));
+            reservations.add(reservationId);
+            storage.store(main, processed.main(), processed.byteSize(), processed.mimeType());
+            storage.store(thumb, processed.thumbnail(), processed.thumbnailByteSize(), processed.mimeType());
+            Instant now = clock.now();
+            em.createNativeQuery("""
+                insert into image_assets(owner_id,id,mime_type,original_file_name,byte_size,width,height,
+                  content_hash,storage_backend,storage_key,thumbnail_mime_type,thumbnail_byte_size,
+                  thumbnail_width,thumbnail_height,thumbnail_storage_key,orphaned_at,created_at,updated_at,version)
+                values (:owner,:id,:mime,:name,:bytes,:width,:height,:hash,:backend,:key,:thumbMime,
+                  :thumbBytes,:thumbWidth,:thumbHeight,:thumbKey,:now,:now,:now,0)
+                on conflict(owner_id,id) do update set mime_type=excluded.mime_type,
+                  original_file_name=excluded.original_file_name,byte_size=excluded.byte_size,
+                  width=excluded.width,height=excluded.height,content_hash=excluded.content_hash,
+                  storage_backend=excluded.storage_backend,storage_key=excluded.storage_key,
+                  thumbnail_mime_type=excluded.thumbnail_mime_type,thumbnail_byte_size=excluded.thumbnail_byte_size,
+                  thumbnail_width=excluded.thumbnail_width,thumbnail_height=excluded.thumbnail_height,
+                  thumbnail_storage_key=excluded.thumbnail_storage_key,updated_at=excluded.updated_at,
+                  version=image_assets.version+1
+                """).setParameter("owner", owner).setParameter("id", id).setParameter("mime", processed.mimeType())
+                .setParameter("name", node.path("fileName").isTextual() ? node.path("fileName").textValue() : null)
+                .setParameter("bytes", processed.byteSize()).setParameter("width", processed.width())
+                .setParameter("height", processed.height()).setParameter("hash", processed.hash())
+                .setParameter("backend", storage.backend()).setParameter("key", main)
+                .setParameter("thumbMime", processed.mimeType()).setParameter("thumbBytes", processed.thumbnailByteSize())
+                .setParameter("thumbWidth", processed.thumbnailWidth()).setParameter("thumbHeight", processed.thumbnailHeight())
+                .setParameter("thumbKey", thumb).setParameter("now", now).executeUpdate();
+            if (!old.isEmpty()) {
+                String oldMain = (String) old.getFirst()[0];
+                String oldThumb = (String) old.getFirst()[1];
+                String oldBackend = (String) old.getFirst()[2];
+                if (!main.equals(oldMain) || !thumb.equals(oldThumb)) {
+                    operations.enqueueBinaryDelete(new OwnerId(owner), oldBackend, oldMain, oldThumb);
                 }
-                operations.completeReservation(reservationId);
-                clearTombstone(owner, "IMAGE_ASSET", id);
             }
-        } catch (IOException failure) { throw new IllegalStateException("Could not stage an imported image", failure); }
-        finally { if (decoded != null) try { Files.deleteIfExists(decoded); } catch (IOException ignored) {} }
+            operations.completeReservation(reservationId);
+            clearTombstone(owner, "IMAGE_ASSET", id);
+        }
     }
 
     private void note(UUID owner, JsonNode node, IdMap map, PortableTransferCodec.Cancellation cancel) {

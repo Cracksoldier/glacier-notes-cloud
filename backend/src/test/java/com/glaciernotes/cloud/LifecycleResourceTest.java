@@ -108,7 +108,7 @@ class LifecycleResourceTest {
     }
 
     @Test
-    void settingsEnforceDomainsAndLastAdministratorRule() {
+    void settingsEnforceDomainsAndLastAdministratorRule() throws SQLException {
         var admin = login("admin", PASSWORD);
         adminRequest(admin).body("""
             {"allowedEmailDomains":["EXAMPLE.ORG"],"invitationExpirationHours":48,
@@ -129,6 +129,17 @@ class LifecycleResourceTest {
         adminRequest(admin).body("{\"role\":\"USER\"}")
             .patch("/api/v1/admin/users/" + ADMIN_ID).then().statusCode(409)
             .body("errorCode", equalTo("LAST_ADMIN_REQUIRED"));
+
+        try (var connection = dataSource.getConnection();
+             var statement = connection.prepareStatement("""
+                 select metadata_json ->> 'area' from audit_events
+                 where event_type = 'INSTANCE_SETTINGS_CHANGED'
+                 order by occurred_at desc limit 1
+                 """);
+             var rows = statement.executeQuery()) {
+            rows.next();
+            assertEquals("instance-settings", rows.getString(1));
+        }
     }
 
     @Test

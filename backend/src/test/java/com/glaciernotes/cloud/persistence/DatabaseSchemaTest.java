@@ -5,12 +5,17 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -108,13 +113,162 @@ class DatabaseSchemaTest {
                 assertEquals(3, rows.getInt(1));
             }
             try (var statement = connection.prepareStatement("""
-                select count(*) from information_schema.columns
+                select is_nullable from information_schema.columns
                 where table_schema = 'public' and table_name = 'note_versions'
                   and column_name = 'content_hash'
                 """); var rows = statement.executeQuery()) {
                 assertTrue(rows.next());
-                assertEquals(1, rows.getInt(1));
+                assertEquals("NO", rows.getString(1));
             }
+        }
+    }
+
+    @Test
+    void checklistRelocationRefreshesBothAffectedSearchDocuments() throws SQLException {
+        UUID owner = UUID.randomUUID();
+        UUID firstNotebook = UUID.randomUUID();
+        UUID secondNotebook = UUID.randomUUID();
+        UUID firstNote = UUID.randomUUID();
+        UUID secondNote = UUID.randomUUID();
+        UUID item = UUID.randomUUID();
+        try (var connection = dataSource.getConnection()) {
+            try (var statement = connection.prepareStatement("""
+                insert into app_users(id,username,username_normalized,email,email_normalized,role,status)
+                values (?, ?, ?, ?, ?, 'USER', 'ACTIVE')
+                """)) {
+                statement.setObject(1, owner);
+                statement.setString(2, "schema-" + owner);
+                statement.setString(3, "schema-" + owner);
+                statement.setString(4, owner + "@example.test");
+                statement.setString(5, owner + "@example.test");
+                statement.executeUpdate();
+            }
+            try (var statement = connection.prepareStatement("""
+                insert into notebooks(owner_id,id,name,is_default,sort_order)
+                values (?,?,'First',true,0),(?,?,'Second',false,1)
+                """)) {
+                statement.setObject(1, owner);
+                statement.setObject(2, firstNotebook);
+                statement.setObject(3, owner);
+                statement.setObject(4, secondNotebook);
+                statement.executeUpdate();
+            }
+            try (var statement = connection.prepareStatement("""
+                insert into notes(owner_id,id,notebook_id,note_type,title,content)
+                values (?,?,?,'checklist','First',''),(?,?,?,'checklist','Second','')
+                """)) {
+                statement.setObject(1, owner);
+                statement.setObject(2, firstNote);
+                statement.setObject(3, firstNotebook);
+                statement.setObject(4, owner);
+                statement.setObject(5, secondNote);
+                statement.setObject(6, secondNotebook);
+                statement.executeUpdate();
+            }
+            try (var statement = connection.prepareStatement("""
+                insert into checklist_items(owner_id,id,note_id,text,sort_order)
+                values (?,?,?,'relocated phrase',0)
+                """)) {
+                statement.setObject(1, owner);
+                statement.setObject(2, item);
+                statement.setObject(3, firstNote);
+                statement.executeUpdate();
+            }
+            try (var statement = connection.prepareStatement("""
+                update checklist_items set note_id=? where owner_id=? and id=?
+                """)) {
+                statement.setObject(1, secondNote);
+                statement.setObject(2, owner);
+                statement.setObject(3, item);
+                statement.executeUpdate();
+            }
+            try (var statement = connection.prepareStatement("""
+                select id, checklist_search_text from notes where owner_id=? order by id
+                """)) {
+                statement.setObject(1, owner);
+                try (var rows = statement.executeQuery()) {
+                    var searchTextByNote = new HashMap<UUID, String>();
+                    while (rows.next()) {
+                        searchTextByNote.put(rows.getObject(1, UUID.class), rows.getString(2));
+                    }
+                    assertEquals(
+                        Map.of(firstNote, "", secondNote, "relocated phrase"),
+                        searchTextByNote
+                    );
+                }
+            } finally {
+                try (var statement = connection.prepareStatement("delete from notes where owner_id=?")) {
+                    statement.setObject(1, owner);
+                    statement.executeUpdate();
+                }
+                try (var statement = connection.prepareStatement("delete from app_users where id=?")) {
+                    statement.setObject(1, owner);
+                    statement.executeUpdate();
+                }
+            }
+        }
+    }
+
+    @Test
+    void transferScopeConstraintRejectsInvalidResourceCombinations() throws SQLException {
+        UUID owner = UUID.randomUUID();
+        try (var connection = dataSource.getConnection()) {
+            try (var statement = connection.prepareStatement("""
+                insert into app_users(id,username,username_normalized,email,email_normalized,role,status)
+                values (?, ?, ?, ?, ?, 'USER', 'ACTIVE')
+                """)) {
+                statement.setObject(1, owner);
+                statement.setString(2, "transfer-" + owner);
+                statement.setString(3, "transfer-" + owner);
+                statement.setString(4, owner + "@example.test");
+                statement.setString(5, owner + "@example.test");
+                statement.executeUpdate();
+            }
+            try {
+                insertExportJob(connection, owner, "ALL", null);
+                insertExportJob(connection, owner, "NOTEBOOK", UUID.randomUUID());
+                insertExportJob(connection, owner, "NOTE", UUID.randomUUID());
+
+                assertThrows(
+                    SQLException.class,
+                    () -> insertExportJob(connection, owner, "ALL", UUID.randomUUID())
+                );
+                assertThrows(
+                    SQLException.class,
+                    () -> insertExportJob(connection, owner, "NOTEBOOK", null)
+                );
+                assertThrows(
+                    SQLException.class,
+                    () -> insertExportJob(connection, owner, "NOTE", null)
+                );
+            } finally {
+                try (var statement = connection.prepareStatement(
+                    "delete from transfer_jobs where requested_by=?"
+                )) {
+                    statement.setObject(1, owner);
+                    statement.executeUpdate();
+                }
+                try (var statement = connection.prepareStatement("delete from app_users where id=?")) {
+                    statement.setObject(1, owner);
+                    statement.executeUpdate();
+                }
+            }
+        }
+    }
+
+    private void insertExportJob(Connection connection, UUID owner, String scope, UUID scopeId)
+        throws SQLException {
+        try (var statement = connection.prepareStatement("""
+            insert into transfer_jobs(
+              id,job_kind,phase,state,requested_by,target_user_id,scope_kind,scope_entity_id,expires_at
+            ) values (?,'EXPORT','GENERATE','QUEUED',?,?,?,?,current_timestamp + interval '1 hour')
+            """)) {
+            statement.setObject(1, UUID.randomUUID());
+            statement.setObject(2, owner);
+            statement.setObject(3, owner);
+            statement.setString(4, scope);
+            statement.setObject(5, scopeId);
+            statement.executeUpdate();
         }
     }
 

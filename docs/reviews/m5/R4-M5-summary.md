@@ -118,3 +118,15 @@ eleven distinct concerns. The one false positive remains rejected.
    secret validation, accurate problem mapping, and the admin-settings overwrite path.
 4. Track dormant generated-code and old-repository findings explicitly so reduced reachability is
    not mistaken for remediation.
+
+## Batch 4 Remediation Update
+
+Revalidated on 2026-07-24 against base `c28f701`.
+
+| Original finding | Final status |
+|---|---|
+| Per-ID note page loading | **Resolved.** Owner-scoped batch loading uses one follow-up query and restores ranked/page order; statement-count regression coverage proves two total statements. |
+| Unbounded note content and 10,000-item checklist payloads | **Resolved.** Note content is capped at 8 MiB and checklist input at 1,000 items in the canonical contract, with boundary tests and regenerated clients. |
+
+Implementation, query-count, and full-suite evidence is in the
+[Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).

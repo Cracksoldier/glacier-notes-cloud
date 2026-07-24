@@ -11,6 +11,5 @@ public interface NoteRepository {
 
     List<Note> listByNotebook(OwnerId ownerId, UUID notebookId, int limit);
 
-    Note save(Note note);
+    Note save(OwnerId ownerId, Note note);
 }
-

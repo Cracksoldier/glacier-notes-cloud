@@ -5,7 +5,6 @@ import com.glaciernotes.cloud.generated.model.AdminStatus;
 import com.glaciernotes.cloud.application.lifecycle.LifecycleService;
 import com.glaciernotes.cloud.application.port.BinaryAssetStorage;
 import com.glaciernotes.cloud.application.transfer.TransferModels.ApplyCommand;
-import com.glaciernotes.cloud.application.transfer.TransferModels.JobView;
 import com.glaciernotes.cloud.application.transfer.TransferService;
 import com.glaciernotes.cloud.generated.model.*;
 import com.glaciernotes.cloud.security.CookieManager;
@@ -132,38 +131,25 @@ public class AdministrationResource implements AdministrationApi {
 
     @Override
     public TransferJob createAdminImport(UUID target, InputStream file) {
-        return transferJob(transfers.createImport(actor(), target, true, file, "import.glacier.json"));
+        return TransferJobMapper.toModel(
+            transfers.createImport(actor(), target, true, file, "import.glacier.json")
+        );
     }
 
     @Override
     public TransferJob getAdminImport(UUID id) {
-        return transferJob(transfers.get(id, actor(), "IMPORT", true));
+        return TransferJobMapper.toModel(transfers.get(id, actor(), "IMPORT", true));
     }
 
     @Override
     public TransferJob applyAdminImport(UUID id, ImportApplyRequest request) {
         String strategy = request == null || request.getStrategy() == null ? null : request.getStrategy().toString();
-        return transferJob(transfers.apply(id, actor(), true, new ApplyCommand(strategy)));
+        return TransferJobMapper.toModel(transfers.apply(id, actor(), true, new ApplyCommand(strategy)));
     }
 
     @Override
     public void cancelAdminImport(UUID id) {
         transfers.cancel(id, actor(), "IMPORT", true);
-    }
-
-    private TransferJob transferJob(JobView view) {
-        TransferCounts counts = view.counts() == null ? null : new TransferCounts(
-            view.counts().notebooks(), view.counts().notes(), view.counts().labels(),
-            view.counts().images(), view.counts().checklistItems());
-        return new TransferJob(view.id(), TransferJob.KindEnum.fromValue(view.kind()),
-            TransferJob.StateEnum.fromValue(view.state()), view.createdAt(), view.expiresAt())
-            .phase(view.phase() == null ? null : TransferJob.PhaseEnum.fromValue(view.phase()))
-            .counts(counts)
-            .hasConflicts(view.hasConflicts())
-            .quotaImpactBytes(view.quotaImpactBytes())
-            .errors(view.errors())
-            .downloadUrl(view.downloadUrl())
-            .completedAt(view.completedAt());
     }
 
     private UUID actor() { return UUID.fromString(identity.getPrincipal().getName()); }

@@ -147,12 +147,7 @@ public class CoreContentRepository {
         Query query = entityManager.createNativeQuery(sql.toString()).setMaxResults(limit);
         parameters.forEach(query::setParameter);
         List<?> ids = query.getResultList();
-        List<NoteEntity> result = new ArrayList<>(ids.size());
-        for (Object id : ids) {
-            result.add(entityManager.find(NoteEntity.class,
-                new OwnedEntityId(ownerId.value(), (UUID) id)));
-        }
-        return result;
+        return orderedNotes(ownerId, ids.stream().map(UUID.class::cast).toList());
     }
 
     public List<SearchHit> searchNotes(OwnerId ownerId, String queryText, NoteQuery filter,
@@ -198,13 +193,36 @@ public class CoreContentRepository {
         Query query = entityManager.createNativeQuery(sql.toString()).setMaxResults(limit);
         parameters.forEach(query::setParameter);
         List<?> rows = query.getResultList();
+        List<UUID> ids = rows.stream().map(value -> (UUID) ((Object[]) value)[0]).toList();
+        Map<UUID, NoteEntity> notes = notesById(ownerId, ids);
         List<SearchHit> result = new ArrayList<>(rows.size());
         for (Object value : rows) {
             Object[] row = (Object[]) value;
             UUID id = (UUID) row[0];
-            result.add(new SearchHit(entityManager.find(NoteEntity.class,
-                new OwnedEntityId(ownerId.value(), id)), ((Number) row[2]).floatValue()));
+            NoteEntity note = notes.get(id);
+            if (note != null) {
+                result.add(new SearchHit(note, ((Number) row[2]).floatValue()));
+            }
         }
+        return result;
+    }
+
+    private List<NoteEntity> orderedNotes(OwnerId ownerId, List<UUID> ids) {
+        Map<UUID, NoteEntity> notes = notesById(ownerId, ids);
+        return ids.stream().map(notes::get).filter(java.util.Objects::nonNull).toList();
+    }
+
+    private Map<UUID, NoteEntity> notesById(OwnerId ownerId, List<UUID> ids) {
+        if (ids.isEmpty()) return Map.of();
+        Map<UUID, NoteEntity> result = new java.util.HashMap<>();
+        entityManager.createQuery(
+                "select n from NoteEntity n where n.key.ownerId = :owner and n.key.id in :ids",
+                NoteEntity.class
+            )
+            .setParameter("owner", ownerId.value())
+            .setParameter("ids", ids)
+            .getResultList()
+            .forEach(note -> result.put(note.id(), note));
         return result;
     }
 

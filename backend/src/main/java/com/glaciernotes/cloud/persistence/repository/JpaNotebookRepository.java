@@ -42,8 +42,9 @@ public class JpaNotebookRepository implements NotebookRepository {
 
     @Override
     @Transactional
-    public Notebook save(Notebook notebook) {
-        var key = new OwnedEntityId(notebook.ownerId().value(), notebook.id());
+    public Notebook save(OwnerId ownerId, Notebook notebook) {
+        requireOwner(ownerId, notebook.ownerId());
+        var key = new OwnedEntityId(ownerId.value(), notebook.id());
         var entity = entityManager.find(NotebookEntity.class, key);
         if (entity == null) {
             entity = new NotebookEntity(notebook);
@@ -54,5 +55,10 @@ public class JpaNotebookRepository implements NotebookRepository {
         entityManager.flush();
         return entity.toDomain();
     }
-}
 
+    private static void requireOwner(OwnerId scope, OwnerId entityOwner) {
+        if (!scope.equals(entityOwner)) {
+            throw new IllegalArgumentException("Owner scope does not match entity owner");
+        }
+    }
+}

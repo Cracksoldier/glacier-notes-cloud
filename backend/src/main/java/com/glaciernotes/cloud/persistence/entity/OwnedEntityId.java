@@ -34,7 +34,7 @@ public class OwnedEntityId implements Serializable {
     @Override
     public boolean equals(Object other) {
         return this == other || other instanceof OwnedEntityId that
-            && ownerId.equals(that.ownerId) && id.equals(that.id);
+            && Objects.equals(ownerId, that.ownerId) && Objects.equals(id, that.id);
     }
 
     @Override
@@ -42,4 +42,3 @@ public class OwnedEntityId implements Serializable {
         return Objects.hash(ownerId, id);
     }
 }
-

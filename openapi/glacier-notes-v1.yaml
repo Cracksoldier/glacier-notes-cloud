@@ -135,6 +135,9 @@ paths:
       responses:
         '204':
           description: Session revoked
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
         '401':
           $ref: '#/components/responses/ProblemResponse'
         '403':
@@ -149,6 +152,9 @@ paths:
       responses:
         '200':
           description: Current session
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
           content:
             application/json:
               schema:
@@ -396,6 +402,9 @@ paths:
       responses:
         '200':
           description: Active sessions
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
           content:
             application/json:
               schema:
@@ -416,6 +425,9 @@ paths:
       responses:
         '204':
           description: Other sessions revoked
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
         '401':
           $ref: '#/components/responses/ProblemResponse'
         '403':
@@ -440,6 +452,9 @@ paths:
       responses:
         '204':
           description: Session revoked
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
         '401':
           $ref: '#/components/responses/ProblemResponse'
         '403':
@@ -1661,6 +1676,20 @@ components:
       properties:
         scope: { type: string, enum: [ALL, NOTEBOOK, NOTE] }
         resourceId: { type: string, format: uuid }
+      allOf:
+        - if:
+            properties:
+              scope: { const: ALL }
+            required: [scope]
+          then:
+            not:
+              required: [resourceId]
+        - if:
+            properties:
+              scope: { enum: [NOTEBOOK, NOTE] }
+            required: [scope]
+          then:
+            required: [resourceId]
     ImportApplyRequest:
       type: object
       required: [strategy]
@@ -1951,7 +1980,7 @@ components:
     AdminUserUpdate:
       type: object
       properties:
-        username: { type: string, minLength: 3, maxLength: 64 }
+        username: { type: string, minLength: 3, maxLength: 64, pattern: '^[\p{L}\p{N}._-]+$' }
         email: { type: string, format: email, maxLength: 320 }
         displayName: { type: string, maxLength: 128 }
         role: { type: string, enum: [USER, ADMIN] }
@@ -1960,7 +1989,7 @@ components:
       required: [email, role]
       properties:
         email: { type: string, format: email, maxLength: 320 }
-        proposedUsername: { type: string, minLength: 3, maxLength: 64 }
+        proposedUsername: { type: string, minLength: 3, maxLength: 64, pattern: '^[\p{L}\p{N}._-]+$' }
         displayName: { type: string, maxLength: 128 }
         role: { type: string, enum: [USER, ADMIN] }
     InvitationSummary:
@@ -2173,10 +2202,10 @@ components:
         notebookId: { type: string, format: uuid }
         noteType: { $ref: '#/components/schemas/NoteType' }
         title: { type: string, maxLength: 10000, default: '' }
-        content: { type: string, default: '' }
+        content: { type: string, maxLength: 8388608, default: '' }
         checklistItems:
           type: array
-          maxItems: 10000
+          maxItems: 1000
           items: { $ref: '#/components/schemas/ChecklistItemInput' }
         pinned: { type: boolean, default: false }
         archived: { type: boolean, default: false }
@@ -2208,10 +2237,10 @@ components:
       required: [title, content, checklistItems, pinned, archived, color, labelIds, version]
       properties:
         title: { type: string, maxLength: 10000 }
-        content: { type: string }
+        content: { type: string, maxLength: 8388608 }
         checklistItems:
           type: array
-          maxItems: 10000
+          maxItems: 1000
           items: { $ref: '#/components/schemas/ChecklistItemInput' }
         pinned: { type: boolean }
         archived: { type: boolean }

@@ -76,3 +76,17 @@ contains two Major and two Minor distinct concerns.
 4. Fix the M8 checklist trigger before relying on M9 `REPLACE_BY_ID` imports.
 5. Align portable image validation, export invariants, and endpoint DTOs with configuration and the
    canonical OpenAPI contract; make transfer E2E accounts disposable.
+
+## Batch 4 Remediation Update
+
+Revalidated on 2026-07-24 against base `c28f701`.
+
+| Original finding | Final status |
+|---|---|
+| Export scope/resource invariant is incomplete | **Resolved.** OpenAPI 3.1, the entity factory, and a behavioral PostgreSQL constraint enforce the same `ALL`/`NOTEBOOK`/`NOTE` combinations. |
+| Image base64 limit is hard-coded | **Resolved.** Checked expansion derives the image ceiling, while streamed decoding preserves the lower general JSON string limit and bounds decoded bytes. |
+| Import/export resources return internal records as `Object` | **Resolved.** User and administrator paths return generated `TransferJob` models through one mapper. |
+| Export download can leak its stream during metadata failure | **Resolved.** Metadata is resolved before opening the stream, and response-build failures close it. |
+
+Contract, parser, database, download, and deployment evidence is in the
+[Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).

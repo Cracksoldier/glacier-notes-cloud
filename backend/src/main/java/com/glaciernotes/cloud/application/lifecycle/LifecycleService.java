@@ -366,7 +366,7 @@ public class LifecycleService {
                 .setParameter("days", entity.defaultTrashRetentionDays()).executeUpdate();
         }
         audit("INSTANCE_SETTINGS_CHANGED", actor, null, "INSTANCE_SETTINGS", null, correlationId,
-            Map.of("area", "user-lifecycle"));
+            Map.of("area", "instance-settings"));
         return settingsModel(entity);
     }
 

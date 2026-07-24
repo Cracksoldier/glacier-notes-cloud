@@ -61,3 +61,16 @@ R0. Triage below is based on source inspection and milestone requirements.
 Before modifying code, create one issue per consolidated group and attach a focused regression test
 expectation. Review changes with `cr review --agent --uncommitted`, then run the M0/M1 verification
 sequence from `CODERABBIT_M0_M10_REVIEW_PLAN.md`.
+
+## Batch 4 Remediation Update
+
+Revalidated on 2026-07-24 against base `c28f701`.
+
+| Original finding | Final status |
+|---|---|
+| Note saves lack explicit `OwnerId` scope | **Resolved.** The contract and JPA adapter require the scope and reject entity/scope mismatches. |
+| Notebook saves lack explicit `OwnerId` scope | **Resolved.** The contract and JPA adapter require the scope and reject entity/scope mismatches. |
+| `OwnedEntityId.equals` is null-unsafe | **Resolved.** Component comparison is null-safe and persisted/reloaded identifier equality and hash behavior are covered. |
+
+Implementation, regression-first, full-suite, deployment, and finished-diff review evidence is in
+the [Batch 4 record](../remediation/batch-4/B4-PERSISTENCE-CONTRACTS-summary.md).
