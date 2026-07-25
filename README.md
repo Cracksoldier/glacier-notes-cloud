@@ -112,11 +112,42 @@ account. Administrators may disable user exports and can perform a blind import 
 page without previewing note content. See [docs/PORTABLE_TRANSFERS.md](docs/PORTABLE_TRANSFERS.md)
 for format limits, job states, cleanup, and compatibility guidance.
 
+## Install a published release
+
+Tagged releases publish a signed, immutable image to `ghcr.io/cracksoldier/glacier-notes-cloud:vX.Y.Z`
+and attach a versioned Compose file, CycloneDX SBOM, cosign signature bundle, and `SHA256SUMS` to each
+[GitHub Release](https://github.com/Cracksoldier/glacier-notes-cloud/releases). This is the supported
+way to run the released application without building from source:
+
+~~~bash
+mkdir -p deployment/secrets
+openssl rand -base64 36 > deployment/secrets/database-password.txt
+openssl rand -base64 36 > deployment/secrets/bootstrap-token.txt
+openssl rand -base64 48 > deployment/secrets/session-secret.txt
+chmod 600 deployment/secrets/*.txt
+
+curl -fLO https://github.com/Cracksoldier/glacier-notes-cloud/releases/download/v0.1.0/compose-v0.1.0.yaml
+
+# Optional but recommended: verify the image was built by this repository's release workflow.
+# Requires cosign (https://docs.sigstore.dev/cosign/system_config/installation/).
+cosign verify ghcr.io/cracksoldier/glacier-notes-cloud:v0.1.0 \
+  --certificate-identity-regexp \
+    'https://github.com/Cracksoldier/glacier-notes-cloud/.github/workflows/release.yml@refs/tags/v0.1.0' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+
+docker compose -f compose-v0.1.0.yaml up -d
+~~~
+
+Open `http://127.0.0.1:8080` and use the generated bootstrap token to create the administrator.
+See [docs/UPGRADE.md](docs/UPGRADE.md) for moving between released versions and
+[docs/adr/0008-release-and-signing-process.md](docs/adr/0008-release-and-signing-process.md) for the
+publication and signing rationale.
+
 ## Production-like local environment
 
-Use Docker Compose when testing the compiled, same-origin application rather than live development
-servers. Copy the non-secret configuration template, create local secrets, then build and start the
-complete environment:
+Use the following flow when testing the compiled, same-origin application from **source** rather than
+from a published release. Copy the non-secret configuration template, create local secrets, then
+build and start the complete environment:
 
 ~~~bash
 cp .env.example .env

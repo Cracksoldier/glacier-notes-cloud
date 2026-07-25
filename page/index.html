@@ -116,10 +116,38 @@ cd frontend &amp;&amp; npm start
       </article>
 
       <article class="setup-block">
-        <h3><i class="fa-solid fa-server"></i> 2. Production setup (real use)</h3>
+        <h3><i class="fa-solid fa-box-archive"></i> 2. Install the published release (recommended for real use)</h3>
         <p>
-          Generate real secrets, then build and start the full Compose deployment (Quarkus app image
-          plus PostgreSQL).
+          Each tagged release publishes a signed, immutable image to
+          <code>ghcr.io/cracksoldier/glacier-notes-cloud</code> and attaches a versioned Compose file,
+          CycloneDX SBOM, cosign signature bundle, and <code>SHA256SUMS</code> to its
+          <a href="https://github.com/Cracksoldier/glacier-notes-cloud/releases">GitHub Release</a>.
+          Generate secrets, download the versioned Compose file, optionally verify the image
+          signature, then start the stack &mdash; no local build required.
+        </p>
+        <pre><code>mkdir -p deployment/secrets
+openssl rand -base64 36 &gt; deployment/secrets/database-password.txt
+openssl rand -base64 36 &gt; deployment/secrets/bootstrap-token.txt
+openssl rand -base64 48 &gt; deployment/secrets/session-secret.txt
+chmod 600 deployment/secrets/*.txt
+
+curl -fLO https://github.com/Cracksoldier/glacier-notes-cloud/releases/download/v0.1.0/compose-v0.1.0.yaml
+
+# Optional but recommended: verify the image was built by this repo's release workflow.
+cosign verify ghcr.io/cracksoldier/glacier-notes-cloud:v0.1.0 \
+  --certificate-identity-regexp \
+    'https://github.com/Cracksoldier/glacier-notes-cloud/.github/workflows/release.yml@refs/tags/v0.1.0' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+
+docker compose -f compose-v0.1.0.yaml up -d
+# Open http://127.0.0.1:8080</code></pre>
+      </article>
+
+      <article class="setup-block">
+        <h3><i class="fa-solid fa-server"></i> 3. Build the container from source</h3>
+        <p>
+          Only needed when running an unreleased revision or a local modification. Generate secrets,
+          then build and start the full Compose deployment (Quarkus app image plus PostgreSQL).
         </p>
         <pre><code>cp .env.example .env
 mkdir -p deployment/secrets
@@ -138,7 +166,7 @@ docker compose down --volumes</code></pre>
       </article>
 
       <article class="setup-block">
-        <h3><i class="fa-solid fa-vial"></i> 3. Running all tests</h3>
+        <h3><i class="fa-solid fa-vial"></i> 4. Running all tests</h3>
         <p>
           The full verification loop mirrors CI: backend build and tests, then the frontend
           contract/lint/build/unit chain, plus the security gates added for the release candidate.
