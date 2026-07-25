@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Documentation &mdash; Glacier Notes Cloud</title>
+  <meta name="description" content="Detailed install instructions and configuration reference for Glacier Notes Cloud." />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="vendor/fontawesome/css/fontawesome.min.css" />
+  <link rel="stylesheet" href="vendor/fontawesome/css/solid.min.css" />
+  <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="docs-topbar">
+    <div class="wrap docs-topbar-inner">
+      <a class="docs-back" href="index.html"><i class="fa-solid fa-arrow-left"></i> Overview</a>
+      <a class="docs-back" href="https://github.com/Cracksoldier/glacier-notes-cloud"><i class="fa-brands fa-github"></i> GitHub</a>
+    </div>
+  </header>
+
+  <div class="wrap docs-layout">
+    <nav class="docs-sidebar">
+      <p class="docs-sidebar-title">Install</p>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#local-setup">Local setup</a></li>
+        <li><a href="#production-setup">Production setup</a></li>
+        <li><a href="#first-administrator">First administrator</a></li>
+        <li><a href="#optional-s3">Optional S3 / MinIO storage</a></li>
+        <li><a href="#upgrading">Upgrading &amp; stopping</a></li>
+      </ul>
+      <p class="docs-sidebar-title">Configuration reference</p>
+      <ul>
+        <li><a href="#cfg-database">Database</a></li>
+        <li><a href="#cfg-bootstrap">Bootstrap &amp; admin secrets</a></li>
+        <li><a href="#cfg-session">Session &amp; security</a></li>
+        <li><a href="#cfg-password">Password policy</a></li>
+        <li><a href="#cfg-images">Image storage</a></li>
+        <li><a href="#cfg-backup">Backups</a></li>
+        <li><a href="#cfg-smtp">SMTP / email</a></li>
+        <li><a href="#cfg-http">HTTP body limits</a></li>
+        <li><a href="#cfg-transfer">Portable transfer limits</a></li>
+        <li><a href="#cfg-metrics">Metrics &amp; management</a></li>
+      </ul>
+    </nav>
+
+    <main class="docs-content">
+      <h1>Documentation</h1>
+      <p class="tagline docs-lead">
+        A manual covering the full install path and every configuration category the backend reads.
+        For a quick start, see the <a href="index.html#setup">setup guide</a> on the overview page.
+      </p>
+
+      <section id="install">
+        <h2>Install</h2>
+
+        <article class="setup-block" id="prerequisites">
+          <h3><i class="fa-solid fa-list-check"></i> Prerequisites</h3>
+          <ul>
+            <li>JDK 21</li>
+            <li>Node.js 24.15 and npm 11.12.1 (for frontend development)</li>
+            <li>Docker with Compose v2 (<code>docker compose</code>)</li>
+            <li>OpenSSL (for generating production secrets)</li>
+          </ul>
+        </article>
+
+        <article class="setup-block" id="local-setup">
+          <h3><i class="fa-solid fa-laptop-code"></i> Local setup</h3>
+          <p>
+            Regenerate the OpenAPI-generated contracts, install frontend dependencies, then run the
+            backend and frontend side by side. The backend needs a running Docker daemon for Dev
+            Services, which provisions a disposable PostgreSQL instance automatically.
+          </p>
+          <pre><code># From the repo root
+./mvnw -pl backend clean generate-sources
+cd frontend &amp;&amp; npm ci &amp;&amp; cd ..
+
+# Terminal 1 &mdash; backend, with required env vars
+export GLACIER_BOOTSTRAP_TOKEN=local-bootstrap-token-development-only
+export GLACIER_SECURITY_SESSION_SECRET=local-session-secret-development-only
+export GLACIER_IMAGE_FILESYSTEM_ROOT=/tmp/glacier-notes-dev-images
+./mvnw -pl backend quarkus:dev
+
+# Terminal 2 &mdash; frontend (proxies /api to :8080)
+cd frontend &amp;&amp; npm start
+# Open http://localhost:4200</code></pre>
+          <p>
+            <code>GLACIER_BOOTSTRAP_TOKEN</code> and <code>GLACIER_SECURITY_SESSION_SECRET</code> must
+            each be at least 32 non-whitespace characters (see
+            <a href="#cfg-bootstrap">Bootstrap &amp; admin secrets</a> and
+            <a href="#cfg-session">Session &amp; security</a>). To exercise the admin backup dashboard
+            locally, also set <code>GLACIER_BACKUP_ENABLED=true</code>, <code>GLACIER_BACKUP_DIRECTORY</code>,
+            and <code>GLACIER_BUILD_IDENTIFIER</code>.
+          </p>
+        </article>
+
+        <article class="setup-block" id="production-setup">
+          <h3><i class="fa-solid fa-server"></i> Production setup</h3>
+          <p>
+            Generate real secrets as files rather than environment variables &mdash; the Compose file
+            mounts them as Docker secrets so they never appear in process listings or container
+            environment dumps. Each secret must be 32&ndash;512 non-whitespace characters.
+          </p>
+          <pre><code>cp .env.example .env
+mkdir -p deployment/secrets
+openssl rand -base64 36 &gt; deployment/secrets/database-password.txt
+openssl rand -base64 36 &gt; deployment/secrets/bootstrap-token.txt
+openssl rand -base64 48 &gt; deployment/secrets/session-secret.txt
+chmod 600 deployment/secrets/*.txt
+
+docker compose up --build --wait
+# Open http://127.0.0.1:8080</code></pre>
+          <p>
+            <code>base64 -w0</code> output length scales roughly 4/3 with input bytes, so 36 and 48
+            random bytes comfortably clear the 32-character minimum with room to spare. Edit
+            <code>.env</code> to change bind addresses, ports, or the public base URL &mdash; see the
+            <a href="#configuration">configuration reference</a> below for every variable it can set.
+          </p>
+        </article>
+
+        <article class="setup-block" id="first-administrator">
+          <h3><i class="fa-solid fa-user-shield"></i> First administrator</h3>
+          <p>
+            On a fresh instance, create the first administrator account with the bootstrap token from
+            <code>deployment/secrets/bootstrap-token.txt</code> (or <code>GLACIER_BOOTSTRAP_TOKEN</code>
+            in local dev). Send it as the <code>X-Bootstrap-Token</code> header:
+          </p>
+          <pre><code>curl -X POST http://127.0.0.1:8080/api/v1/setup/administrator \
+  -H "Content-Type: application/json" \
+  -H "X-Bootstrap-Token: $(cat deployment/secrets/bootstrap-token.txt)" \
+  -d '{
+    "username": "admin",
+    "email": "admin@example.com",
+    "displayName": "Administrator",
+    "language": "en",
+    "password": "a long, unique passphrase"
+  }'</code></pre>
+          <p>Response on success:</p>
+          <pre><code>{
+  "initialized": true,
+  "initializedAt": "2026-07-25T12:00:00Z"
+}</code></pre>
+          <p>
+            Passwords must be 12&ndash;128 characters, contain no whitespace, and not appear on the
+            built-in common-password denylist. Setup can also be checked without attempting it via
+            <code>GET /api/v1/setup/status</code>, which returns <code>{"setupRequired": true|false}</code>.
+            Bootstrap attempts are rate-limited: 5 failed attempts within a 900-second window trigger a
+            900-second lockout (see <a href="#cfg-bootstrap">Bootstrap &amp; admin secrets</a>). Once an
+            administrator exists, the endpoint refuses further use &mdash; subsequent admins are created
+            from the admin user-management page.
+          </p>
+        </article>
+
+        <article class="setup-block" id="optional-s3">
+          <h3><i class="fa-solid fa-cloud"></i> Optional S3 / MinIO storage</h3>
+          <p>
+            Image storage defaults to the local filesystem. To exercise the S3-compatible backend
+            locally, layer the MinIO overlay on top of the base Compose file. This starts a MinIO
+            server, provisions the bucket, and switches the app's image backend to <code>S3</code>.
+          </p>
+          <pre><code>openssl rand -base64 24 &gt; deployment/secrets/s3-access-key.txt
+openssl rand -base64 32 &gt; deployment/secrets/s3-secret-key.txt
+chmod 600 deployment/secrets/s3-*.txt
+
+docker compose -f compose.yaml -f compose.minio.yaml up --build --wait
+# MinIO console: http://127.0.0.1:9003</code></pre>
+          <p>
+            The image storage backend is immutable after the first image upload &mdash; choose
+            <code>FILESYSTEM</code>, <code>POSTGRESQL</code>, or <code>S3</code> before any note has an
+            attached image. See <a href="#cfg-images">Image storage</a> for the full variable list.
+          </p>
+        </article>
+
+        <article class="setup-block" id="upgrading">
+          <h3><i class="fa-solid fa-sync-alt"></i> Upgrading &amp; stopping</h3>
+          <p>
+            Flyway migrations run automatically at startup, so upgrading is a rebuild-and-restart.
+            Application health can be checked on the private management port before routing traffic:
+          </p>
+          <pre><code># Rebuild and restart with the latest image
+docker compose up --build --wait
+
+# Liveness / readiness (management port, kept off the public network)
+curl http://127.0.0.1:9000/q/health/ready
+
+# Stop, preserving volumes
+docker compose down
+
+# Stop and permanently delete all data
+docker compose down --volumes</code></pre>
+        </article>
+      </section>
+
+      <section id="configuration">
+        <h2>Configuration reference</h2>
+        <p>
+          Every variable below is read directly by the backend or the Compose deployment. Defaults
+          apply whenever a variable is unset. <code>*_FILE</code> variables point to a file whose
+          contents are read at startup &mdash; prefer these over the bare variable for anything secret.
+        </p>
+
+        <article class="feature-card cfg-card" id="cfg-database">
+          <h3><i class="fa-solid fa-database"></i> Database</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GLACIER_DATABASE_URL</code></td><td>&mdash;</td><td>JDBC URL, e.g. <code>jdbc:postgresql://postgres:5432/glacier_notes</code></td></tr>
+              <tr><td><code>GLACIER_DATABASE_USERNAME</code></td><td>&mdash;</td><td>PostgreSQL role name</td></tr>
+              <tr><td><code>GLACIER_DATABASE_PASSWORD_FILE</code></td><td>&mdash;</td><td>Path to a file containing the database password</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <pre><code>GLACIER_DATABASE_URL=jdbc:postgresql://postgres:5432/glacier_notes
+GLACIER_DATABASE_USERNAME=glacier_notes
+GLACIER_DATABASE_PASSWORD_FILE=/run/secrets/database_password</code></pre>
+        </article>
+
+        <article class="feature-card cfg-card" id="cfg-bootstrap">
+          <h3><i class="fa-solid fa-key"></i> Bootstrap &amp; admin secrets</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GLACIER_BOOTSTRAP_TOKEN</code></td><td>&mdash;</td><td>Bootstrap token value, 32&ndash;512 non-whitespace characters</td></tr>
+              <tr><td><code>GLACIER_BOOTSTRAP_TOKEN_FILE</code></td><td>&mdash;</td><td>Path to a file containing the bootstrap token instead</td></tr>
+              <tr><td><code>failure-limit</code></td><td>5</td><td>Failed attempts allowed within the window (not env-configurable)</td></tr>
+              <tr><td><code>window-seconds</code></td><td>900</td><td>Rolling window for counting failures</td></tr>
+              <tr><td><code>block-seconds</code></td><td>900</td><td>Lockout duration once the limit is hit</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <pre><code>GLACIER_BOOTSTRAP_TOKEN_FILE=/run/secrets/bootstrap_token</code></pre>
+        </article>
+
+        <article class="feature-card cfg-card" id="cfg-session">
+          <h3><i class="fa-solid fa-lock"></i> Session &amp; security</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GLACIER_SECURITY_SESSION_SECRET</code></td><td>&mdash;</td><td>HMAC key for session token hashing, 32&ndash;512 non-whitespace characters</td></tr>
+              <tr><td><code>GLACIER_SECURITY_SESSION_SECRET_FILE</code></td><td>&mdash;</td><td>Path to a file containing the session secret instead</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>
+            Session tokens are opaque and random; only a keyed hash is persisted. Rotating this secret
+            invalidates every existing session.
+          </p>
+          <pre><code>GLACIER_SECURITY_SESSION_SECRET_FILE=/run/secrets/session_secret</code></pre>
+        </article>
+
+        <article class="feature-card cfg-card" id="cfg-password">
+          <h3><i class="fa-solid fa-shield-halved"></i> Password policy</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Rule</th><th>Value</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td>Length</td><td>12&ndash;128 chars</td><td>No whitespace permitted; rejected against a common-password denylist</td></tr>
+              <tr><td>Argon2id memory</td><td>19456 KiB</td><td>Not environment-configurable &mdash; fixed hashing cost</td></tr>
+              <tr><td>Argon2id iterations</td><td>2</td><td>&nbsp;</td></tr>
+              <tr><td>Argon2id parallelism</td><td>1</td><td>&nbsp;</td></tr>
+              <tr><td>Argon2id hash length</td><td>32 bytes</td><td>Salt length is 16 bytes</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>These parameters are fixed in code, not exposed as environment variables.</p>
+        </article>
+
+        <article class="feature-card cfg-card" id="cfg-images">
+          <h3><i class="fa-solid fa-image"></i> Image storage</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GLACIER_IMAGE_BACKEND</code></td><td>FILESYSTEM</td><td>FILESYSTEM, POSTGRESQL, or S3 &mdash; immutable after first upload</td></tr>
+              <tr><td><code>GLACIER_IMAGE_FILESYSTEM_ROOT</code></td><td><code>/var/lib/glacier-notes/images</code></td><td>Root directory when backend is FILESYSTEM</td></tr>
+              <tr><td><code>GLACIER_S3_ENDPOINT</code></td><td>&mdash;</td><td>S3-compatible endpoint URL</td></tr>
+              <tr><td><code>GLACIER_S3_REGION</code></td><td>us-east-1</td><td>&nbsp;</td></tr>
+              <tr><td><code>GLACIER_S3_BUCKET</code></td><td>glacier-notes</td><td>&nbsp;</td></tr>
+              <tr><td><code>GLACIER_S3_PATH_STYLE</code></td><td>true</td><td>Path-style addressing, needed for MinIO</td></tr>
+              <tr><td><code>GLACIER_S3_ACCESS_KEY_FILE</code></td><td>&mdash;</td><td>Path to a file containing the access key</td></tr>
+              <tr><td><code>GLACIER_S3_SECRET_KEY_FILE</code></td><td>&mdash;</td><td>Path to a file containing the secret key</td></tr>
+              <tr><td><code>GLACIER_S3_SERVER_SIDE_ENCRYPTION</code></td><td>&mdash;</td><td>Optional SSE mode</td></tr>
+              <tr><td><code>GLACIER_S3_API_CALL_TIMEOUT_SECONDS</code></td><td>30</td><td>&nbsp;</td></tr>
+              <tr><td><code>GLACIER_S3_API_CALL_ATTEMPT_TIMEOUT_SECONDS</code></td><td>10</td><td>&nbsp;</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>
+            Uploads are also capped at 40 MB, 40 megapixels, and a 2560px longest edge; thumbnails are
+            generated at a 480px edge (fixed, not environment-configurable).
+          </p>
+          <pre><code>GLACIER_IMAGE_BACKEND=S3
+GLACIER_S3_ENDPOINT=http://minio:9000
+GLACIER_S3_BUCKET=glacier-notes
+GLACIER_S3_ACCESS_KEY_FILE=/run/secrets/s3_access_key
+GLACIER_S3_SECRET_KEY_FILE=/run/secrets/s3_secret_key</code></pre>
+        </article>
+
+        <article class="feature-card cfg-card" id="cfg-backup">
+          <h3><i class="fa-solid fa-box-archive"></i> Backups</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GLACIER_BACKUP_ENABLED</code></td><td>false</td><td>Enables the automated backup job and admin dashboard</td></tr>
+              <tr><td><code>GLACIER_BACKUP_DIRECTORY</code></td><td><code>/var/lib/glacier-notes/backups</code></td><td>Output directory &mdash; protect it externally, it is not encrypted</td></tr>
+              <tr><td><code>GLACIER_BUILD_IDENTIFIER</code></td><td>unknown</td><td>Recorded in backup metadata to identify the producing build</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <pre><code>GLACIER_BACKUP_ENABLED=true
+GLACIER_BACKUP_DIRECTORY=/var/lib/glacier-notes/backups
+GLACIER_BUILD_IDENTIFIER=2026.07.25</code></pre>
+        </article>
+
+        <article class="feature-card cfg-card" id="cfg-smtp">
+          <h3><i class="fa-solid fa-envelope"></i> SMTP / email</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GLACIER_SMTP_ENABLED</code></td><td>false</td><td>When false, verification/reset flows show copyable links instead of sending mail</td></tr>
+              <tr><td><code>GLACIER_SMTP_HOST</code></td><td>localhost</td><td>&nbsp;</td></tr>
+              <tr><td><code>GLACIER_SMTP_PORT</code></td><td>587</td><td>&nbsp;</td></tr>
+              <tr><td><code>GLACIER_SMTP_START_TLS</code></td><td>REQUIRED</td><td>&nbsp;</td></tr>
+              <tr><td><code>GLACIER_SMTP_TLS</code></td><td>false</td><td>Implicit TLS on connect</td></tr>
+              <tr><td><code>GLACIER_SMTP_USERNAME</code></td><td>&mdash;</td><td>&nbsp;</td></tr>
+              <tr><td><code>GLACIER_SMTP_PASSWORD_FILE</code></td><td>&mdash;</td><td>Path to a file containing the SMTP password, mounted into the container when set</td></tr>
+              <tr><td><code>GLACIER_SMTP_SENDER_NAME</code></td><td>Glacier Notes</td><td>&nbsp;</td></tr>
+              <tr><td><code>GLACIER_SMTP_SENDER_ADDRESS</code></td><td>noreply@localhost</td><td>&nbsp;</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <pre><code>GLACIER_SMTP_ENABLED=true
+GLACIER_SMTP_HOST=smtp.example.com
+GLACIER_SMTP_PORT=587
+GLACIER_SMTP_START_TLS=REQUIRED
+GLACIER_SMTP_USERNAME=notifications@example.com
+GLACIER_SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+GLACIER_SMTP_SENDER_ADDRESS=notes@example.com</code></pre>
+        </article>
+
+        <article class="feature-card cfg-card" id="cfg-http">
+          <h3><i class="fa-solid fa-maximize"></i> HTTP body limits</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GLACIER_HTTP_DEFAULT_MAXIMUM_BODY_BYTES</code></td><td>10485760 (10 MiB)</td><td>Cap on ordinary API request bodies</td></tr>
+              <tr><td><code>GLACIER_HTTP_MULTIPART_OVERHEAD_BYTES</code></td><td>1048576 (1 MiB)</td><td>Allowance added on top of upload/import maximums for multipart envelopes</td></tr>
+              <tr><td><code>GLACIER_HTTP_ABSOLUTE_MAXIMUM_BODY_BYTES</code></td><td>1611661312 (~1.5 GiB)</td><td>Outer ceiling enforced by Quarkus &mdash; raising any upload limit requires raising this too</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>
+            The absolute ceiling must stay at least the multipart overhead above the largest configured
+            upload limit (currently the portable-import maximum, see
+            <a href="#cfg-transfer">Portable transfer limits</a>).
+          </p>
+          <pre><code>GLACIER_HTTP_DEFAULT_MAXIMUM_BODY_BYTES=10485760
+GLACIER_HTTP_MULTIPART_OVERHEAD_BYTES=1048576
+GLACIER_HTTP_ABSOLUTE_MAXIMUM_BODY_BYTES=1611661312</code></pre>
+        </article>
+
+        <article class="feature-card cfg-card" id="cfg-transfer">
+          <h3><i class="fa-solid fa-right-left"></i> Portable transfer limits</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GLACIER_TRANSFER_MAXIMUM_UPLOAD_BYTES</code></td><td>1610612736 (1.5 GiB)</td><td>Maximum <code>.glacier.json</code> import size</td></tr>
+              <tr><td><code>GLACIER_TRANSFER_MAXIMUM_DECODED_IMAGE_BYTES</code></td><td>1073741824 (1 GiB)</td><td>Cap on total decoded image data within one import</td></tr>
+              <tr><td><code>GLACIER_TRANSFER_RETENTION_HOURS</code></td><td>24</td><td>How long staged import/export files are retained before cleanup</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>
+            Additional per-import structural limits (10,000 notebooks, 100,000 notes, 10,000 labels,
+            100,000 images, 1,000,000 checklist items, 32 levels of JSON nesting, 16,777,216-character
+            strings) are fixed in code rather than environment-configurable.
+          </p>
+          <pre><code>GLACIER_TRANSFER_MAXIMUM_UPLOAD_BYTES=1610612736
+GLACIER_TRANSFER_MAXIMUM_DECODED_IMAGE_BYTES=1073741824
+GLACIER_TRANSFER_RETENTION_HOURS=24</code></pre>
+        </article>
+
+        <article class="feature-card cfg-card" id="cfg-metrics">
+          <h3><i class="fa-solid fa-chart-area"></i> Metrics &amp; management</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GLACIER_METRICS_ENABLED</code></td><td>true</td><td>Enables Micrometer and the Prometheus scrape endpoint</td></tr>
+              <tr><td><code>GLACIER_MANAGEMENT_BIND</code></td><td>127.0.0.1</td><td>Host interface Compose binds the management port to</td></tr>
+              <tr><td><code>GLACIER_MANAGEMENT_PORT</code></td><td>9000</td><td>Health checks, metrics &mdash; never publish this port</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>
+            The management port serves <code>/q/health/ready</code>, <code>/q/health/live</code>, and
+            <code>/q/metrics</code>. Keep it bound to <code>127.0.0.1</code> or an internal network only.
+          </p>
+          <pre><code>GLACIER_METRICS_ENABLED=true
+GLACIER_MANAGEMENT_BIND=127.0.0.1
+GLACIER_MANAGEMENT_PORT=9000</code></pre>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <footer class="wrap">
+    <p>
+      <a href="https://github.com/Cracksoldier/glacier-notes-cloud"><i class="fa-brands fa-github"></i> Glacier Notes Cloud</a>
+      &mdash;
+      <a href="https://github.com/Cracksoldier/glacier-notes-cloud/blob/main/LICENSE"><i class="fa-solid fa-scale-balanced"></i> MIT licensed</a>
+    </p>
+    <p class="note">This page is a standalone static document; it is not part of the Angular application.</p>
+  </footer>
+</body>
+</html>
