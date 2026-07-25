@@ -2230,8 +2230,8 @@
     "semantic_hash": "98cbc3c62a6f6e5004040c70f87a8e56"
   },
   ".claude/settings.local.json": {
-    "mtime": 1784973268.431751,
-    "ast_hash": "d70fee6786c9fb6eaad27175121b9724",
+    "mtime": 1784975883.8160453,
+    "ast_hash": "c3845adce8b9b919f6d55090d7153bd1",
     "semantic_hash": ""
   },
   "backend/scripts/check-log-hygiene.sh": {
@@ -2282,6 +2282,31 @@
   "docs/THREAT_MODEL.md": {
     "mtime": 1784925073.9825232,
     "ast_hash": "aa72c5af7bf4fbbd4b3fb758264c67fd",
+    "semantic_hash": ""
+  },
+  ".github/workflows/deploy-pages.yml": {
+    "mtime": 1784974098.4314358,
+    "ast_hash": "9efab85f36a3d329ff169785669ae5d9",
+    "semantic_hash": ""
+  },
+  "page/documentation.html": {
+    "mtime": 1784975829.9372108,
+    "ast_hash": "4a697ed64a3ae34c89c68ca1a61230df",
+    "semantic_hash": ""
+  },
+  "page/index.html": {
+    "mtime": 1784975366.8613434,
+    "ast_hash": "fe3f96fb0de6e533b2a8958ac15ac20b",
+    "semantic_hash": ""
+  },
+  "page/vendor/fontawesome/LICENSE.txt": {
+    "mtime": 1784974453.6443703,
+    "ast_hash": "f36af1c24ccf20e8805e40b6da8842b9",
+    "semantic_hash": ""
+  },
+  "page/favicon.svg": {
+    "mtime": 1784974314.0024674,
+    "ast_hash": "86aae3c01976d2080adeb828f6de3e6a",
     "semantic_hash": ""
   }
 }
