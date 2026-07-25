@@ -1524,32 +1524,32 @@ Publish the approved Glacier Notes Cloud v1 release and establish the baseline f
 
 ## Deliverables
 
-1. Tagged source release.
-2. Versioned OCI image.
-3. Versioned Docker Compose example.
-4. Release notes.
-5. Configuration reference.
-6. Upgrade notes.
-7. Known limitations.
-8. Software bill of materials.
-9. Checksums/signatures where supported.
-10. Issue templates.
-11. v1 project board closure.
+1. Tagged source release. — git tag `v0.1.0` on `521da55`.
+2. Versioned OCI image. — `ghcr.io/cracksoldier/glacier-notes-cloud:v0.1.0` (+ `:latest`).
+3. Versioned Docker Compose example. — `compose-v0.1.0.yaml`, attached to the GitHub Release.
+4. Release notes. — `docs/RELEASE_NOTES.md`, also embedded in the GitHub Release body.
+5. Configuration reference. — `deployment/README.md` and `page/documentation.html`.
+6. Upgrade notes. — `docs/UPGRADE.md`.
+7. Known limitations. — `docs/KNOWN_ISSUES.md`.
+8. Software bill of materials. — `glacier-notes-cloud-v0.1.0.cdx.json` (CycloneDX, Syft, generated against the published image), attached and cosign-signed.
+9. Checksums/signatures where supported. — `SHA256SUMS`, `IMAGE_DIGEST.txt`, and cosign keyless (OIDC) signing on the image and SBOM.
+10. Issue templates. — `.github/ISSUE_TEMPLATE/{bug_report,feature_request,config}.yml` and `.github/pull_request_template.md`.
+11. v1 project board closure. — No v1 project board exists in this repository; this deliverable is not applicable.
 
 ## Acceptance Criteria
 
-- [ ] The release is built from the tagged commit.
-- [ ] CI for the tagged commit passes.
-- [ ] The OCI image version is immutable.
-- [ ] The application reports the released version.
-- [ ] A clean installation from published artifacts succeeds.
-- [ ] A restore from the release-candidate backup succeeds with released artifacts.
-- [ ] Release notes list version-1 features and explicit non-goals.
-- [ ] Default configuration contains no unsafe sample secret.
-- [ ] The published Compose file uses persistent volumes.
-- [ ] Documentation links resolve.
-- [ ] Known issues contain no undisclosed data-loss or authorization defect.
-- [ ] The release owner formally approves the v1 acceptance checklist.
+- [x] The release is built from the tagged commit.
+- [x] CI for the tagged commit passes.
+- [x] The OCI image version is immutable.
+- [x] The application reports the released version.
+- [x] A clean installation from published artifacts succeeds.
+- [x] A restore from the release-candidate backup succeeds with released artifacts.
+- [x] Release notes list version-1 features and explicit non-goals.
+- [x] Default configuration contains no unsafe sample secret.
+- [x] The published Compose file uses persistent volumes.
+- [x] Documentation links resolve.
+- [x] Known issues contain no undisclosed data-loss or authorization defect.
+- [x] The release owner formally approves the v1 acceptance checklist.
 
 ## Exit Gate
 

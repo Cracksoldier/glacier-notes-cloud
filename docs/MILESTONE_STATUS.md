@@ -19,7 +19,7 @@ implementation and repository verification gates pass.
 | M10 | Complete | Account self-service, verified email changes, deletion retention, synchronized preferences, i18n, themes, and external email sharing |
 | M11 | Complete | Administrative overview, safe settings, SMTP status, immutable audit, metrics, coordinated cleanup, and gated full backups |
 | M12 | Complete | Dependency and container image vulnerability scanning, named security-attack-simulation tests, log-hygiene CI enforcement, broadened upgrade data-integrity coverage, and release-candidate documentation |
-| M13 | Pending | Not yet implemented |
+| M13 | Complete | Tag-triggered release workflow, signed immutable `ghcr.io` image, CycloneDX SBOM with cosign attestation, versioned Compose release template, upgrade/rollback runbook, and issue/PR templates |
 
 ## M5 Verification
 
