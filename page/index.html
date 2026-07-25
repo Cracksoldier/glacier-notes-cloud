@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Glacier Notes Cloud</title>
+  <meta name="description" content="Self-hosted, multi-user notes web application. Quarkus backend, Angular frontend, PostgreSQL persistence." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Self-hosted &middot; Multi-user &middot; OpenAPI-first</p>
+      <h1>Glacier Notes Cloud</h1>
+      <p class="tagline">
+        A self-hosted, multi-user notes web application &mdash; an OpenAPI-first monorepo with a
+        Quarkus (Java 21) backend, an Angular frontend, and PostgreSQL persistence.
+      </p>
+      <ul class="stack-line">
+        <li>Quarkus 3.37.3</li>
+        <li>Java 21</li>
+        <li>Angular 22.0.7</li>
+        <li>PostgreSQL 18.3</li>
+        <li>Docker Compose</li>
+      </ul>
+      <div class="hero-actions">
+        <a class="button primary" href="#setup">Get started</a>
+        <a class="button" href="#features">See features</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="features">
+      <h2>Features</h2>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <h3>Notes &amp; organization</h3>
+          <ul>
+            <li>Owner-scoped notebooks, notes, checklists, and labels with archive and trash</li>
+            <li>Sanitized Markdown editing and rendering</li>
+            <li>Ordered checklists with text search and checkbox toggling</li>
+            <li>PostgreSQL-backed full-text search with ownership filters</li>
+            <li>Note version history with preview and restore</li>
+            <li>Image attachments across filesystem, PostgreSQL, or S3-compatible storage, with thumbnails and per-user quotas</li>
+          </ul>
+        </article>
+
+        <article class="feature-card">
+          <h3>Portability &amp; account</h3>
+          <ul>
+            <li>Portable <code>.glacier.json</code> import/export, desktop-compatible</li>
+            <li>Full account, notebook, or single-note export scope</li>
+            <li>Conflict resolution on import: add as copies, or replace existing by ID</li>
+            <li>Profile and verified email changes, password reset history</li>
+            <li>Self-service account deletion with retention and restoration</li>
+          </ul>
+        </article>
+
+        <article class="feature-card">
+          <h3>Administration</h3>
+          <ul>
+            <li>User management and invitations</li>
+            <li>Immutable audit event log, exportable as CSV or JSON</li>
+            <li>Instance settings and SMTP status</li>
+            <li>Prometheus metrics on a private management port</li>
+            <li>Environment-gated automated backups with restore verification</li>
+            <li>English and German localization with synced user preferences</li>
+          </ul>
+        </article>
+
+        <article class="feature-card">
+          <h3>Security &amp; operations</h3>
+          <ul>
+            <li>Opaque session tokens with keyed hashes and double-submit CSRF protection</li>
+            <li>Argon2id password hashing and progressive login throttling</li>
+            <li>Ownership isolation enforced at the repository layer &mdash; no cross-owner lookups</li>
+            <li>OWASP dependency scanning and Trivy container image scanning in CI</li>
+            <li>Automated log-hygiene enforcement (content, passwords, and tokens are never logged)</li>
+            <li>Named security-attack-simulation tests: session fixation, token replay, path traversal</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="setup">
+      <h2>Setup guide</h2>
+
+      <article class="setup-block">
+        <h3>1. Local setup (for testing)</h3>
+        <p>
+          Regenerate the OpenAPI-generated contracts, install frontend dependencies, then run the
+          backend and frontend side by side. Backend requires a Docker daemon for Dev Services
+          (PostgreSQL) and a few environment variables.
+        </p>
+        <pre><code># From the repo root
+./mvnw -pl backend clean generate-sources
+cd frontend &amp;&amp; npm ci &amp;&amp; cd ..
+
+# Terminal 1 &mdash; backend, with required env vars
+export GLACIER_BOOTSTRAP_TOKEN=local-bootstrap-token-development-only
+export GLACIER_SECURITY_SESSION_SECRET=local-session-secret-development-only
+export GLACIER_IMAGE_FILESYSTEM_ROOT=/tmp/glacier-notes-dev-images
+./mvnw -pl backend quarkus:dev
+
+# Terminal 2 &mdash; frontend (proxies /api to :8080)
+cd frontend &amp;&amp; npm start
+# Open http://localhost:4200</code></pre>
+      </article>
+
+      <article class="setup-block">
+        <h3>2. Production setup (real use)</h3>
+        <p>
+          Generate real secrets, then build and start the full Compose deployment (Quarkus app image
+          plus PostgreSQL).
+        </p>
+        <pre><code>cp .env.example .env
+mkdir -p deployment/secrets
+openssl rand -base64 36 &gt; deployment/secrets/database-password.txt
+openssl rand -base64 36 &gt; deployment/secrets/bootstrap-token.txt
+openssl rand -base64 48 &gt; deployment/secrets/session-secret.txt
+chmod 600 deployment/secrets/*.txt
+
+docker compose up --build --wait
+# Open http://127.0.0.1:8080
+
+# Stop, preserving volumes:
+docker compose down
+# Stop and delete data permanently:
+docker compose down --volumes</code></pre>
+      </article>
+
+      <article class="setup-block">
+        <h3>3. Running all tests</h3>
+        <p>
+          The full verification loop mirrors CI: backend build and tests, then the frontend
+          contract/lint/build/unit chain, plus the security gates added for the release candidate.
+        </p>
+        <pre><code># Backend &mdash; full reactor build and JUnit tests against PostgreSQL
+./mvnw verify
+
+# Backend security gates
+./mvnw -pl backend org.owasp:dependency-check-maven:check
+bash backend/scripts/check-log-hygiene.sh
+
+# Frontend
+cd frontend
+npm ci
+npm run test:repository     # repository/generated-client metadata
+npm run check                # Biome format + lint
+npm run build:production     # strict Angular production build
+npm run test:ci              # Vitest unit suite
+npm audit --omit=dev --audit-level=high
+
+# End-to-end (needs a running Compose deployment)
+GLACIER_E2E_BASE_URL=http://127.0.0.1:8080 \
+GLACIER_E2E_USERNAME=&lt;username&gt; GLACIER_E2E_PASSWORD=&lt;password&gt; \
+npm run test:e2e</code></pre>
+      </article>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <p>Glacier Notes Cloud &mdash; <a href="../LICENSE">MIT licensed</a>.</p>
+    <p class="note">This page is a standalone static document; it is not part of the Angular application.</p>
+  </footer>
+</body>
+</html>
