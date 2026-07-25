@@ -41,7 +41,7 @@
         <li><a href="#cfg-smtp">SMTP / email</a></li>
         <li><a href="#cfg-http">HTTP body limits</a></li>
         <li><a href="#cfg-transfer">Portable transfer limits</a></li>
-        <li><a href="#cfg-metrics">Metrics &amp; management</a></li>
+        <li><a href="#cfg-network">Network &amp; management</a></li>
       </ul>
     </nav>
 
@@ -312,6 +312,15 @@ GLACIER_S3_SECRET_KEY_FILE=/run/secrets/s3_secret_key</code></pre>
             </tbody>
           </table>
           </div>
+          <p>
+            Backups are started from Administration &rarr; Backups and written as a ZIP containing the
+            PostgreSQL database (content and authentication hashes), image objects, non-secret instance
+            settings, a manifest, version information, and SHA-256 checksums. They intentionally
+            <strong>exclude</strong> database credentials, SMTP passwords, S3 credentials, bootstrap
+            tokens, and cryptographic keys &mdash; treat completed archives as highly sensitive anyway,
+            since they contain user content. The full restore runbook lives in
+            <a href="https://github.com/Cracksoldier/glacier-notes-cloud/blob/main/docs/BACKUP_RESTORE.md">docs/BACKUP_RESTORE.md</a>.
+          </p>
           <pre><code>GLACIER_BACKUP_ENABLED=true
 GLACIER_BACKUP_DIRECTORY=/var/lib/glacier-notes/backups
 GLACIER_BUILD_IDENTIFIER=2026.07.25</code></pre>
@@ -388,12 +397,15 @@ GLACIER_TRANSFER_MAXIMUM_DECODED_IMAGE_BYTES=1073741824
 GLACIER_TRANSFER_RETENTION_HOURS=24</code></pre>
         </article>
 
-        <article class="feature-card cfg-card" id="cfg-metrics">
-          <h3><i class="fa-solid fa-chart-area"></i> Metrics &amp; management</h3>
+        <article class="feature-card cfg-card" id="cfg-network">
+          <h3><i class="fa-solid fa-network-wired"></i> Network &amp; management</h3>
           <div class="table-scroll">
           <table>
             <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
             <tbody>
+              <tr><td><code>GLACIER_PUBLIC_BASE_URL</code></td><td><code>http://localhost:8080</code></td><td>Canonical URL used in email verification/reset links and to decide whether session and CSRF cookies get the <code>Secure</code> flag (based on the URL scheme). Overridable at runtime via Administration &rarr; Instance settings.</td></tr>
+              <tr><td><code>GLACIER_HTTP_BIND</code></td><td>127.0.0.1</td><td>Host interface Compose binds the main application port to</td></tr>
+              <tr><td><code>GLACIER_HTTP_PORT</code></td><td>8080</td><td>Host port for the main application</td></tr>
               <tr><td><code>GLACIER_METRICS_ENABLED</code></td><td>true</td><td>Enables Micrometer and the Prometheus scrape endpoint</td></tr>
               <tr><td><code>GLACIER_MANAGEMENT_BIND</code></td><td>127.0.0.1</td><td>Host interface Compose binds the management port to</td></tr>
               <tr><td><code>GLACIER_MANAGEMENT_PORT</code></td><td>9000</td><td>Health checks, metrics &mdash; never publish this port</td></tr>
@@ -403,8 +415,14 @@ GLACIER_TRANSFER_RETENTION_HOURS=24</code></pre>
           <p>
             The management port serves <code>/q/health/ready</code>, <code>/q/health/live</code>, and
             <code>/q/metrics</code>. Keep it bound to <code>127.0.0.1</code> or an internal network only.
+            When deploying behind a TLS-terminating reverse proxy, set <code>GLACIER_PUBLIC_BASE_URL</code>
+            to the externally visible <code>https://</code> address &mdash; otherwise session cookies
+            are issued without the <code>Secure</code> flag.
           </p>
-          <pre><code>GLACIER_METRICS_ENABLED=true
+          <pre><code>GLACIER_PUBLIC_BASE_URL=https://notes.example.com
+GLACIER_HTTP_BIND=127.0.0.1
+GLACIER_HTTP_PORT=8080
+GLACIER_METRICS_ENABLED=true
 GLACIER_MANAGEMENT_BIND=127.0.0.1
 GLACIER_MANAGEMENT_PORT=9000</code></pre>
         </article>
