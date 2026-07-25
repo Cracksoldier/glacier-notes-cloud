@@ -3,6 +3,11 @@
 Self-hosted, multi-user Glacier Notes web application. The project is an OpenAPI-first
 monorepo with a Quarkus backend, Angular frontend, and PostgreSQL persistence layer.
 
+> [!WARNING]
+> **Early development.** Glacier Notes Cloud is a pre-1.0 release (v0.1.x). APIs, database schema,
+> and configuration may change between versions without notice. Not production-ready — do not rely
+> on it for irreplaceable data, and always keep verified backups.
+
 ## Prerequisites
 
 - JDK 21 or newer (the build targets Java 21)

@@ -42,6 +42,28 @@ code, pre {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
+/* Early-development disclaimer banner */
+
+.disclaimer {
+  background: #3a2a08;
+  border-bottom: 1px solid #a97b2e;
+  color: #ffe4b0;
+  padding: 0.85rem 1.5rem;
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.disclaimer strong {
+  color: #ffd070;
+  margin-right: 0.35em;
+}
+
+.disclaimer i {
+  color: #ffd070;
+  margin-right: 0.4em;
+}
+
 /* Hero */
 
 .hero {
