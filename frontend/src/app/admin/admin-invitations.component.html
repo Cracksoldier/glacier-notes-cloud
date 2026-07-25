@@ -1,49 +1,71 @@
-<h1>Invitations</h1>
+<h1>{{ i18n.t('adminInvitationsTitle') }}</h1>
 <form (ngSubmit)="create()">
-  <label>Email<input name="email" type="email" [(ngModel)]="email" required></label>
-  <label>Proposed username<input name="username" [(ngModel)]="proposedUsername"></label>
-  <label>Display name<input name="displayName" [(ngModel)]="displayName"></label>
   <label
-    >Role<select name="role" [(ngModel)]="role">
+    >{{ i18n.t('adminInvitationsEmail') }}
+    <input name="email" type="email" [(ngModel)]="email" required></label
+  >
+  <label
+    >{{ i18n.t('adminInvitationsProposedUsername') }}
+    <input name="username" [(ngModel)]="proposedUsername"></label
+  >
+  <label
+    >{{ i18n.t('adminInvitationsDisplayName') }}
+    <input name="displayName" [(ngModel)]="displayName"></label
+  >
+  <label
+    >{{ i18n.t('adminInvitationsRole') }}
+    <select name="role" [(ngModel)]="role">
       <option value="USER">USER</option>
       <option value="ADMIN">ADMIN</option>
     </select></label
   >
-  <button type="submit">Create invitation</button>
+  <button type="submit">{{ i18n.t('adminInvitationsCreate') }}</button>
 </form>
 @if (delivery(); as value) {
 <div class="card">
   <strong>{{ message() }}</strong>
   @if (value.activationUrl) {
   <input readonly [value]="value.activationUrl">
-  <button type="button" (click)="copy(value.activationUrl)">Copy activation link</button>
+  <button type="button" (click)="copy(value.activationUrl)">
+    {{ i18n.t('adminInvitationsCopyActivationLink') }}
+  </button>
   } @if (value.token) {
-  <label>Full one-time token<input readonly [value]="value.token"></label>
-  <button type="button" (click)="copy(value.token)">Copy token</button>
+  <label>{{ i18n.t('adminInvitationsFullToken') }}<input readonly [value]="value.token"></label>
+  <button type="button" (click)="copy(value.token)">
+    {{ i18n.t('adminInvitationsCopyToken') }}
+  </button>
   }
 </div>
 } @if (error()) {
 <p role="alert">{{ error() }}</p>
 }
 <label
-  >Status<select name="status" [(ngModel)]="status" (ngModelChange)="load()">
-    <option value="">All</option>
-    <option value="PENDING">Pending</option>
-    <option value="ACCEPTED">Accepted</option>
-    <option value="REVOKED">Revoked</option>
-    <option value="EXPIRED">Expired</option>
+  >{{ i18n.t('adminInvitationsStatus') }}
+  <select name="status" [(ngModel)]="status" (ngModelChange)="load()">
+    <option value="">{{ i18n.t('adminInvitationsStatusAll') }}</option>
+    <option value="PENDING">{{ i18n.t('adminInvitationsStatusPending') }}</option>
+    <option value="ACCEPTED">{{ i18n.t('adminInvitationsStatusAccepted') }}</option>
+    <option value="REVOKED">{{ i18n.t('adminInvitationsStatusRevoked') }}</option>
+    <option value="EXPIRED">{{ i18n.t('adminInvitationsStatusExpired') }}</option>
   </select></label
 >
 <div class="list">
   @for (invitation of invitations(); track invitation.id) {
   <article class="card">
     <strong>{{ invitation.email }}</strong>
-    <span>{{ invitation.role }}· {{ invitation.status }} · expires {{ invitation.expiresAt }}</span>
+    <span
+      >{{ invitation.role }}· {{ invitation.status }} ·
+      {{ i18n.t('adminInvitationsExpires', { date: invitation.expiresAt }) }}</span
+    >
     @if (invitation.status === 'PENDING' || invitation.status === 'EXPIRED') {
     <div class="actions">
-      <button type="button" (click)="resend(invitation.id)">Regenerate</button>
+      <button type="button" (click)="resend(invitation.id)">
+        {{ i18n.t('adminInvitationsRegenerate') }}
+      </button>
       @if (invitation.status === 'PENDING') {
-      <button type="button" (click)="revoke(invitation.id)">Revoke</button>
+      <button type="button" (click)="revoke(invitation.id)">
+        {{ i18n.t('adminInvitationsRevoke') }}
+      </button>
       }
     </div>
     }

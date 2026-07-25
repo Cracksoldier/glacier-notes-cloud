@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { I18nService } from '../core/i18n.service';
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
 
 @Component({
@@ -10,6 +11,7 @@ import { AdministrationService } from '../shared/generated-api/api/administratio
 })
 export class AdminShellComponent {
   private readonly api = inject(AdministrationService);
+  protected readonly i18n = inject(I18nService);
   readonly backupEnabled = signal(false);
 
   constructor() {

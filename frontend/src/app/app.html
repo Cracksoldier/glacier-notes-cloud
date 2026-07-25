@@ -4,7 +4,7 @@
 <div class="application">
   @if (auth.session(); as session) { @if (!notesActive()) {
   <header>
-    <a class="wordmark" href="/notes" routerLink="/notes">Glacier Notes</a>
+    <a class="wordmark" href="/notes" routerLink="/notes">{{ i18n.t('appShellWordmark') }}</a>
     <nav [attr.aria-label]="i18n.t('accountNavigation')">
       <a href="/sessions" routerLink="/sessions">{{ i18n.t('sessions') }}</a>
       <a href="/settings" routerLink="/settings">{{ i18n.t('settings') }}</a>
@@ -21,15 +21,15 @@
 <main class="shell">
   <section class="status-card" aria-labelledby="unavailable-title">
     <div class="mark" aria-hidden="true">G</div>
-    <h1 id="unavailable-title">Server unavailable</h1>
+    <h1 id="unavailable-title">{{ i18n.t('appShellServerUnavailable') }}</h1>
     <p class="lede" role="alert">
-      {{ setupError() || 'Glacier Notes could not check the instance setup status.' }}
+      {{ setupError() || i18n.t('appShellCheckFailed') }}
     </p>
-    <button type="button" (click)="retry()">Try again</button>
+    <button type="button" (click)="retry()">{{ i18n.t('appShellTryAgain') }}</button>
   </section>
 </main>
 } @default {
 <main class="shell" aria-busy="true">
-  <p class="loading" role="status">Checking instance security…</p>
+  <p class="loading" role="status">{{ i18n.t('appShellChecking') }}</p>
 </main>
 } }

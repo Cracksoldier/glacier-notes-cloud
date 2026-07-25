@@ -1,17 +1,14 @@
 <main class="setup-shell">
   <section class="setup-card" aria-labelledby="setup-title">
     <div class="brand" aria-hidden="true">G</div>
-    <p class="eyebrow">First-run setup</p>
-    <h1 id="setup-title">Create your administrator</h1>
-    <p class="intro">
-      This account owns the initial Notes notebook. The bootstrap token is sent once and is never
-      stored by Glacier Notes.
-    </p>
+    <p class="eyebrow">{{ i18n.t('setupFirstRun') }}</p>
+    <h1 id="setup-title">{{ i18n.t('setupCreateAdmin') }}</h1>
+    <p class="intro">{{ i18n.t('setupIntro') }}</p>
     @if (errorMessage(); as message) {
     <div class="notice notice-error" role="alert">
       {{ message }}
       @if (retryAfter(); as seconds) {
-      <span>Try again in about {{ seconds }} seconds.</span>
+      <span>{{ i18n.t('setupTryAgainInSeconds', { seconds }) }}</span>
       }
     </div>
     }
@@ -19,7 +16,7 @@
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <div class="field-grid">
         <div class="field">
-          <label for="username">Username</label>
+          <label for="username">{{ i18n.t('setupUsername') }}</label>
           <input
             id="username"
             formControlName="username"
@@ -33,7 +30,7 @@
         </div>
 
         <div class="field">
-          <label for="email">Email</label>
+          <label for="email">{{ i18n.t('setupEmail') }}</label>
           <input
             id="email"
             type="email"
@@ -49,7 +46,9 @@
       </div>
 
       <div class="field">
-        <label for="display-name">Display name <span>(optional)</span></label>
+        <label for="display-name"
+          >{{ i18n.t('setupDisplayName') }} <span>{{ i18n.t('setupOptional') }}</span></label
+        >
         <input
           id="display-name"
           formControlName="displayName"
@@ -64,7 +63,7 @@
 
       <div class="field-grid">
         <div class="field">
-          <label for="password">Password</label>
+          <label for="password">{{ i18n.t('setupPassword') }}</label>
           <input
             id="password"
             type="password"
@@ -75,14 +74,14 @@
               errorFor('password') ? 'password-hint password-error' : 'password-hint'
             "
           >
-          <p id="password-hint" class="hint">12–128 characters, without spaces.</p>
+          <p id="password-hint" class="hint">{{ i18n.t('setupPasswordHint') }}</p>
           @if (errorFor('password'); as error) {
           <p id="password-error" class="field-error">{{ error }}</p>
           }
         </div>
 
         <div class="field">
-          <label for="password-confirmation">Confirm password</label>
+          <label for="password-confirmation">{{ i18n.t('setupConfirmPassword') }}</label>
           <input
             id="password-confirmation"
             type="password"
@@ -100,7 +99,7 @@
       </div>
 
       <div class="field token-field">
-        <label for="bootstrap-token">Bootstrap token</label>
+        <label for="bootstrap-token">{{ i18n.t('setupBootstrapToken') }}</label>
         <input
           id="bootstrap-token"
           type="password"
@@ -114,16 +113,14 @@
               : 'bootstrap-token-hint'
           "
         >
-        <p id="bootstrap-token-hint" class="hint">
-          Use the value configured on the server or stored in its secret file.
-        </p>
+        <p id="bootstrap-token-hint" class="hint">{{ i18n.t('setupBootstrapTokenHint') }}</p>
         @if (errorFor('bootstrapToken'); as error) {
         <p id="bootstrap-token-error" class="field-error">{{ error }}</p>
         }
       </div>
 
       <button type="submit" [disabled]="submitting()">
-        {{ submitting() ? 'Creating administrator…' : 'Initialize Glacier Notes' }}
+        {{ submitting() ? i18n.t('setupCreatingAdmin') : i18n.t('setupInitialize') }}
       </button>
     </form>
   </section>

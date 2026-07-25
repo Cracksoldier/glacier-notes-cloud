@@ -2,37 +2,36 @@
   <section aria-labelledby="sessions-title">
     <div class="heading">
       <div>
-        <p class="eyebrow">Account security</p>
-        <h1 id="sessions-title">Signed-in devices</h1>
+        <p class="eyebrow">{{ i18n.t('sessionsAccountSecurity') }}</p>
+        <h1 id="sessions-title">{{ i18n.t('sessionsSignedInDevices') }}</h1>
       </div>
       <button type="button" class="secondary" (click)="revokeOthers()">
-        Sign out other devices
+        {{ i18n.t('sessionsSignOutOthers') }}
       </button>
     </div>
     @if (error(); as message) {
     <p class="notice" role="alert">{{ message }}</p>
     } @if (loading()) {
-    <p role="status">Loading sessions…</p>
+    <p role="status">{{ i18n.t('sessionsLoading') }}</p>
     } @else {
     <ul>
       @for (session of sessions(); track session.id) {
       <li>
         <div>
-          <strong>{{ session.clientDescription || 'Unknown browser' }}</strong>
+          <strong>{{ session.clientDescription || i18n.t('sessionsUnknownBrowser') }}</strong>
           @if (session.current) {
-          <span class="current">Current session</span>
+          <span class="current">{{ i18n.t('sessionsCurrent') }}</span>
           }
           <p>
-            Last active {{ session.lastSeenAt | date: 'medium' }} · Expires
-            {{ session.expiresAt | date: 'medium' }}
+            {{ i18n.t('sessionsLastActive', { last: (session.lastSeenAt | date: 'medium') ?? '', expires: (session.expiresAt | date: 'medium') ?? '' }) }}
           </p>
         </div>
         <button type="button" (click)="revoke(session)">
-          {{ session.current ? 'Sign out' : 'Revoke' }}
+          {{ session.current ? i18n.t('sessionsSignOutButton') : i18n.t('sessionsRevoke') }}
         </button>
       </li>
       } @empty {
-      <li>No active sessions.</li>
+      <li>{{ i18n.t('sessionsNoActive') }}</li>
       }
     </ul>
     }

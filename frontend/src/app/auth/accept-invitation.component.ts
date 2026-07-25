@@ -16,7 +16,7 @@ import type { InvitationInspection } from '../shared/generated-api/model/invitat
 })
 export class AcceptInvitationComponent {
   private readonly api = inject(AuthenticationService);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
   readonly inspection = signal<InvitationInspection | null>(null);
   readonly busy = signal(false);
   readonly completed = signal(false);

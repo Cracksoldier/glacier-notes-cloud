@@ -8,7 +8,7 @@
   @if (note(); as current) {
   <section
     class="editor__body note-color-{{ color().toLowerCase() }}"
-    aria-label="Note editor"
+    [attr.aria-label]="i18n.t('editorNoteEditor')"
     (drop)="onDrop($event)"
     (dragover)="$event.preventDefault()"
     (paste)="onPaste($event)"
@@ -16,32 +16,37 @@
     <header class="editor__header">
       <input
         class="editor__title"
-        aria-label="Note title"
-        placeholder="Title"
+        [attr.aria-label]="i18n.t('editorNoteTitle')"
+        [placeholder]="i18n.t('editorTitlePlaceholder')"
         [value]="title()"
         (input)="setTitle($any($event.target).value)"
       >
       <button
         type="button"
         class="icon-button"
-        title="Save and close"
-        aria-label="Save and close"
+        [title]="i18n.t('editorSaveAndClose')"
+        [attr.aria-label]="i18n.t('editorSaveAndClose')"
         (click)="close()"
       >
         <i class="fa-solid fa-xmark"></i>
       </button>
     </header>
     @if (imageIds().length) {
-    <section class="image-gallery" aria-label="Attached images">
+    <section class="image-gallery" [attr.aria-label]="i18n.t('editorAttachedImages')">
       @for (imageId of imageIds(); track imageId) {
       <figure>
         <button type="button" class="image-gallery__preview" (click)="lightbox.set(imageId)">
-          <img [src]="imageUrl(imageId, true)" alt="Note attachment" loading="lazy">
+          <!-- biome-ignore lint/a11y/useAltText: alt is bound from I18nService -->
+          <img
+            [src]="imageUrl(imageId, true)"
+            [alt]="i18n.t('editorNoteAttachment')"
+            loading="lazy"
+          >
         </button>
         <button
           type="button"
           class="image-gallery__remove"
-          aria-label="Remove image"
+          [attr.aria-label]="i18n.t('editorRemoveImage')"
           (click)="removeImage(imageId)"
         >
           <i class="fa-solid fa-xmark"></i>
@@ -57,7 +62,7 @@
       }
     </div>
     } @if (current.noteType === 'TEXT') {
-    <div class="editor__toolbar" role="toolbar" aria-label="Markdown toolbar">
+    <div class="editor__toolbar" role="toolbar" [attr.aria-label]="i18n.t('editorMarkdownToolbar')">
       <div class="editor__formatting">
         @for (button of toolbar; track button.action) {
         <button
@@ -79,7 +84,7 @@
         (click)="preview.set(!preview())"
       >
         <i class="fa-solid" [class.fa-eye]="!preview()" [class.fa-pen]="preview()"></i>
-        {{ preview() ? 'Edit' : 'Preview' }}
+        {{ preview() ? i18n.t('editorEdit') : i18n.t('editorPreview') }}
       </button>
     </div>
     @if (preview()) {
@@ -91,43 +96,53 @@
     <textarea
       #textarea
       class="editor__content"
-      aria-label="Note content"
-      placeholder="Take a note…"
+      [attr.aria-label]="i18n.t('editorNoteContent')"
+      [placeholder]="i18n.t('editorBodyPlaceholder')"
       [value]="content()"
       (input)="setContent($any($event.target).value)"
     ></textarea>
     } } @else {
     <fieldset class="checklist">
-      <legend class="visually-hidden">Checklist items</legend>
+      <legend class="visually-hidden">{{ i18n.t('editorChecklistItems') }}</legend>
       @for (item of items(); track item.key; let index = $index; let first = $first; let last =
       $last) {
       <div class="checklist__row" [class.done]="item.checked">
         <span class="checklist__reorder">
-          <button type="button" title="Move up" [disabled]="first" (click)="moveItem(index, -1)">
+          <button
+            type="button"
+            [title]="i18n.t('notesMoveUp')"
+            [disabled]="first"
+            (click)="moveItem(index, -1)"
+          >
             <i class="fa-solid fa-chevron-up"></i>
           </button>
-          <button type="button" title="Move down" [disabled]="last" (click)="moveItem(index, 1)">
+          <button
+            type="button"
+            [title]="i18n.t('notesMoveDown')"
+            [disabled]="last"
+            (click)="moveItem(index, 1)"
+          >
             <i class="fa-solid fa-chevron-down"></i>
           </button>
         </span>
         <input
           type="checkbox"
           [checked]="item.checked"
-          [attr.aria-label]="'Toggle ' + (item.text || 'item')"
+          [attr.aria-label]="i18n.t('editorToggleItem', { item: item.text || i18n.t('editorItem') })"
           (change)="toggleItem(index)"
         >
         <input
           class="checklist__text"
-          aria-label="Checklist item"
-          placeholder="List item"
+          [attr.aria-label]="i18n.t('editorChecklistItem')"
+          [placeholder]="i18n.t('editorListItemPlaceholder')"
           [value]="item.text"
           (input)="updateItem(index, $any($event.target).value)"
         >
         <button
           type="button"
           class="checklist__remove"
-          title="Remove item"
-          aria-label="Remove item"
+          [title]="i18n.t('editorRemoveItem')"
+          [attr.aria-label]="i18n.t('editorRemoveItem')"
           (click)="removeItem(index)"
         >
           <i class="fa-solid fa-xmark"></i>
@@ -136,17 +151,19 @@
       }
       <button type="button" class="checklist__add" (click)="addItem()">
         <i class="fa-solid fa-plus"></i>
-        Add item
+        {{ i18n.t('editorAddItem') }}
       </button>
     </fieldset>
     } @if (saveState() === 'conflict') {
     <div class="editor__conflict" role="alert">
       <div>
-        <strong>Another session changed this note.</strong><br>Your local draft has been retained.
+        <strong>{{ i18n.t('editorConflictTitle') }}</strong><br>{{ i18n.t('editorConflictBody') }}
       </div>
-      <button type="button" (click)="copyLocalDraft()">Copy local draft</button>
-      <button type="button" (click)="loadServerCopy()">Reload server</button>
-      <button type="button" (click)="overwriteDraft()">Overwrite with draft</button>
+      <button type="button" (click)="copyLocalDraft()">{{ i18n.t('editorCopyLocalDraft') }}</button>
+      <button type="button" (click)="loadServerCopy()">{{ i18n.t('editorReloadServer') }}</button>
+      <button type="button" (click)="overwriteDraft()">
+        {{ i18n.t('editorOverwriteWithDraft') }}
+      </button>
     </div>
     }
 
@@ -154,7 +171,7 @@
       <div class="editor__options">
         <button type="button" (click)="openHistory()">
           <i class="fa-solid fa-clock-rotate-left"></i>
-          History
+          {{ i18n.t('editorHistory') }}
         </button>
         <button type="button" (click)="shareByEmail()">
           <i class="fa-solid fa-envelope"></i>
@@ -166,7 +183,7 @@
             [class.fa-list-check]="current.noteType === 'TEXT'"
             [class.fa-file-lines]="current.noteType === 'CHECKLIST'"
           ></i>
-          Convert
+          {{ i18n.t('editorConvert') }}
         </button>
         <input
           #imagePicker
@@ -178,10 +195,10 @@
         >
         <button type="button" (click)="imagePicker.click()">
           <i class="fa-solid fa-image"></i>
-          Images
+          {{ i18n.t('editorImages') }}
         </button>
         <details>
-          <summary><i class="fa-solid fa-palette"></i> Color</summary>
+          <summary><i class="fa-solid fa-palette"></i> {{ i18n.t('editorColor') }}</summary>
           <div class="editor-menu editor-menu--colors">
             @for (entry of colors; track entry) {
             <button
@@ -195,7 +212,7 @@
           </div>
         </details>
         <details>
-          <summary><i class="fa-solid fa-tag"></i> Labels</summary>
+          <summary><i class="fa-solid fa-tag"></i> {{ i18n.t('editorLabels') }}</summary>
           <div class="editor-menu">
             @for (label of store.labels(); track label.id) {
             <label
@@ -205,11 +222,11 @@
                 (change)="toggleLabel(label.id)"
               > {{ label.name }}</label
             >
-            } @empty { <span>No labels yet</span> }
+            } @empty { <span>{{ i18n.t('editorNoLabelsYet') }}</span> }
           </div>
         </details>
         <select
-          aria-label="Move to notebook"
+          [attr.aria-label]="i18n.t('editorMoveToNotebook')"
           [value]="current.notebookId"
           (change)="moveTo($any($event.target).value)"
         >
@@ -218,14 +235,16 @@
           }
         </select>
         <button type="button" [class.active]="pinned()" (click)="pinned.set(!pinned()); changed()">
-          <i class="fa-solid fa-thumbtack"></i> {{ pinned() ? 'Pinned' : 'Pin' }}
+          <i class="fa-solid fa-thumbtack"></i>
+          {{ pinned() ? i18n.t('editorPinned') : i18n.t('editorPin') }}
         </button>
         <button type="button" (click)="archived.set(!archived()); changed()">
-          <i class="fa-solid fa-box-archive"></i> {{ archived() ? 'Unarchive' : 'Archive' }}
+          <i class="fa-solid fa-box-archive"></i>
+          {{ archived() ? i18n.t('editorUnarchive') : i18n.t('editorArchive') }}
         </button>
         <button type="button" class="danger" (click)="trash()">
           <i class="fa-solid fa-trash-can"></i>
-          Trash
+          {{ i18n.t('editorTrash') }}
         </button>
       </div>
       <div class="save-state save-state--{{ saveState() }}" role="status" aria-live="polite">
@@ -242,7 +261,9 @@
         <i class="fa-solid fa-circle-exclamation"></i>
         }
         <span class="save-state__message">{{ saveMessage() }}</span>
-        @if (saveState() === 'error') { <button type="button" (click)="retry()">Retry</button> }
+        @if (saveState() === 'error') {
+        <button type="button" (click)="retry()">{{ i18n.t('editorRetry') }}</button>
+        }
       </div>
     </footer>
     @if (lightbox(); as imageId) {
@@ -251,37 +272,42 @@
       appModalFocus
       role="dialog"
       aria-modal="true"
-      aria-label="Image preview"
+      [attr.aria-label]="i18n.t('editorImagePreview')"
       (click)="lightbox.set(null)"
       (modalDismiss)="lightbox.set(null)"
     >
-      <button type="button" aria-label="Close image preview" (click)="lightbox.set(null)">
+      <button
+        type="button"
+        [attr.aria-label]="i18n.t('editorCloseImagePreview')"
+        (click)="lightbox.set(null)"
+      >
         <i class="fa-solid fa-xmark"></i>
       </button>
+      <!-- biome-ignore lint/a11y/useAltText: alt is bound from I18nService -->
       <img
         [src]="imageUrl(imageId)"
-        alt="Full-size note attachment"
+        [alt]="i18n.t('editorFullSizeAttachment')"
         (click)="$event.stopPropagation()"
       >
     </div>
     } @if (historyOpen()) {
-    <aside class="history-panel" aria-label="Note version history">
+    <aside class="history-panel" [attr.aria-label]="i18n.t('editorVersionHistory')">
       <header class="history-panel__header">
         <div class="history-panel__heading">
-          <strong>Version history</strong
-          ><small>Restoring keeps the current notebook and trash state.</small>
+          <strong>{{ i18n.t('editorVersionHistoryHeading') }}</strong
+          ><small>{{ i18n.t('editorRestoreKeepsState') }}</small>
         </div>
         <button
           type="button"
           class="history-panel__close"
-          aria-label="Close history"
+          [attr.aria-label]="i18n.t('editorCloseHistory')"
           (click)="historyOpen.set(false)"
         >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </header>
       <div class="history-panel__body">
-        <nav class="history-panel__versions" aria-label="Saved versions">
+        <nav class="history-panel__versions" [attr.aria-label]="i18n.t('editorSavedVersions')">
           @for (version of versions(); track version.id) {
           <button
             type="button"
@@ -289,36 +315,38 @@
             [class.active]="selectedVersion()?.id === version.id"
             (click)="selectVersion(version.id)"
           >
-            <strong>{{ version.title || 'Untitled' }}</strong>
+            <strong>{{ version.title || i18n.t('editorUntitled') }}</strong>
             <span>{{ version.reason.replaceAll('_', ' ') }}</span>
             <small>{{ i18n.formatDate(version.snapshotAt) }}</small>
           </button>
           } @empty {
-          <p>No saved versions yet.</p>
+          <p>{{ i18n.t('editorNoVersions') }}</p>
           } @if (historyCursor()) {
           <button type="button" class="history-panel__version" (click)="loadOlderVersions()">
-            Load older versions
+            {{ i18n.t('editorLoadOlderVersions') }}
           </button>
           }
         </nav>
         <section class="history-preview">
           @if (historyLoading()) {
-          <p><i class="fa-solid fa-circle-notch fa-spin"></i> Loading history…</p>
+          <p>
+            <i class="fa-solid fa-circle-notch fa-spin"></i> {{ i18n.t('editorLoadingHistory') }}
+          </p>
           } @else if (selectedVersion(); as version) {
-          <h2>{{ version.title || 'Untitled' }}</h2>
+          <h2>{{ version.title || i18n.t('editorUntitled') }}</h2>
           <pre>{{ versionBody(version) }}</pre>
           <dl>
             <div class="history-preview__metadata">
-              <dt>Type</dt>
+              <dt>{{ i18n.t('editorType') }}</dt>
               <dd>{{ version.noteType }}</dd>
             </div>
             <div class="history-preview__metadata">
-              <dt>Source version</dt>
+              <dt>{{ i18n.t('editorSourceVersion') }}</dt>
               <dd>{{ version.sourceVersion }}</dd>
             </div>
           </dl>
           <button type="button" class="history-restore" (click)="restoreSelectedVersion()">
-            Restore this version
+            {{ i18n.t('editorRestoreThisVersion') }}
           </button>
           }
         </section>

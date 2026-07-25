@@ -1,7 +1,7 @@
-<h1>Users</h1>
+<h1>{{ i18n.t('adminUsersTitle') }}</h1>
 <form (ngSubmit)="load()">
-  <label>Search <input name="query" [(ngModel)]="query"></label>
-  <button type="submit">Search</button>
+  <label>{{ i18n.t('adminUsersSearch') }} <input name="query" [(ngModel)]="query"></label>
+  <button type="submit">{{ i18n.t('adminUsersSearch') }}</button>
 </form>
 @if (error()) {
 <p role="alert">{{ error() }}</p>
@@ -14,6 +14,6 @@
     <span>{{ user.noteCount }} notes · {{ user.storageBytes }} bytes</span>
   </a>
   } @empty {
-  <p>No users found.</p>
+  <p>{{ i18n.t('adminUsersNoUsers') }}</p>
   }
 </div>

@@ -1,20 +1,20 @@
 <main class="auth-shell">
   <section class="auth-card" aria-labelledby="login-title">
     <div class="brand" aria-hidden="true">G</div>
-    <p class="eyebrow">Glacier Notes Cloud</p>
-    <h1 id="login-title">Welcome back</h1>
-    <p class="intro">Sign in with your username or email address.</p>
+    <p class="eyebrow">{{ i18n.t('authGlacierNotesCloud') }}</p>
+    <h1 id="login-title">{{ i18n.t('authWelcomeBack') }}</h1>
+    <p class="intro">{{ i18n.t('authSignInIntro') }}</p>
     @if (errorMessage(); as message) {
     <div class="notice" role="alert">
       {{ message }}
       @if (retryAfter(); as seconds) {
-      <span>Try again in {{ seconds }} seconds.</span>
+      <span>{{ i18n.t('authTryAgainInSeconds', { seconds }) }}</span>
       }
     </div>
     }
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <label for="identifier">Username or email</label>
+      <label for="identifier">{{ i18n.t('authUsernameOrEmail') }}</label>
       <input
         id="identifier"
         formControlName="identifier"
@@ -25,7 +25,7 @@
       @if (errorFor('identifier'); as error) {
       <p id="identifier-error" class="field-error">{{ error }}</p>
       }
-      <label for="password">Password</label>
+      <label for="password">{{ i18n.t('authPassword') }}</label>
       <input
         id="password"
         formControlName="password"
@@ -39,12 +39,14 @@
       }
       <label class="remember">
         <input formControlName="rememberMe" type="checkbox">
-        Keep me signed in on this device
+        {{ i18n.t('authRememberMe') }}
       </label>
       <button type="submit" [disabled]="submitting()">
-        {{ submitting() ? 'Signing in…' : 'Sign in' }}
+        {{ submitting() ? i18n.t('authSigningIn') : i18n.t('authSignIn') }}
       </button>
-      <a href="/forgot-password" routerLink="/forgot-password">Forgot your password?</a>
+      <a href="/forgot-password" routerLink="/forgot-password"
+        >{{ i18n.t('authForgotPassword') }}</a
+      >
     </form>
   </section>
 </main>

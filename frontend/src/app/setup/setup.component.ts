@@ -24,7 +24,7 @@ interface ControlErrors {
 export class SetupComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly setupApi = inject(SetupService);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
 
   @Output() readonly initialized = new EventEmitter<void>();
 

@@ -7,21 +7,21 @@ import type { SmtpStatus } from '../shared/generated-api/model/smtpStatus';
 @Component({
   selector: 'app-admin-smtp',
   template: `
-    <h1>SMTP status</h1>
-    <p>SMTP credentials remain deployment secrets and are never returned to this dashboard.</p>
+    <h1>{{ i18n.t('adminSmtpTitle') }}</h1>
+    <p>{{ i18n.t('adminSmtpIntro') }}</p>
     @if (status(); as value) {
       <dl>
-        <div><dt>Configured</dt><dd>{{ value.configured ? 'Yes' : 'No' }}</dd></div>
-        <div><dt>Sender</dt><dd>{{ value.senderName }} &lt;{{ value.senderAddress }}&gt;</dd></div>
-        <div><dt>State</dt><dd>{{ value.state }}</dd></div>
-        <div><dt>Last success</dt><dd>{{ value.lastSuccessfulAt ?? 'Never' }}</dd></div>
-        <div><dt>Last failure</dt><dd>{{ value.lastFailureCategory ?? 'None' }}</dd></div>
+        <div><dt>{{ i18n.t('adminSmtpConfigured') }}</dt><dd>{{ value.configured ? i18n.t('adminSmtpYes') : i18n.t('adminSmtpNo') }}</dd></div>
+        <div><dt>{{ i18n.t('adminSmtpSender') }}</dt><dd>{{ value.senderName }} &lt;{{ value.senderAddress }}&gt;</dd></div>
+        <div><dt>{{ i18n.t('adminSmtpState') }}</dt><dd>{{ value.state }}</dd></div>
+        <div><dt>{{ i18n.t('adminSmtpLastSuccess') }}</dt><dd>{{ value.lastSuccessfulAt ?? i18n.t('adminSmtpNever') }}</dd></div>
+        <div><dt>{{ i18n.t('adminSmtpLastFailure') }}</dt><dd>{{ value.lastFailureCategory ?? i18n.t('adminSmtpNone') }}</dd></div>
       </dl>
       <button type="button" [disabled]="!value.configured || testing()" (click)="test()">
-        {{ testing() ? 'Sending…' : 'Send test email to me' }}
+        {{ testing() ? i18n.t('adminSmtpSending') : i18n.t('adminSmtpSendTestEmail') }}
       </button>
     } @else {
-      <p role="status">Loading SMTP status…</p>
+      <p role="status">{{ i18n.t('adminSmtpLoading') }}</p>
     }
     @if (message()) { <p role="status">{{ message() }}</p> }
     @if (error()) { <p role="alert">{{ error() }}</p> }
@@ -30,7 +30,7 @@ import type { SmtpStatus } from '../shared/generated-api/model/smtpStatus';
 })
 export class AdminSmtpComponent {
   private readonly api = inject(AdministrationService);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
   readonly status = signal<SmtpStatus | null>(null);
   readonly testing = signal(false);
   readonly message = signal('');

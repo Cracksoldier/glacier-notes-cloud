@@ -4,9 +4,15 @@
   (click)="open()"
 >
   @if (note().pinned && !trashed()) {
-  <i class="note-card__pin fa-solid fa-thumbtack" title="Pinned" aria-hidden="true"></i>
+  <i
+    class="note-card__pin fa-solid fa-thumbtack"
+    [title]="i18n.t('noteCardPinned')"
+    aria-hidden="true"
+  ></i>
   } @if (note().archived) {
-  <span class="note-card__badge"><i class="fa-solid fa-box-archive"></i> Archived</span>
+  <span class="note-card__badge"
+    ><i class="fa-solid fa-box-archive"></i> {{ i18n.t('noteCardArchived') }}</span
+  >
   } @if (note().title) {
   <h3>{{ note().title }}</h3>
   } @if (firstImage(); as imageId) {
@@ -31,7 +37,7 @@
       <span aria-hidden="true" [innerHTML]="markdown.renderInline(item.text)"></span>
     </label>
     } @if (note().checklistPreview.length === 0 && !note().title) {
-    <p class="muted">Empty note</p>
+    <p class="muted">{{ i18n.t('noteCardEmpty') }}</p>
     }
   </div>
   } @else if (note().preview) {
@@ -41,7 +47,7 @@
     (click)="onPreviewClick($event)"
   ></div>
   } @else if (!note().title) {
-  <p class="muted">Empty note</p>
+  <p class="muted">{{ i18n.t('noteCardEmpty') }}</p>
   } @if (labels().length) {
   <div class="note-card__labels">
     @for (label of labels(); track label.id) {
@@ -52,17 +58,27 @@
 
   <div class="note-card__actions" (click)="$event.stopPropagation()">
     @if (!trashed()) {
-    <button type="button" title="Open note" aria-label="Open note" (click)="open()">
+    <button
+      type="button"
+      [title]="i18n.t('noteCardOpen')"
+      [attr.aria-label]="i18n.t('noteCardOpen')"
+      (click)="open()"
+    >
       <i class="fa-solid fa-pen"></i>
     </button>
     } @if (trashed()) {
-    <button type="button" title="Restore" aria-label="Restore" (click)="store.restoreNote(note())">
+    <button
+      type="button"
+      [title]="i18n.t('noteCardRestore')"
+      [attr.aria-label]="i18n.t('noteCardRestore')"
+      (click)="store.restoreNote(note())"
+    >
       <i class="fa-solid fa-trash-arrow-up"></i>
     </button>
     <button
       type="button"
-      title="Delete forever"
-      aria-label="Delete forever"
+      [title]="i18n.t('noteCardDeleteForever')"
+      [attr.aria-label]="i18n.t('noteCardDeleteForever')"
       (click)="purge($event)"
     >
       <i class="fa-solid fa-xmark"></i>
@@ -70,8 +86,8 @@
     } @else {
     <button
       type="button"
-      title="{{ note().pinned ? 'Unpin' : 'Pin' }}"
-      aria-label="{{ note().pinned ? 'Unpin' : 'Pin' }}"
+      [title]="note().pinned ? i18n.t('noteCardUnpin') : i18n.t('noteCardPin')"
+      [attr.aria-label]="note().pinned ? i18n.t('noteCardUnpin') : i18n.t('noteCardPin')"
       [class.active]="note().pinned"
       (click)="store.togglePin(note())"
     >
@@ -79,8 +95,8 @@
     </button>
     <button
       type="button"
-      title="{{ note().archived ? 'Unarchive' : 'Archive' }}"
-      aria-label="{{ note().archived ? 'Unarchive' : 'Archive' }}"
+      [title]="note().archived ? i18n.t('noteCardUnarchive') : i18n.t('noteCardArchive')"
+      [attr.aria-label]="note().archived ? i18n.t('noteCardUnarchive') : i18n.t('noteCardArchive')"
       (click)="store.setArchived(note(), !note().archived)"
     >
       <i
@@ -90,11 +106,20 @@
       ></i>
     </button>
     <span class="menu-anchor">
-      <button type="button" title="Color" aria-label="Color" (click)="toggleMenu($event, 'color')">
+      <button
+        type="button"
+        [title]="i18n.t('noteCardColor')"
+        [attr.aria-label]="i18n.t('noteCardColor')"
+        (click)="toggleMenu($event, 'color')"
+      >
         <i class="fa-solid fa-palette"></i>
       </button>
       @if (menu() === 'color') {
-      <span class="card-menu card-menu--colors" role="menu" aria-label="Note color">
+      <span
+        class="card-menu card-menu--colors"
+        role="menu"
+        [attr.aria-label]="i18n.t('noteCardNoteColor')"
+      >
         @for (color of colors; track color) {
         <button
           type="button"
@@ -108,12 +133,17 @@
       }
     </span>
     <span class="menu-anchor">
-      <button type="button" title="Move" aria-label="Move" (click)="toggleMenu($event, 'move')">
+      <button
+        type="button"
+        [title]="i18n.t('noteCardMove')"
+        [attr.aria-label]="i18n.t('noteCardMove')"
+        (click)="toggleMenu($event, 'move')"
+      >
         <i class="fa-solid fa-folder-open"></i>
       </button>
       @if (menu() === 'move') {
-      <span class="card-menu" role="menu" aria-label="Move to notebook">
-        <strong>Move to</strong>
+      <span class="card-menu" role="menu" [attr.aria-label]="i18n.t('noteCardMoveToNotebook')">
+        <strong>{{ i18n.t('noteCardMoveTo') }}</strong>
         @for (notebook of store.notebooks(); track notebook.id) {
         <button type="button" (click)="chooseNotebook($event, notebook.id)">
           {{ notebook.name }}
@@ -124,8 +154,8 @@
     </span>
     <button
       type="button"
-      title="Move to trash"
-      aria-label="Move to trash"
+      [title]="i18n.t('noteCardMoveToTrash')"
+      [attr.aria-label]="i18n.t('noteCardMoveToTrash')"
       (click)="store.trashNote(note())"
     >
       <i class="fa-solid fa-trash-can"></i>

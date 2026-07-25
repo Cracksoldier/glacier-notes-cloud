@@ -15,7 +15,7 @@ import type { SessionSummary } from '../shared/generated-api/model/sessionSummar
 export class SessionsComponent {
   private readonly sessionsApi = inject(SessionsService);
   private readonly auth = inject(AuthStore);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly sessions = signal<SessionSummary[]>([]);
   protected readonly loading = signal(true);

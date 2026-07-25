@@ -2,41 +2,47 @@
 <h1>{{ value.username }}</h1>
 <p>{{ value.status }} · {{ value.role }}</p>
 @if (value.deletionDueAt) {
-<p role="status">Deletion due: {{ value.deletionDueAt }}</p>
+<p role="status">{{ i18n.t('adminUserDeletionDue', { date: value.deletionDueAt }) }}</p>
 }
 <form (ngSubmit)="save()">
-  <label>Username<input name="username" [(ngModel)]="username"></label>
-  <label>Email<input name="email" type="email" [(ngModel)]="email"></label>
-  <label>Display name<input name="displayName" [(ngModel)]="displayName"></label>
+  <label>{{ i18n.t('adminUserUsername') }}<input name="username" [(ngModel)]="username"></label>
+  <label>{{ i18n.t('adminUserEmail') }}<input name="email" type="email" [(ngModel)]="email"></label>
   <label
-    >Role<select name="role" [(ngModel)]="role">
+    >{{ i18n.t('adminUserDisplayName') }}<input name="displayName" [(ngModel)]="displayName"></label
+  >
+  <label
+    >{{ i18n.t('adminUserRole') }}
+    <select name="role" [(ngModel)]="role">
       <option value="USER">USER</option>
       <option value="ADMIN">ADMIN</option>
     </select></label
   >
-  <button type="submit">Save account</button>
+  <button type="submit">{{ i18n.t('adminUserSaveAccount') }}</button>
 </form>
 <div class="actions">
-  <button type="button" (click)="activate()">Activate</button>
-  <button type="button" (click)="deactivate()">Deactivate</button>
-  <button type="button" (click)="unlock()">Unlock</button>
-  <button type="button" (click)="revokeSessions()">Revoke sessions</button>
-  <button type="button" (click)="resetPassword()">Generate reset link</button>
+  <button type="button" (click)="activate()">{{ i18n.t('adminUserActivate') }}</button>
+  <button type="button" (click)="deactivate()">{{ i18n.t('adminUserDeactivate') }}</button>
+  <button type="button" (click)="unlock()">{{ i18n.t('adminUserUnlock') }}</button>
+  <button type="button" (click)="revokeSessions()">{{ i18n.t('adminUserRevokeSessions') }}</button>
+  <button type="button" (click)="resetPassword()">
+    {{ i18n.t('adminUserGenerateResetLink') }}
+  </button>
   @if (value.status === 'PENDING_DELETION') {
-  <button type="button" (click)="restoreDeletion()">Restore account</button>
+  <button type="button" (click)="restoreDeletion()">{{ i18n.t('adminUserRestoreAccount') }}</button>
   } @else {
-  <button type="button" (click)="scheduleDeletion()">Schedule retained deletion</button>
-  <button type="button" class="danger" (click)="deleteImmediately()">Delete immediately…</button>
+  <button type="button" (click)="scheduleDeletion()">
+    {{ i18n.t('adminUserScheduleDeletion') }}
+  </button>
+  <button type="button" class="danger" (click)="deleteImmediately()">
+    {{ i18n.t('adminUserDeleteImmediately') }}
+  </button>
   }
 </div>
 <section class="card blind-import">
-  <h2>Blind portable import</h2>
-  <p>
-    Import a <code>.glacier.json</code> file into this account. Only structural counts and errors
-    are shown; note content, images, and embedded filenames are never previewed.
-  </p>
+  <h2>{{ i18n.t('adminUserBlindImportTitle') }}</h2>
+  <p>{{ i18n.t('adminUserBlindImportIntro') }}</p>
   <label class="file-button"
-    >Choose import file
+    >{{ i18n.t('adminUserChooseImportFile') }}
     <input
       type="file"
       accept=".json,.glacier.json,application/json"
@@ -45,17 +51,20 @@
     >
   </label>
   @if (importJob(); as job) {
-  <p role="status">Status: {{ job.state }}</p>
+  <p role="status">{{ i18n.t('adminUserImportStatus', { state: job.state }) }}</p>
   @if (job.counts; as counts) {
   <p>
-    {{ counts.notebooks }}
-    notebooks · {{ counts.notes }} notes · {{ counts.labels }} labels · {{ counts.images }} images
+    {{ i18n.t('adminUserImportCounts', { notebooks: counts.notebooks, notes: counts.notes, labels: counts.labels, images: counts.images }) }}
   </p>
   } @if (job.state === 'READY' && job.hasConflicts) {
   <div class="actions">
-    <button type="button" (click)="applyImport(ImportStrategy.AddAsCopies)">Add as copies</button>
-    <button type="button" (click)="applyImport(ImportStrategy.ReplaceById)">Replace by ID</button>
-    <button type="button" (click)="cancelImport()">Cancel</button>
+    <button type="button" (click)="applyImport(ImportStrategy.AddAsCopies)">
+      {{ i18n.t('adminUserAddAsCopies') }}
+    </button>
+    <button type="button" (click)="applyImport(ImportStrategy.ReplaceById)">
+      {{ i18n.t('adminUserReplaceById') }}
+    </button>
+    <button type="button" (click)="cancelImport()">{{ i18n.t('commonCancel') }}</button>
   </div>
   } @if (job.errors?.length) {
   <ul role="alert">
@@ -66,8 +75,8 @@
   } }
 </section>
 @if (reset(); as link) {
-<label>One-time reset URL<input readonly [value]="link.resetUrl"></label>
-<button type="button" (click)="copy(link.resetUrl)">Copy reset link</button>
+<label>{{ i18n.t('adminUserOneTimeResetUrl') }}<input readonly [value]="link.resetUrl"></label>
+<button type="button" (click)="copy(link.resetUrl)">{{ i18n.t('adminUserCopyResetLink') }}</button>
 } } @if (message()) {
 <p role="status">{{ message() }}</p>
 } @if (error()) {

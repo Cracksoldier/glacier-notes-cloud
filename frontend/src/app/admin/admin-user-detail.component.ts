@@ -22,7 +22,7 @@ export class AdminUserDetailComponent {
   private readonly api = inject(AdministrationService);
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
   readonly user = signal<AdminUser | null>(null);
   readonly reset = signal<ResetLink | null>(null);

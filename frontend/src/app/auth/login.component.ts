@@ -22,7 +22,7 @@ interface LoginControlErrors {
 export class LoginComponent {
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
   private readonly problems = inject(ProblemService);
 
   protected readonly submitting = signal(false);

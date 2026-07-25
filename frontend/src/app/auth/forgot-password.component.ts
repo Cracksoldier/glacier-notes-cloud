@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
+import { I18nService } from '../core/i18n.service';
 import { AuthenticationService } from '../shared/generated-api/api/authentication.service';
 
 @Component({
@@ -12,6 +13,7 @@ import { AuthenticationService } from '../shared/generated-api/api/authenticatio
 })
 export class ForgotPasswordComponent {
   private readonly api = inject(AuthenticationService);
+  protected readonly i18n = inject(I18nService);
   readonly sent = signal(false);
   email = '';
 

@@ -13,7 +13,7 @@ import { AuthenticationService } from '../shared/generated-api/api/authenticatio
 })
 export class ResetPasswordComponent {
   private readonly api = inject(AuthenticationService);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
   readonly done = signal(false);
   readonly error = signal('');
   readonly busy = signal(false);

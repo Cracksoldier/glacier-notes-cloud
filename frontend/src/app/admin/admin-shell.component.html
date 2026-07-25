@@ -1,15 +1,31 @@
 <main class="admin-shell">
   <aside>
-    <p class="eyebrow">Administration</p>
-    <a href="/admin/overview" routerLink="overview" routerLinkActive="active">Overview</a>
-    <a href="/admin/users" routerLink="users" routerLinkActive="active">Users</a>
-    <a href="/admin/invitations" routerLink="invitations" routerLinkActive="active">Invitations</a>
-    <a href="/admin/settings" routerLink="settings" routerLinkActive="active">Instance settings</a>
-    <a href="/admin/smtp" routerLink="smtp" routerLinkActive="active">SMTP</a>
-    <a href="/admin/audit" routerLink="audit" routerLinkActive="active">Audit log</a>
-    <a href="/admin/status" routerLink="status" routerLinkActive="active">Status</a>
+    <p class="eyebrow">{{ i18n.t('administration') }}</p>
+    <a href="/admin/overview" routerLink="overview" routerLinkActive="active"
+      >{{ i18n.t('adminShellOverview') }}</a
+    >
+    <a href="/admin/users" routerLink="users" routerLinkActive="active"
+      >{{ i18n.t('adminShellUsers') }}</a
+    >
+    <a href="/admin/invitations" routerLink="invitations" routerLinkActive="active"
+      >{{ i18n.t('adminShellInvitations') }}</a
+    >
+    <a href="/admin/settings" routerLink="settings" routerLinkActive="active"
+      >{{ i18n.t('adminShellSettings') }}</a
+    >
+    <a href="/admin/smtp" routerLink="smtp" routerLinkActive="active"
+      >{{ i18n.t('adminShellSmtp') }}</a
+    >
+    <a href="/admin/audit" routerLink="audit" routerLinkActive="active"
+      >{{ i18n.t('adminShellAuditLog') }}</a
+    >
+    <a href="/admin/status" routerLink="status" routerLinkActive="active"
+      >{{ i18n.t('adminShellStatus') }}</a
+    >
     @if (backupEnabled()) {
-    <a href="/admin/backups" routerLink="backups" routerLinkActive="active">Backups</a>
+    <a href="/admin/backups" routerLink="backups" routerLinkActive="active"
+      >{{ i18n.t('adminShellBackups') }}</a
+    >
     }
   </aside>
   <section><router-outlet /></section>

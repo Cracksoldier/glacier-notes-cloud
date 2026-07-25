@@ -3,7 +3,7 @@
     <button
       type="button"
       class="mobile-menu"
-      aria-label="Open navigation"
+      [attr.aria-label]="i18n.t('notesOpenNavigation')"
       (click)="drawerOpen.set(!drawerOpen())"
     >
       <i class="fa-solid fa-bars"></i>
@@ -13,7 +13,7 @@
       <span>Glacier Notes</span>
     </a>
     <div class="search-wrap">
-      <search class="search-placeholder" aria-label="Search notes">
+      <search class="search-placeholder" [attr.aria-label]="i18n.t('search')">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input
           #searchInput
@@ -24,13 +24,17 @@
           (keydown)="searchKeydown($event)"
         >
         @if (searchValue()) {
-        <button type="button" aria-label="Clear search" (click)="clearSearch()">
+        <button
+          type="button"
+          [attr.aria-label]="i18n.t('notesClearSearch')"
+          (click)="clearSearch()"
+        >
           <i class="fa-solid fa-xmark"></i>
         </button>
         }
         <button
           type="button"
-          aria-label="Search filters"
+          [attr.aria-label]="i18n.t('notesSearchFilters')"
           [class.active]="searchFiltersOpen()"
           (click)="searchFiltersOpen.set(!searchFiltersOpen())"
         >
@@ -38,15 +42,15 @@
         </button>
       </search>
       @if (searchFiltersOpen()) {
-      <section class="search-filters" aria-label="Search filters">
+      <section class="search-filters" [attr.aria-label]="i18n.t('notesSearchFilters')">
         <fieldset class="search-scope">
-          <legend class="visually-hidden">Search scope</legend>
+          <legend class="visually-hidden">{{ i18n.t('notesSearchScope') }}</legend>
           <button
             type="button"
             [class.active]="searchScope() === 'ALL'"
             (click)="searchScope.set('ALL'); runSearch()"
           >
-            All notes
+            {{ i18n.t('notesAllNotes') }}
           </button>
           <button
             type="button"
@@ -54,95 +58,105 @@
             [disabled]="store.view()?.kind !== 'notebook'"
             (click)="searchScope.set('CURRENT'); runSearch()"
           >
-            Current notebook
+            {{ i18n.t('notesCurrentNotebook') }}
           </button>
         </fieldset>
         <label
-          >Notebook
+          >{{ i18n.t('notesFilterNotebook') }}
           <select
             [value]="searchNotebook()"
             (change)="searchNotebook.set($any($event.target).value); runSearch()"
           >
-            <option value="">Any</option>
+            <option value="">{{ i18n.t('notesFilterAny') }}</option>
             @for (notebook of store.notebooks(); track notebook.id) {
             <option [value]="notebook.id">{{ notebook.name }}</option>
             }
           </select>
         </label>
         <label
-          >Label
+          >{{ i18n.t('notesFilterLabel') }}
           <select
             [value]="searchLabel()"
             (change)="searchLabel.set($any($event.target).value); runSearch()"
           >
-            <option value="">Any</option>
+            <option value="">{{ i18n.t('notesFilterAny') }}</option>
             @for (label of store.labels(); track label.id) {
             <option [value]="label.id">{{ label.name }}</option>
             }
           </select>
         </label>
         <label
-          >Type
+          >{{ i18n.t('notesFilterType') }}
           <select
             [value]="searchType()"
             (change)="searchType.set($any($event.target).value); runSearch()"
           >
-            <option value="">Any</option>
-            <option value="TEXT">Text</option>
-            <option value="CHECKLIST">Checklist</option>
+            <option value="">{{ i18n.t('notesFilterAny') }}</option>
+            <option value="TEXT">{{ i18n.t('notesTypeText') }}</option>
+            <option value="CHECKLIST">{{ i18n.t('notesTypeChecklist') }}</option>
           </select>
         </label>
         <label
-          >Pinned
+          >{{ i18n.t('notesFilterPinned') }}
           <select
             [value]="searchPinned()"
             (change)="searchPinned.set($any($event.target).value); runSearch()"
           >
-            <option value="">Any</option>
-            <option value="true">Pinned</option>
-            <option value="false">Not pinned</option>
+            <option value="">{{ i18n.t('notesFilterAny') }}</option>
+            <option value="true">{{ i18n.t('notesFilterPinned') }}</option>
+            <option value="false">{{ i18n.t('notesFilterNotPinned') }}</option>
           </select>
         </label>
         <label
-          >Archive
+          >{{ i18n.t('notesFilterArchive') }}
           <select
             [value]="searchArchive()"
             (change)="searchArchive.set($any($event.target).value); runSearch()"
           >
-            <option value="ALL">All</option>
-            <option value="ACTIVE">Active</option>
-            <option value="ARCHIVED">Archived</option>
+            <option value="ALL">{{ i18n.t('notesFilterAll') }}</option>
+            <option value="ACTIVE">{{ i18n.t('notesFilterActive') }}</option>
+            <option value="ARCHIVED">{{ i18n.t('notesFilterArchived') }}</option>
           </select>
         </label>
         <label
-          >Trash
+          >{{ i18n.t('notesFilterTrash') }}
           <select
             [value]="searchTrash()"
             (change)="searchTrash.set($any($event.target).value); runSearch()"
           >
-            <option value="ACTIVE">Exclude trash</option>
-            <option value="TRASHED">Trash only</option>
+            <option value="ACTIVE">{{ i18n.t('notesFilterExcludeTrash') }}</option>
+            <option value="TRASHED">{{ i18n.t('notesFilterTrashOnly') }}</option>
           </select>
         </label>
       </section>
       }
     </div>
-    <nav class="header-actions" aria-label="Application actions">
+    <nav class="header-actions" [attr.aria-label]="i18n.t('notesApplicationActions')">
       <button
         type="button"
-        [attr.aria-label]="theme.dark() ? 'Switch to light theme' : 'Switch to dark theme'"
+        [attr.aria-label]="theme.dark() ? i18n.t('notesSwitchToLightTheme') : i18n.t('notesSwitchToDarkTheme')"
         (click)="toggleTheme()"
       >
         <i class="fa-solid" [class.fa-sun]="theme.dark()" [class.fa-moon]="!theme.dark()"></i>
       </button>
-      <button type="button" aria-label="Keyboard shortcuts" (click)="overlay.set('shortcuts')">
+      <button
+        type="button"
+        [attr.aria-label]="i18n.t('notesKeyboardShortcutsAria')"
+        (click)="overlay.set('shortcuts')"
+      >
         <i class="fa-solid fa-circle-question"></i>
       </button>
-      <button type="button" aria-label="Settings" (click)="overlay.set('settings')">
+      <button
+        type="button"
+        [attr.aria-label]="i18n.t('notesSettingsAria')"
+        (click)="overlay.set('settings')"
+      >
         <i class="fa-solid fa-gear"></i>
       </button>
       <details class="account-menu">
-        <summary aria-label="Account menu"><i class="fa-solid fa-user"></i></summary>
+        <summary [attr.aria-label]="i18n.t('notesAccountMenu')">
+          <i class="fa-solid fa-user"></i>
+        </summary>
         <div>
           <strong>{{ auth.session()?.user?.displayName || auth.session()?.user?.username }}</strong>
           <a href="/settings" routerLink="/settings"
@@ -171,7 +185,7 @@
     <button
       type="button"
       class="drawer-backdrop"
-      aria-label="Close navigation"
+      [attr.aria-label]="i18n.t('notesCloseNavigation')"
       (click)="closeDrawer()"
     ></button>
     }
@@ -186,7 +200,7 @@
             <input
               #notebookName
               class="sidebar-input"
-              aria-label="Notebook name"
+              [attr.aria-label]="i18n.t('notesNotebookName')"
               [value]="notebook.name"
               (keydown.enter)="notebookName.blur()"
               (keydown.escape)="notebookEditing.set(null)"
@@ -205,7 +219,7 @@
             <span class="row-actions">
               <button
                 type="button"
-                title="Move up"
+                [title]="i18n.t('notesMoveUp')"
                 [disabled]="first"
                 (click)="store.reorderNotebook(notebook, -1)"
               >
@@ -213,17 +227,25 @@
               </button>
               <button
                 type="button"
-                title="Move down"
+                [title]="i18n.t('notesMoveDown')"
                 [disabled]="last"
                 (click)="store.reorderNotebook(notebook, 1)"
               >
                 <i class="fa-solid fa-chevron-down"></i>
               </button>
-              <button type="button" title="Rename" (click)="notebookEditing.set(notebook.id)">
+              <button
+                type="button"
+                [title]="i18n.t('notesRename')"
+                (click)="notebookEditing.set(notebook.id)"
+              >
                 <i class="fa-solid fa-pen"></i>
               </button>
               @if (!notebook.defaultNotebook) {
-              <button type="button" title="Delete" (click)="notebookDelete.set(notebook)">
+              <button
+                type="button"
+                [title]="i18n.t('notesDelete')"
+                (click)="notebookDelete.set(notebook)"
+              >
                 <i class="fa-solid fa-trash-can"></i>
               </button>
               }
@@ -236,8 +258,8 @@
             <input
               #newNotebook
               class="sidebar-input"
-              aria-label="New notebook name"
-              placeholder="Notebook name"
+              [attr.aria-label]="i18n.t('notesNewNotebookName')"
+              [placeholder]="i18n.t('notesNotebookPlaceholder')"
               (keydown.enter)="newNotebook.blur()"
               (keydown.escape)="notebookCreating.set(false)"
               (blur)="createNotebook(newNotebook.value)"
@@ -245,7 +267,7 @@
             } @else {
             <button type="button" class="sidebar-item muted" (click)="notebookCreating.set(true)">
               <i class="fa-solid fa-plus"></i>
-              New notebook
+              {{ i18n.t('notesNewNotebook') }}
             </button>
             }
           </li>
@@ -261,7 +283,7 @@
             <input
               #labelName
               class="sidebar-input"
-              aria-label="Label name"
+              [attr.aria-label]="i18n.t('notesLabelName')"
               [value]="label.name"
               (keydown.enter)="labelName.blur()"
               (keydown.escape)="labelEditing.set(null)"
@@ -277,10 +299,14 @@
               <i class="fa-solid fa-tag"></i><span>{{ label.name }}</span>
             </button>
             <span class="row-actions">
-              <button type="button" title="Rename" (click)="labelEditing.set(label.id)">
+              <button
+                type="button"
+                [title]="i18n.t('notesRename')"
+                (click)="labelEditing.set(label.id)"
+              >
                 <i class="fa-solid fa-pen"></i>
               </button>
-              <button type="button" title="Delete" (click)="deleteLabel(label)">
+              <button type="button" [title]="i18n.t('notesDelete')" (click)="deleteLabel(label)">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </span>
@@ -292,8 +318,8 @@
             <input
               #newLabel
               class="sidebar-input"
-              aria-label="New label name"
-              placeholder="Label name"
+              [attr.aria-label]="i18n.t('notesNewLabelName')"
+              [placeholder]="i18n.t('notesLabelPlaceholder')"
               (keydown.enter)="newLabel.blur()"
               (keydown.escape)="labelCreating.set(false)"
               (blur)="createLabel(newLabel.value)"
@@ -301,7 +327,7 @@
             } @else {
             <button type="button" class="sidebar-item muted" (click)="labelCreating.set(true)">
               <i class="fa-solid fa-plus"></i>
-              New label
+              {{ i18n.t('notesNewLabel') }}
             </button>
             }
           </li>
@@ -327,7 +353,7 @@
         >
         <button type="button" class="sidebar-item" (click)="overlay.set('transfer'); closeDrawer()">
           <i class="fa-solid fa-file-export"></i>
-          Import / Export <small>M9</small>
+          {{ i18n.t('notesImportExport') }} <small>M9</small>
         </button>
       </section>
     </aside>
@@ -339,11 +365,11 @@
         <div class="new-note-actions">
           <button type="button" (click)="store.createNote(NoteType.Text)">
             <i class="fa-solid fa-file-lines"></i>
-            Text note
+            {{ i18n.t('notesTextNote') }}
           </button>
           <button type="button" (click)="store.createNote(NoteType.Checklist)">
             <i class="fa-solid fa-list-check"></i>
-            Checklist
+            {{ i18n.t('notesChecklistNote') }}
           </button>
         </div>
         }
@@ -352,13 +378,13 @@
       <div class="trash-bar">
         <span
           ><i class="fa-solid fa-circle-info"></i>
-          Trashed notes are retained according to instance policy.</span
-        ><button type="button" (click)="emptyTrash()">Empty trash</button>
+          {{ i18n.t('notesTrashRetention') }}</span
+        ><button type="button" (click)="emptyTrash()">{{ i18n.t('notesEmptyTrash') }}</button>
       </div>
       } @if (store.loading()) {
       <div class="empty-state" aria-busy="true">
         <i class="fa-solid fa-snowflake fa-spin"></i>
-        <p>Loading notes…</p>
+        <p>{{ i18n.t('notesLoading') }}</p>
       </div>
       } @else if (!store.notes().length) {
       <div class="empty-state">
@@ -369,10 +395,10 @@
           [class.fa-folder-open]="store.view()?.kind !== 'notebook' && store.view()?.kind !== 'trash'"
         ></i>
         <h2>
-          {{ store.searching() ? 'No matching notes' : store.view()?.kind === 'trash' ? 'Trash is empty' : store.view()?.kind === 'archive' ? 'Nothing archived' : 'No notes yet' }}
+          {{ store.searching() ? i18n.t('notesNoMatching') : store.view()?.kind === 'trash' ? i18n.t('notesTrashEmpty') : store.view()?.kind === 'archive' ? i18n.t('notesNothingArchived') : i18n.t('notesNoNotesYet') }}
         </h2>
         <p>
-          {{ store.searching() ? 'Try different words or filters.' : store.view()?.kind === 'notebook' ? 'Create a note to get started.' : 'Notes will appear here when available.' }}
+          {{ store.searching() ? i18n.t('notesTryDifferentSearch') : store.view()?.kind === 'notebook' ? i18n.t('notesCreateNoteHint') : i18n.t('notesWillAppearHere') }}
         </p>
       </div>
       } @else { @if (store.searching()) {
@@ -380,12 +406,14 @@
         @for (note of store.notes(); track note.id) { <app-note-card [note]="note" /> }
       </div>
       } @else { @if (store.pinned().length) {
-      <h2 class="grid-heading"><i class="fa-solid fa-thumbtack"></i> Pinned</h2>
+      <h2 class="grid-heading">
+        <i class="fa-solid fa-thumbtack"></i> {{ i18n.t('notesPinnedHeading') }}
+      </h2>
       <div class="note-grid">
         @for (note of store.pinned(); track note.id) { <app-note-card [note]="note" /> }
       </div>
       @if (store.others().length) {
-      <h2 class="grid-heading grid-heading--others">Others</h2>
+      <h2 class="grid-heading grid-heading--others">{{ i18n.t('notesOthers') }}</h2>
       } }
       <div class="note-grid">
         @for (note of store.others(); track note.id) { <app-note-card [note]="note" /> }
@@ -397,7 +425,7 @@
         [disabled]="store.loadingMore()"
         (click)="store.loadMore()"
       >
-        {{ store.loadingMore() ? 'Loading…' : 'Load more notes' }}
+        {{ store.loadingMore() ? i18n.t('notesLoadingMore') : i18n.t('notesLoadMore') }}
       </button>
       } }
       <router-outlet />
@@ -409,7 +437,13 @@
   @for (notice of problems.notices(); track notice.id) {
   <div role="alert">
     {{ notice.message }}
-    <button type="button" aria-label="Dismiss" (click)="problems.dismiss(notice.id)">×</button>
+    <button
+      type="button"
+      [attr.aria-label]="i18n.t('notesDismiss')"
+      (click)="problems.dismiss(notice.id)"
+    >
+      ×
+    </button>
   </div>
   }
 </div>
@@ -425,8 +459,10 @@ notebook) {
     (click)="$event.stopPropagation()"
     (modalDismiss)="notebookDelete.set(null)"
   >
-    <h2 id="delete-notebook-title">Delete “{{ notebook.name }}”?</h2>
-    <p>This notebook contains {{ notebook.noteCount }} notes.</p>
+    <h2 id="delete-notebook-title">
+      {{ i18n.t('notesDeleteNotebookTitle', { name: notebook.name }) }}
+    </h2>
+    <p>{{ i18n.t('notesDeleteNotebookHint', { count: notebook.noteCount }) }}</p>
     <label
       ><input
         type="radio"
@@ -434,7 +470,7 @@ notebook) {
         [checked]="notebookDeleteStrategy() === 'MOVE_TO_DEFAULT'"
         (change)="notebookDeleteStrategy.set('MOVE_TO_DEFAULT')"
       >
-      Move notes to the default notebook</label
+      {{ i18n.t('notesMoveToDefault') }}</label
     >
     <label
       ><input
@@ -443,12 +479,12 @@ notebook) {
         [checked]="notebookDeleteStrategy() === 'TRASH_NOTES'"
         (change)="notebookDeleteStrategy.set('TRASH_NOTES')"
       >
-      Move notes to trash</label
+      {{ i18n.t('notesMoveToTrashChoice') }}</label
     >
     <footer>
-      <button type="button" (click)="notebookDelete.set(null)">Cancel</button
+      <button type="button" (click)="notebookDelete.set(null)">{{ i18n.t('commonCancel') }}</button
       ><button type="button" class="danger" (click)="confirmNotebookDelete()">
-        Delete notebook
+        {{ i18n.t('notesDeleteNotebookConfirm') }}
       </button>
     </footer>
   </section>
@@ -472,44 +508,44 @@ notebook) {
     (modalDismiss)="overlay.set(null)"
   >
     @if (visibleOverlay === 'shortcuts') {
-    <h2 id="shortcuts-title">Keyboard shortcuts</h2>
+    <h2 id="shortcuts-title">{{ i18n.t('notesShortcutsTitle') }}</h2>
     <table>
       <tbody>
         <tr>
           <td><kbd>Ctrl/Cmd + N</kbd></td>
-          <td>New text note</td>
+          <td>{{ i18n.t('notesShortcutNewText') }}</td>
         </tr>
         <tr>
           <td><kbd>Ctrl/Cmd + Shift + N</kbd></td>
-          <td>New checklist</td>
+          <td>{{ i18n.t('notesShortcutNewChecklist') }}</td>
         </tr>
         <tr>
           <td><kbd>Ctrl/Cmd + Enter</kbd></td>
-          <td>Save and close editor</td>
+          <td>{{ i18n.t('notesShortcutSaveClose') }}</td>
         </tr>
         <tr>
           <td><kbd>Esc</kbd></td>
-          <td>Close editor or dialog</td>
+          <td>{{ i18n.t('notesShortcutClose') }}</td>
         </tr>
         <tr>
           <td><kbd>Ctrl/Cmd + B / I</kbd></td>
-          <td>Bold / italic</td>
+          <td>{{ i18n.t('notesShortcutBoldItalic') }}</td>
         </tr>
         <tr>
           <td><kbd>Ctrl/Cmd + E</kbd></td>
-          <td>Import / export</td>
+          <td>{{ i18n.t('notesShortcutImportExport') }}</td>
         </tr>
         <tr>
           <td><kbd>Ctrl/Cmd + ,</kbd></td>
-          <td>Settings</td>
+          <td>{{ i18n.t('notesShortcutSettings') }}</td>
         </tr>
         <tr>
           <td><kbd>Ctrl/Cmd + /</kbd></td>
-          <td>Shortcut help</td>
+          <td>{{ i18n.t('notesShortcutHelp') }}</td>
         </tr>
         <tr>
           <td><kbd>Ctrl/Cmd + F</kbd></td>
-          <td>Focus note search</td>
+          <td>{{ i18n.t('notesShortcutFocusSearch') }}</td>
         </tr>
       </tbody>
     </table>

@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { I18nService } from '../core/i18n.service';
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
 import type { AuditEvent } from '../shared/generated-api/model/auditEvent';
 
@@ -8,30 +9,30 @@ import type { AuditEvent } from '../shared/generated-api/model/auditEvent';
   selector: 'app-admin-audit',
   imports: [FormsModule],
   template: `
-    <h1>Audit log</h1>
-    <p>Audit records are append-only and are removed only by the configured retention job.</p>
+    <h1>{{ i18n.t('adminAuditTitle') }}</h1>
+    <p>{{ i18n.t('adminAuditIntro') }}</p>
     <form class="filters" (ngSubmit)="load()">
-      <label>Event type<input name="eventType" maxlength="64" [(ngModel)]="eventType"></label>
-      <label>Result<select name="result" [(ngModel)]="result">
-        <option value="">Any</option><option value="SUCCESS">Success</option>
-        <option value="FAILURE">Failure</option><option value="DENIED">Denied</option>
+      <label>{{ i18n.t('adminAuditEventType') }}<input name="eventType" maxlength="64" [(ngModel)]="eventType"></label>
+      <label>{{ i18n.t('adminAuditResult') }}<select name="result" [(ngModel)]="result">
+        <option value="">{{ i18n.t('adminAuditAny') }}</option><option value="SUCCESS">{{ i18n.t('adminAuditSuccess') }}</option>
+        <option value="FAILURE">{{ i18n.t('adminAuditFailure') }}</option><option value="DENIED">{{ i18n.t('adminAuditDenied') }}</option>
       </select></label>
-      <button type="submit">Apply filters</button>
+      <button type="submit">{{ i18n.t('adminAuditApplyFilters') }}</button>
     </form>
     <div class="actions">
-      <button type="button" (click)="export('csv')">Export CSV</button>
-      <button type="button" (click)="export('json')">Export JSON</button>
+      <button type="button" (click)="export('csv')">{{ i18n.t('adminAuditExportCsv') }}</button>
+      <button type="button" (click)="export('json')">{{ i18n.t('adminAuditExportJson') }}</button>
     </div>
-    @if (loading()) { <p role="status">Loading audit events…</p> }
+    @if (loading()) { <p role="status">{{ i18n.t('adminAuditLoading') }}</p> }
     @if (error()) { <p role="alert">{{ error() }}</p> }
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Time</th><th>Event</th><th>Result</th><th>Client</th><th>Correlation ID</th></tr></thead>
+        <thead><tr><th>{{ i18n.t('adminAuditColumnTime') }}</th><th>{{ i18n.t('adminAuditColumnEvent') }}</th><th>{{ i18n.t('adminAuditColumnResult') }}</th><th>{{ i18n.t('adminAuditColumnClient') }}</th><th>{{ i18n.t('adminAuditColumnCorrelationId') }}</th></tr></thead>
         <tbody>
           @for (event of events(); track event.id) {
             <tr>
               <td>{{ event.occurredAt }}</td><td>{{ event.eventType }}</td><td>{{ event.result }}</td>
-              <td>{{ event.ipAddress ?? '—' }} · {{ event.clientDescription ?? 'Background' }}</td>
+              <td>{{ event.ipAddress ?? '—' }} · {{ event.clientDescription ?? i18n.t('adminAuditBackground') }}</td>
               <td><code>{{ event.correlationId }}</code></td>
             </tr>
           }
@@ -39,13 +40,14 @@ import type { AuditEvent } from '../shared/generated-api/model/auditEvent';
       </table>
     </div>
     @if (nextCursor()) {
-      <button type="button" (click)="loadMore()">Load more</button>
+      <button type="button" (click)="loadMore()">{{ i18n.t('adminAuditLoadMore') }}</button>
     }
   `,
   styleUrl: './admin.css',
 })
 export class AdminAuditComponent {
   private readonly api = inject(AdministrationService);
+  protected readonly i18n = inject(I18nService);
   readonly events = signal<AuditEvent[]>([]);
   readonly loading = signal(false);
   readonly error = signal('');
@@ -76,7 +78,7 @@ export class AdminAuditComponent {
           this.loading.set(false);
         },
         error: (failure) => {
-          this.error.set(failure.error?.detail ?? 'Audit events could not be loaded.');
+          this.error.set(failure.error?.detail ?? this.i18n.t('adminAuditLoadFailed'));
           this.loading.set(false);
         },
       });
@@ -100,7 +102,7 @@ export class AdminAuditComponent {
           URL.revokeObjectURL(url);
         },
         error: (failure) =>
-          this.error.set(failure.error?.detail ?? 'Audit export could not be created.'),
+          this.error.set(failure.error?.detail ?? this.i18n.t('adminAuditExportFailed')),
       });
   }
 }

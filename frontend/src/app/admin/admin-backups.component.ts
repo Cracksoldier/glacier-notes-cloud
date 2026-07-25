@@ -3,19 +3,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
+import { I18nService } from '../core/i18n.service';
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
 import type { BackupJob } from '../shared/generated-api/model/backupJob';
 
 @Component({
   selector: 'app-admin-backups',
   template: `
-    <h1>Full server backups</h1>
-    <p role="note">
-      Backups remain on the configured server volume and contain sensitive user data and password
-      hashes. Protect and encrypt that volume externally.
-    </p>
+    <h1>{{ i18n.t('adminBackupsTitle') }}</h1>
+    <p role="note">{{ i18n.t('adminBackupsIntro') }}</p>
     <button type="button" [disabled]="creating()" (click)="create()">
-      {{ creating() ? 'Queuing…' : 'Create backup' }}
+      {{ creating() ? i18n.t('adminBackupsQueuing') : i18n.t('adminBackupsCreate') }}
     </button>
     @if (error()) { <p role="alert">{{ error() }}</p> }
     <div class="list">
@@ -23,9 +21,9 @@ import type { BackupJob } from '../shared/generated-api/model/backupJob';
         <article class="card">
           <strong>{{ job.state }}</strong>
           <span>{{ job.createdAt }}</span>
-          <span>Initiated by {{ job.createdByUserId }}</span>
-          @if (job.outputIdentifier) { <span>Server identifier: {{ job.outputIdentifier }}</span> }
-          @if (job.byteSize !== undefined) { <span>{{ job.byteSize }} bytes · SHA-256 {{ job.checksum }}</span> }
+          <span>{{ i18n.t('adminBackupsInitiatedBy', { user: job.createdByUserId }) }}</span>
+          @if (job.outputIdentifier) { <span>{{ i18n.t('adminBackupsServerIdentifier', { id: job.outputIdentifier }) }}</span> }
+          @if (job.byteSize !== undefined) { <span>{{ i18n.t('adminBackupsBytesChecksum', { bytes: job.byteSize, checksum: job.checksum ?? '' }) }}</span> }
           @if (job.errorMessage) { <span>{{ job.errorMessage }}</span> }
         </article>
       }
@@ -36,6 +34,7 @@ import type { BackupJob } from '../shared/generated-api/model/backupJob';
 export class AdminBackupsComponent {
   private readonly api = inject(AdministrationService);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly i18n = inject(I18nService);
   readonly jobs = signal<BackupJob[]>([]);
   readonly creating = signal(false);
   readonly error = signal('');
@@ -49,7 +48,7 @@ export class AdminBackupsComponent {
       .subscribe({
         next: (page) => this.jobs.set(page.items),
         error: (failure) =>
-          this.error.set(failure.error?.detail ?? 'Backup jobs could not be loaded.'),
+          this.error.set(failure.error?.detail ?? this.i18n.t('adminBackupsLoadFailed')),
       });
   }
 
@@ -63,7 +62,7 @@ export class AdminBackupsComponent {
         this.creating.set(false);
       },
       error: (failure) => {
-        this.error.set(failure.error?.detail ?? 'The backup could not be queued.');
+        this.error.set(failure.error?.detail ?? this.i18n.t('adminBackupsQueueFailed'));
         this.creating.set(false);
       },
     });

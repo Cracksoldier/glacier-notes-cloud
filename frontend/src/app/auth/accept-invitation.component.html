@@ -1,11 +1,12 @@
 <main class="public-page">
   <section class="card">
-    <p class="eyebrow">Invitation</p>
-    <h1>Create your account</h1>
+    <p class="eyebrow">{{ i18n.t('authInvitation') }}</p>
+    <h1>{{ i18n.t('authCreateAccount') }}</h1>
     @if (!inspection()) {
     <form (ngSubmit)="inspect()">
       <label
-        >Full invitation token<input
+        >{{ i18n.t('authInvitationToken') }}
+        <input
           name="token"
           type="password"
           autocomplete="off"
@@ -14,18 +15,23 @@
           required
         ></label
       >
-      <button type="submit">Continue</button>
+      <button type="submit">{{ i18n.t('authContinue') }}</button>
     </form>
     } @else if (!completed()) {
     <p>
-      Invitation for {{ inspection()?.emailHint }}. Expires
-      {{ inspection()?.expiresAt | date:'medium' }}.
+      {{ i18n.t('authInvitationFor', { email: inspection()?.emailHint ?? '', date: (inspection()?.expiresAt | date:'medium') ?? '' }) }}
     </p>
     <form (ngSubmit)="accept()">
-      <label>Username<input name="username" [(ngModel)]="username" minlength="3" required></label>
-      <label>Display name<input name="displayName" [(ngModel)]="displayName"></label>
       <label
-        >Password<input
+        >{{ i18n.t('authUsername') }}
+        <input name="username" [(ngModel)]="username" minlength="3" required></label
+      >
+      <label
+        >{{ i18n.t('authDisplayName') }}<input name="displayName" [(ngModel)]="displayName"></label
+      >
+      <label
+        >{{ i18n.t('authPassword') }}
+        <input
           name="password"
           [(ngModel)]="password"
           type="password"
@@ -33,11 +39,11 @@
           required
         ></label
       >
-      <button type="submit" [disabled]="busy()">Activate account</button>
+      <button type="submit" [disabled]="busy()">{{ i18n.t('authActivateAccount') }}</button>
     </form>
     } @else {
-    <p role="status">Your account is active. You can now sign in.</p>
-    <a href="/login" routerLink="/login">Go to sign in</a>
+    <p role="status">{{ i18n.t('authAccountActive') }}</p>
+    <a href="/login" routerLink="/login">{{ i18n.t('authGoToSignIn') }}</a>
     } @if (error()) {
     <p class="error" role="alert">{{ error() }}</p>
     }

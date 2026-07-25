@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 
+import { I18nService } from '../core/i18n.service';
 import { ContentColor } from '../shared/generated-api/model/contentColor';
 import type { NoteSummary } from '../shared/generated-api/model/noteSummary';
 import { MarkdownService } from './markdown.service';
@@ -15,6 +16,7 @@ export class NoteCardComponent {
 
   protected readonly store = inject(NotesStore);
   protected readonly markdown = inject(MarkdownService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly menu = signal<'color' | 'move' | null>(null);
   protected readonly preview = computed(() => this.markdown.render(this.note().preview));
@@ -61,7 +63,7 @@ export class NoteCardComponent {
 
   protected purge(event: Event): void {
     event.stopPropagation();
-    if (window.confirm('Delete this note forever? This cannot be undone.')) {
+    if (window.confirm(this.i18n.t('noteCardDeleteForeverConfirm'))) {
       void this.store.purgeNote(this.note());
     }
   }

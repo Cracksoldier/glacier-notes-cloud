@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { I18nService } from '../core/i18n.service';
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
 import { InvitationCreateRequestRoleEnum } from '../shared/generated-api/model/invitationCreateRequest';
 import type { InvitationDelivery } from '../shared/generated-api/model/invitationDelivery';
@@ -14,6 +15,7 @@ import type { InvitationSummary } from '../shared/generated-api/model/invitation
 })
 export class AdminInvitationsComponent {
   private readonly api = inject(AdministrationService);
+  protected readonly i18n = inject(I18nService);
   readonly invitations = signal<InvitationSummary[]>([]);
   readonly delivery = signal<InvitationDelivery | null>(null);
   readonly message = signal('');
@@ -42,8 +44,8 @@ export class AdminInvitationsComponent {
           this.delivery.set(value);
           this.message.set(
             value.delivery === 'EMAIL_SENT'
-              ? 'Invitation email sent.'
-              : 'Copy the one-time activation link.',
+              ? this.i18n.t('adminInvitationsEmailSent')
+              : this.i18n.t('adminInvitationsCopyLink'),
           );
           this.email = '';
           this.proposedUsername = '';
@@ -60,8 +62,8 @@ export class AdminInvitationsComponent {
         this.delivery.set(value);
         this.message.set(
           value.delivery === 'EMAIL_SENT'
-            ? 'Replacement invitation sent.'
-            : 'Copy the replacement link.',
+            ? this.i18n.t('adminInvitationsReplacementSent')
+            : this.i18n.t('adminInvitationsCopyReplacementLink'),
         );
         this.load();
       },
@@ -70,7 +72,7 @@ export class AdminInvitationsComponent {
   }
 
   revoke(id: string): void {
-    if (!confirm('Revoke this invitation?')) return;
+    if (!confirm(this.i18n.t('adminInvitationsRevokeConfirm'))) return;
     this.api.revokeInvitation(id).subscribe({
       next: () => this.load(),
       error: (failure) => this.fail(failure),
@@ -89,6 +91,6 @@ export class AdminInvitationsComponent {
   }
 
   private fail(failure: { error?: { detail?: string } }): void {
-    this.error.set(failure.error?.detail ?? 'The invitation action failed.');
+    this.error.set(failure.error?.detail ?? this.i18n.t('adminInvitationsActionFailed'));
   }
 }
