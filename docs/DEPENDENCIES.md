@@ -23,6 +23,28 @@ Maven Wrapper, and npm lockfile.
 | Playwright | 1.55.0 | Apache-2.0 |
 
 Review the complete resolved trees with `./mvnw -pl backend dependency:tree` and `npm ls --all`
-from `frontend`. CI also runs npm audit. The remaining npm advisory, if still reported, is a
-low-severity Windows-only Vite development-server issue in a transitive esbuild version; production
-artifacts do not contain the development server.
+from `frontend`. CI also runs npm audit; see `docs/KNOWN_ISSUES.md` for the one remaining advisory.
+
+## Backend vulnerability scanning
+
+CI runs `org.owasp:dependency-check-maven` against the backend module after `./mvnw verify`,
+failing the build on any finding at CVSS 7.0 (High) or above. Run it locally with:
+
+```bash
+./mvnw -pl backend org.owasp:dependency-check-maven:check
+```
+
+The plugin works without credentials but is faster and more reliable with an NVD API key exported
+as `NVD_API_KEY` (also read from the `NVD_API_KEY` GitHub Actions secret in CI, if configured).
+Reports are written to `backend/target/dependency-check-report` and uploaded as a CI artifact on
+every run. The Sonatype OSS Index analyzer (a supplementary, non-NVD data source) is disabled via
+`ossindexAnalyzerEnabled=false`, because anonymous requests to that service are aggressively rate
+limited and turn transient `401 Unauthorized` responses into a hard scan failure unrelated to any
+actual vulnerability; NVD remains the scan's primary and sufficient CVE source.
+
+If a finding is a false positive or genuinely unreachable in this application (e.g. the vulnerable
+code path is never invoked), add a suppression to `backend/owasp-suppressions.xml` with a `notes`
+element explaining why, following the
+[suppression file schema](https://jeremylong.github.io/DependencyCheck/general/suppression.html).
+Do not suppress a finding solely to unblock CI without recording the justification — suppressions
+receive the same review scrutiny as any other change to a security gate.

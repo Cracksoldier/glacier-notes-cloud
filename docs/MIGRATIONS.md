@@ -16,3 +16,22 @@ Flyway migrations do not provide automatic down scripts. Rollback means restorin
 application version and its verified database backup. Document data conversion, downtime, backup,
 and restore steps in the migration change that introduces a destructive operation.
 
+## Upgrade data-integrity tests
+
+Two tests under `backend/src/test/java/com/glaciernotes/cloud/persistence/` migrate an isolated,
+randomly-named schema to a fixed prior version, seed rows through raw JDBC, migrate to head, and
+assert the seeded data survived:
+
+- `MigrationUpgradeTest` seeds a minimal note/version chain and asserts the V11 `content_hash`
+  backfill produced a 64-character hash.
+- `SchemaUpgradeDataIntegrityTest` seeds one row across every content, ownership, and audit table
+  that exists at the baseline (`notebooks`, `notes`, `checklist_items`, `labels`, `note_labels`,
+  `image_assets`, `image_asset_blobs`, `note_image_references`, `note_versions`,
+  `note_version_image_references`, `user_sessions`, `audit_events`) and asserts every row, plus its
+  foreign-key joins, survives the upgrade to head.
+
+Both currently target `target("10")` (the `external_storage_operations` migration) as the prior
+baseline. When a new milestone adds a migration that changes a seeded table's shape, bump this
+baseline forward to the newest version before that change so the test keeps exercising a real
+upgrade path rather than a no-op.
+

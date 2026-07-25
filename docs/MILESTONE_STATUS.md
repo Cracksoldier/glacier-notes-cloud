@@ -18,7 +18,8 @@ implementation and repository verification gates pass.
 | M9 | Complete | Portable full/notebook/note transfer, desktop compatibility, conflict strategies, bounded jobs, and blind administrative import |
 | M10 | Complete | Account self-service, verified email changes, deletion retention, synchronized preferences, i18n, themes, and external email sharing |
 | M11 | Complete | Administrative overview, safe settings, SMTP status, immutable audit, metrics, coordinated cleanup, and gated full backups |
-| M12–M13 | Pending | Not yet implemented |
+| M12 | Complete | Dependency and container image vulnerability scanning, named security-attack-simulation tests, log-hygiene CI enforcement, broadened upgrade data-integrity coverage, and release-candidate documentation |
+| M13 | Pending | Not yet implemented |
 
 ## M5 Verification
 
@@ -128,3 +129,28 @@ GLACIER_BACKUP_ENABLED=true docker compose up --build --wait
 
 Backup sensitivity, encryption requirements, checksum validation, and clean restore steps are in
 `docs/BACKUP_RESTORE.md`.
+
+## M12 Verification
+
+M12 adds backend dependency vulnerability scanning (`org.owasp:dependency-check-maven`, CVSS ≥ 7.0
+blocks CI) with a documented, justified suppression workflow; application container image
+vulnerability and secret scanning (Trivy) plus `org.opencontainers.image.*` labels carrying the git
+revision, application version, and build date; named security-attack-simulation tests for session
+fixation, session-token replay after logout and after forced revocation, and storage-key path
+traversal against both the image store and the backup archive builder; a CI-enforced log-hygiene
+gate over every backend log call site; and a broadened upgrade/migration data-integrity test seeding
+every content, ownership, and audit table and asserting referential integrity across a full schema
+upgrade.
+
+Backend tests cover the new attack simulations, the path-traversal guards, and the broadened
+migration upgrade. CI runs the OWASP dependency-check and log-hygiene gates in the `backend` job and
+the Trivy image scan in the `deployment` job, uploading both the dependency-check report and
+high-severity Trivy findings as artifacts. `docs/THREAT_MODEL.md`, `docs/SECURITY.md`,
+`docs/DESKTOP_COMPATIBILITY.md`, `docs/KNOWN_ISSUES.md`, `docs/RELEASE_NOTES.md`, and `CHANGELOG.md`
+document this milestone and the release candidate as a whole. Run the standard backend and frontend
+gates above plus:
+
+~~~bash
+./mvnw -pl backend org.owasp:dependency-check-maven:check
+bash backend/scripts/check-log-hygiene.sh
+~~~

@@ -19,6 +19,17 @@ RUN ./mvnw -pl backend package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
+ARG GIT_SHA=unknown
+ARG APP_VERSION=0.1.0
+ARG BUILD_DATE=unknown
+
+LABEL org.opencontainers.image.title="Glacier Notes Cloud" \
+      org.opencontainers.image.description="Self-hosted, multi-user notes web application" \
+      org.opencontainers.image.source="https://github.com/Cracksoldier/glacier-notes-cloud" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.revision="${GIT_SHA}" \
+      org.opencontainers.image.created="${BUILD_DATE}"
+
 RUN apk add --no-cache postgresql-client \
     && addgroup -S -g 10001 glacier \
     && adduser -S -D -H -u 10001 -G glacier glacier \

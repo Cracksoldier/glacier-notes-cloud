@@ -7,6 +7,7 @@ import io.quarkus.security.identity.request.AuthenticationRequest;
 import io.quarkus.vertx.http.runtime.security.ChallengeData;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -15,13 +16,21 @@ import java.util.Set;
 
 @ApplicationScoped
 public class SessionAuthenticationMechanism implements HttpAuthenticationMechanism {
+    /**
+     * Login must never fail because a stale or attacker-supplied session cookie happens to be
+     * present: Quarkus's proactive authentication would otherwise reject the whole request with 401
+     * before {@code AuthenticationResource#login} ever runs. Treat this path like no cookie was sent.
+     */
+    private static final String LOGIN_PATH = "/api/v1/auth/login";
+
     @Override
     public Uni<SecurityIdentity> authenticate(
         RoutingContext context,
         IdentityProviderManager identityProviderManager
     ) {
         var cookie = context.request().getCookie(CookieManager.SESSION_COOKIE);
-        if (cookie == null || cookie.getValue() == null || cookie.getValue().isBlank()) {
+        if (cookie == null || cookie.getValue() == null || cookie.getValue().isBlank()
+            || (context.request().method() == HttpMethod.POST && LOGIN_PATH.equals(context.normalizedPath()))) {
             return Uni.createFrom().nullItem();
         }
         return identityProviderManager.authenticate(new SessionAuthenticationRequest(cookie.getValue()));

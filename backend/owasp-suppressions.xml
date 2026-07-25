@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OWASP dependency-check suppression file. Every entry must include a `notes`
+  element explaining why the finding does not apply (e.g. unreachable code
+  path, false positive, fix pending upstream) and, where applicable, the date
+  the suppression should be revisited. Suppressing a finding here requires the
+  same review scrutiny as any other change to CI security gates.
+
+  See https://jeremylong.github.io/DependencyCheck/general/suppression.html
+  for the schema and cpe/vulnerabilityName matching syntax.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes><![CDATA[
+        Transitive dependency of io.quarkus:quarkus-vertx (via Quarkus platform 3.37.3), not a
+        direct dependency. CVE-2026-44891, CVE-2026-55831, and CVE-2026-55833 are in Netty's STOMP
+        (io.netty.handler.codec.stomp) and SPDY (io.netty.handler.codec.spdy) frame decoders. This
+        application never constructs a STOMP or SPDY server/client and does not expose those
+        protocols; it only uses Netty as the HTTP/1.1 and HTTP/2 transport underlying the Quarkus
+        Vert.x HTTP server. Matched by CPE rather than packageUrl because dependency-check correlates
+        this CVE against every jar sharing the netty:netty CPE (both netty-transport and
+        netty-transport-classes-epoll were observed flagged across different scan runs, depending on
+        which jar the tool picks as the CPE match target). Revisit when the Quarkus platform version
+        is next upgraded, in case the bundled Netty version changes.
+        ]]></notes>
+        <cpe regex="true">^cpe:2\.3:a:netty:netty:.*$</cpe>
+        <cve>CVE-2026-44891</cve>
+        <cve>CVE-2026-55831</cve>
+        <cve>CVE-2026-55833</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive: these CVEs are against "OpenTelemetry-Go", the Go language implementation of
+        OpenTelemetry, not the Java io.opentelemetry.semconv artifact pulled in transitively by
+        Quarkus's OpenTelemetry/Micrometer integration. Dependency-check's CPE matching cross-matches
+        the shared "opentelemetry" product name across ecosystems; this project has no Go
+        dependencies of any kind. The specific CVE IDs returned against this CPE have shifted between
+        scan runs (CVE-2026-29181/CVE-2026-39883 on one run, CVE-2026-39882/CVE-2026-41178 on
+        another) even though the underlying jar version did not change, so all four observed IDs are
+        listed here; revisit and prune to only the IDs the NVD dataset currently returns next time
+        this file is touched.
+        ]]></notes>
+        <cpe regex="true">^cpe:2\.3:a:opentelemetry:opentelemetry:.*$</cpe>
+        <cve>CVE-2026-29181</cve>
+        <cve>CVE-2026-39883</cve>
+        <cve>CVE-2026-39882</cve>
+        <cve>CVE-2026-41178</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Transitive dependency of io.quarkus:quarkus-virtual-threads (via Quarkus platform 3.37.3),
+        not a direct dependency. CVE-2026-15075 and CVE-2026-15076 are in Vert.x's Web Client
+        (io.vertx.ext.web.client.WebClient / WebClientSession) redirect and cookie-domain handling.
+        This backend never uses vertx-web-client to make outbound HTTP requests (confirmed: no
+        WebClient/WebClientSession usage anywhere in backend/src); vertx-core and vertx-auth-common
+        here only back the inbound Quarkus HTTP server. Matched by CPE rather than packageUrl because
+        dependency-check correlates this CVE against every jar sharing the eclipse:vert.x CPE
+        (vertx-core and vertx-auth-common were both observed flagged across different scan runs).
+        Revisit when the Quarkus platform version is next upgraded.
+        ]]></notes>
+        <cpe regex="true">^cpe:2\.3:a:eclipse:vert\.x:.*$</cpe>
+        <cve>CVE-2026-15075</cve>
+        <cve>CVE-2026-15076</cve>
+    </suppress>
+</suppressions>

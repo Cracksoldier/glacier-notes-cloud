@@ -5,9 +5,9 @@
 `openapi/glacier-notes-v1.yaml` is canonical; generator customizations live in `openapi/templates`.
 Backend Java, Flyway migrations, and JUnit tests are under `backend/src`. Angular code is in
 `frontend/src/app`, browser tests in `frontend/e2e`, repository checks in `frontend/scripts`, and
-assets in `frontend/public`. Never hand-edit generated API sources. Keep deployment files in
-`deployment/`, runbooks and review evidence in `docs/`, and desktop fixtures in
-`compatibility-fixtures/`.
+assets in `frontend/public`. Never hand-edit generated API sources, including
+`frontend/src/app/shared/generated-api`. Keep deployment files in `deployment/`, runbooks and review
+evidence in `docs/`, and desktop fixtures in `compatibility-fixtures/`.
 
 ## Build, Test, and Development Commands
 

@@ -6,11 +6,16 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.UUID;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -49,6 +54,20 @@ class BackupTransactionTest {
         assertThrows(IOException.class,
             () -> backups.awaitDump(process, Duration.ofMillis(50)));
         assertFalse(process.isAlive());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "../../../etc/passwd",
+        "/etc/passwd",
+        "images/../../../etc/passwd",
+        "..\\..\\etc\\passwd",
+    })
+    void rejectsAnUnsafeImageStorageKeyBeforeReadingTheAsset(String maliciousKey) throws IOException {
+        try (ZipOutputStream zip = new ZipOutputStream(new ByteArrayOutputStream())) {
+            assertThrows(IOException.class,
+                () -> backups.addStored(zip, maliciousKey, new LinkedHashMap<>()));
+        }
     }
 
     private static final class ExpectedRollback extends RuntimeException {}

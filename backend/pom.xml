@@ -17,6 +17,8 @@
     <password4j.version>1.8.4</password4j.version>
     <twelvemonkeys.version>3.13.1</twelvemonkeys.version>
     <aws.sdk.version>2.41.32</aws.sdk.version>
+    <dependency-check.version>12.1.3</dependency-check.version>
+    <dependency-check.failBuildOnCVSS>7.0</dependency-check.failBuildOnCVSS>
   </properties>
 
   <dependencyManagement>
@@ -221,6 +223,24 @@
           <systemPropertyVariables>
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
           </systemPropertyVariables>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>${dependency-check.version}</version>
+        <configuration>
+          <failBuildOnCVSS>${dependency-check.failBuildOnCVSS}</failBuildOnCVSS>
+          <suppressionFiles>
+            <suppressionFile>${project.basedir}/owasp-suppressions.xml</suppressionFile>
+          </suppressionFiles>
+          <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+          <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
+          <formats>
+            <format>HTML</format>
+            <format>JSON</format>
+          </formats>
+          <outputDirectory>${project.build.directory}/dependency-check-report</outputDirectory>
         </configuration>
       </plugin>
     </plugins>

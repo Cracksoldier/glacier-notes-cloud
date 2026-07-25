@@ -219,7 +219,7 @@ public class BackupService {
         }
     }
 
-    private void addStored(ZipOutputStream zip, String key, Map<String, String> checksums) throws IOException {
+    void addStored(ZipOutputStream zip, String key, Map<String, String> checksums) throws IOException {
         String safe = key.replace('\\', '/');
         if (safe.startsWith("/") || safe.contains("../")) throw new IOException("Unsafe image storage key");
         var object = storage.load(key);
