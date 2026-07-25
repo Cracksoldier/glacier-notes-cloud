@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { I18nService } from '../core/i18n.service';
 import { AuthenticationService } from '../shared/generated-api/api/authentication.service';
 import { InvitationAcceptanceRequestLanguageEnum } from '../shared/generated-api/model/invitationAcceptanceRequest';
 import type { InvitationInspection } from '../shared/generated-api/model/invitationInspection';
@@ -15,6 +16,7 @@ import type { InvitationInspection } from '../shared/generated-api/model/invitat
 })
 export class AcceptInvitationComponent {
   private readonly api = inject(AuthenticationService);
+  private readonly i18n = inject(I18nService);
   readonly inspection = signal<InvitationInspection | null>(null);
   readonly busy = signal(false);
   readonly completed = signal(false);
@@ -41,7 +43,7 @@ export class AcceptInvitationComponent {
         this.displayName = value.displayName ?? '';
       },
       error: (failure) =>
-        this.error.set(failure.error?.detail ?? 'This invitation is invalid or expired.'),
+        this.error.set(failure.error?.detail ?? this.i18n.t('authInvitationInvalid')),
     });
   }
 
@@ -67,7 +69,7 @@ export class AcceptInvitationComponent {
         error: (failure) => {
           this.password = '';
           this.busy.set(false);
-          this.error.set(failure.error?.detail ?? 'Account activation failed.');
+          this.error.set(failure.error?.detail ?? this.i18n.t('authAccountActivationFailed'));
         },
       });
   }

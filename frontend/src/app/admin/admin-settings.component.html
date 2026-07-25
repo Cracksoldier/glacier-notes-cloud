@@ -1,73 +1,59 @@
-<h1>Instance settings</h1>
-<p>
-  Leave domains empty to allow invitations to any valid email address. Enter one exact domain per
-  line.
-</p>
+<h1>{{ i18n.t('adminInstanceSettings') }}</h1>
+<p>{{ i18n.t('adminInstanceSettingsIntro') }}</p>
 @if (loading()) {
-<p role="status">Loading instance settings…</p>
+<p role="status">{{ i18n.t('adminLoadingInstanceSettings') }}</p>
 }
 <form (ngSubmit)="save()">
   <fieldset>
-    <legend>Identity and public links</legend>
+    <legend>{{ i18n.t('adminIdentityAndPublicLinks') }}</legend>
     <label
-      >Instance name<input
-        name="instanceName"
-        required
-        maxlength="128"
-        [(ngModel)]="instanceName"
-      ></label
+      >{{ i18n.t('adminInstanceName') }}
+      <input name="instanceName" required maxlength="128" [(ngModel)]="instanceName"></label
     >
     <label
-      >Default language<select name="defaultLanguage" [(ngModel)]="defaultLanguage">
-        <option value="en">English</option>
-        <option value="de">Deutsch</option>
+      >{{ i18n.t('adminDefaultLanguage') }}
+      <select name="defaultLanguage" [(ngModel)]="defaultLanguage">
+        <option value="en">{{ i18n.t('languageEnglish') }}</option>
+        <option value="de">{{ i18n.t('languageGerman') }}</option>
       </select></label
     >
     <label
-      >Public base URL<input
-        name="publicBaseUrl"
-        type="url"
-        required
-        [(ngModel)]="publicBaseUrl"
-      ></label
+      >{{ i18n.t('adminPublicBaseUrl') }}
+      <input name="publicBaseUrl" type="url" required [(ngModel)]="publicBaseUrl"></label
     >
     <label
-      >SMTP sender name<input
-        name="smtpSenderName"
-        required
-        maxlength="128"
-        [(ngModel)]="smtpSenderName"
-      ></label
+      >{{ i18n.t('adminSmtpSenderName') }}
+      <input name="smtpSenderName" required maxlength="128" [(ngModel)]="smtpSenderName"></label
     >
     <label
-      >SMTP sender address<input
-        name="smtpSenderAddress"
-        type="email"
-        required
-        [(ngModel)]="smtpSenderAddress"
-      ></label
+      >{{ i18n.t('adminSmtpSenderAddress') }}
+      <input name="smtpSenderAddress" type="email" required [(ngModel)]="smtpSenderAddress"></label
     >
     <div>
-      <span>Instance logo</span>
+      <span>{{ i18n.t('adminInstanceLogo') }}</span>
       @if (instanceLogoUrl) {
-      <img class="instance-logo" [src]="instanceLogoUrl" alt="Current instance logo">
-      <button type="button" (click)="removeLogo()">Remove logo</button>
+      <!-- biome-ignore lint/a11y/useAltText: alt is bound from I18nService -->
+      <img class="instance-logo" [src]="instanceLogoUrl" [alt]="i18n.t('adminSettingsLogoAlt')">
+      <button type="button" (click)="removeLogo()">{{ i18n.t('adminRemoveLogo') }}</button>
       }
       <label class="file-button"
-        >Choose logo<input
+        >{{ i18n.t('adminChooseLogo') }}
+        <input
           type="file"
           accept="image/png,image/jpeg,image/webp"
           (change)="uploadLogo($event)"
         ></label
       >
-      <small>PNG, JPEG, or WebP; maximum 2 MB. Logo bytes are stored with instance data.</small>
+      <small>{{ i18n.t('adminSettingsLogoHint') }}</small>
     </div>
   </fieldset>
   <label
-    >Allowed email domains<textarea name="domains" rows="6" [(ngModel)]="domains"></textarea></label
+    >{{ i18n.t('adminSettingsAllowedEmailDomains') }}
+    <textarea name="domains" rows="6" [(ngModel)]="domains"></textarea></label
   >
   <label
-    >Invitation expiration (hours)<input
+    >{{ i18n.t('adminSettingsInvitationHours') }}
+    <input
       name="invitationHours"
       type="number"
       min="1"
@@ -76,16 +62,12 @@
     ></label
   >
   <label
-    >Password reset expiration (minutes)<input
-      name="resetMinutes"
-      type="number"
-      min="5"
-      max="1440"
-      [(ngModel)]="resetMinutes"
-    ></label
+    >{{ i18n.t('adminSettingsResetMinutes') }}
+    <input name="resetMinutes" type="number" min="5" max="1440" [(ngModel)]="resetMinutes"></label
   >
   <label
-    >Email verification expiration (minutes)<input
+    >{{ i18n.t('adminSettingsEmailChangeMinutes') }}
+    <input
       name="emailChangeMinutes"
       type="number"
       min="5"
@@ -94,7 +76,8 @@
     ></label
   >
   <label
-    >Normal session duration (minutes)<input
+    >{{ i18n.t('adminSettingsNormalSessionMinutes') }}
+    <input
       name="normalSessionMinutes"
       type="number"
       min="15"
@@ -103,7 +86,8 @@
     ></label
   >
   <label
-    >Remember-me duration (minutes)<input
+    >{{ i18n.t('adminSettingsRememberSessionMinutes') }}
+    <input
       name="rememberSessionMinutes"
       type="number"
       min="1440"
@@ -112,7 +96,7 @@
     ></label
   >
   <fieldset>
-    <legend>Accepted image uploads</legend>
+    <legend>{{ i18n.t('adminAcceptedImageUploads') }}</legend>
     @for (type of ['image/png', 'image/jpeg', 'image/webp']; track type) {
     <label
       ><input
@@ -124,25 +108,16 @@
     }
   </fieldset>
   <label
-    >Maximum normalized image (MB)<input
-      name="maximumImageMb"
-      type="number"
-      min="1"
-      max="50"
-      [(ngModel)]="maximumImageMb"
-    ></label
+    >{{ i18n.t('adminSettingsMaximumImageMb') }}
+    <input name="maximumImageMb" type="number" min="1" max="50" [(ngModel)]="maximumImageMb"></label
   >
   <label
-    >Per-user image quota (MB)<input
-      name="quotaMb"
-      type="number"
-      min="10"
-      max="1048576"
-      [(ngModel)]="quotaMb"
-    ></label
+    >{{ i18n.t('adminSettingsQuotaMb') }}
+    <input name="quotaMb" type="number" min="10" max="1048576" [(ngModel)]="quotaMb"></label
   >
   <label
-    >Unreferenced image grace period (hours)<input
+    >{{ i18n.t('adminSettingsOrphanGraceHours') }}
+    <input
       name="orphanGraceHours"
       type="number"
       min="1"
@@ -151,7 +126,8 @@
     ></label
   >
   <label
-    >Maximum note versions<input
+    >{{ i18n.t('adminSettingsNoteVersionMaximumCount') }}
+    <input
       name="noteVersionMaximumCount"
       type="number"
       min="1"
@@ -160,7 +136,8 @@
     ></label
   >
   <label
-    >Note version retention (days)<input
+    >{{ i18n.t('adminSettingsNoteVersionRetentionDays') }}
+    <input
       name="noteVersionRetentionDays"
       type="number"
       min="1"
@@ -170,12 +147,13 @@
   >
   <label
     ><input name="userExportsEnabled" type="checkbox" [(ngModel)]="userExportsEnabled">
-    Allow users to export portable data</label
+    {{ i18n.t('adminSettingsUserExportsEnabled') }}</label
   >
   <fieldset>
-    <legend>Account and retention policy</legend>
+    <legend>{{ i18n.t('adminAccountAndRetentionPolicy') }}</legend>
     <label
-      >Default trash retention (days)<input
+      >{{ i18n.t('adminSettingsDefaultTrashDays') }}
+      <input
         name="defaultTrashRetentionDays"
         type="number"
         min="1"
@@ -189,10 +167,11 @@
         type="checkbox"
         [(ngModel)]="usersMayDisableAutoPurge"
       >
-      Users may disable automatic trash cleanup</label
+      {{ i18n.t('adminSettingsUsersMayDisableAutoPurge') }}</label
     >
     <label
-      >Retained account deletion (days)<input
+      >{{ i18n.t('adminSettingsAdminDeletionRetentionDays') }}
+      <input
         name="adminDeletionRetentionDays"
         type="number"
         min="0"
@@ -201,7 +180,8 @@
       ></label
     >
     <label
-      >Audit retention (days)<input
+      >{{ i18n.t('adminSettingsAuditRetentionDays') }}
+      <input
         name="auditRetentionDays"
         type="number"
         min="1"
@@ -210,7 +190,8 @@
       ></label
     >
     <label
-      >Operational log retention guidance (days)<input
+      >{{ i18n.t('adminSettingsOperationalLogRetentionDays') }}
+      <input
         name="operationalLogRetentionDays"
         type="number"
         min="1"
@@ -219,7 +200,8 @@
       ></label
     >
     <label
-      >Login delay threshold<input
+      >{{ i18n.t('adminSettingsLoginDelayThreshold') }}
+      <input
         name="loginDelayThreshold"
         type="number"
         min="3"
@@ -228,7 +210,8 @@
       ></label
     >
     <label
-      >Login lock threshold<input
+      >{{ i18n.t('adminSettingsLoginLockThreshold') }}
+      <input
         name="loginLockThreshold"
         type="number"
         min="4"
@@ -237,7 +220,8 @@
       ></label
     >
     <label
-      >Login lock duration (minutes)<input
+      >{{ i18n.t('adminSettingsLoginLockMinutes') }}
+      <input
         name="loginLockMinutes"
         type="number"
         min="1"
@@ -247,7 +231,7 @@
     >
     <label
       ><input name="selfDeletionEnabled" type="checkbox" [(ngModel)]="selfDeletionEnabled">
-      Allow immediate self-service account deletion</label
+      {{ i18n.t('adminSettingsSelfDeletionEnabled') }}</label
     >
     <label
       ><input
@@ -255,19 +239,16 @@
         type="checkbox"
         [(ngModel)]="commonPasswordCheckEnabled"
       >
-      Reject common passwords</label
+      {{ i18n.t('adminSettingsCommonPasswordCheck') }}</label
     >
     <label
       ><input name="passwordHistoryEnabled" type="checkbox" [(ngModel)]="passwordHistoryEnabled">
-      Prevent reuse of previous passwords</label
+      {{ i18n.t('adminSettingsPasswordHistory') }}</label
     >
   </fieldset>
-  <p class="full-width">
-    Image storage, SMTP enablement, metrics, and full backups are deployment-managed settings. They
-    are read-only here and require an application restart. Secrets are never accepted by this form.
-  </p>
+  <p class="full-width">{{ i18n.t('adminSettingsFooterNote') }}</p>
   <button type="submit" [disabled]="!loaded() || saving()">
-    {{ saving() ? 'Saving…' : 'Save settings' }}
+    {{ saving() ? i18n.t('commonSaving') : i18n.t('adminSaveSettings') }}
   </button>
 </form>
 @if (message()) {

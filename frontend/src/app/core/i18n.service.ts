@@ -2,6 +2,8 @@ import { Injectable, signal } from '@angular/core';
 
 export type GlacierLanguage = 'en' | 'de';
 
+export type MessagePlaceholders = Record<string, string | number>;
+
 const messages = {
   en: {
     notes: 'Notes',
@@ -68,6 +70,162 @@ const messages = {
     deletePermanently: 'Permanently delete account',
     loadingSettings: 'Loading account settings…',
     changeFailed: 'The change could not be saved.',
+
+    languageEnglish: 'English',
+    languageGerman: 'German',
+
+    commonReferenceLabel: 'Reference',
+    commonSaving: 'Saving…',
+    commonSave: 'Save',
+    commonCancel: 'Cancel',
+    commonCopy: 'Copy',
+    commonCopied: 'Copied.',
+    commonRequiredField: 'This field is required.',
+    commonMaxLength: 'Use no more than {length} characters.',
+    commonCheckValue: 'Check this value.',
+
+    problemGeneric: 'Something went wrong. Try again.',
+    problemNetwork: 'The server could not be reached. Your changes are still in this browser.',
+    problemNotFound: 'This item is no longer available.',
+    problemConflict: 'This item changed in another session.',
+    problemStatusFallback: 'The request failed ({status}).',
+
+    problemCodeAuthInvalidCredentials: 'Sign in failed. Check your username and password.',
+    problemCodeAuthSessionExpired: 'Your session has expired. Please sign in again.',
+    problemCodeAuthForbidden: 'You are not permitted to perform this action.',
+    problemCodeAuthRateLimited: 'Too many attempts. Please wait a moment and try again.',
+    problemCodeCsrfInvalid: 'The request could not be verified. Please refresh the page.',
+    problemCodeSetupDenied: 'Setup is not permitted.',
+    problemCodeSetupUnavailable: 'Setup is currently unavailable.',
+    problemCodeSetupConflict: 'The instance is already initialized.',
+    problemCodeSetupRateLimited: 'Too many setup attempts. Please wait a moment.',
+    problemCodeLifecycleUnavailable: 'This account service is temporarily unavailable.',
+    problemCodeLifecycleRateLimited: 'Too many requests. Please wait a moment.',
+    problemCodeIdentityConflict: 'That username or email address is already in use.',
+    problemCodeAccountStateConflict: 'This action is not allowed for the current account state.',
+    problemCodeLastAdminRequired: 'At least one administrator must remain.',
+    problemCodeCurrentPasswordInvalid: 'The current password is not correct.',
+    problemCodeTokenInvalidOrExpired: 'This link is invalid or has expired.',
+    problemCodeContentConflict: 'This item is locked by another change. Please retry in a moment.',
+    problemCodeContentStateConflict: 'This item is in a state that does not allow this action.',
+    problemCodeContentVersionConflict:
+      'This note was changed elsewhere. Reload to see the latest version.',
+    problemCodeEntityNotFound: 'The requested item was not found.',
+    problemCodeValidationFailed: 'The request contains invalid values.',
+    problemCodeRateLimited: 'Too many requests. Please wait a moment.',
+    problemCodeRequestConflict: 'The request conflicts with the current state.',
+    problemCodeRequestInvalid: 'The request could not be understood.',
+    problemCodeRequestTooLarge: 'The request is too large.',
+    problemCodeRequestRejected: 'The request was rejected.',
+    problemCodeUnsupportedMediaType: 'This file type is not supported.',
+    problemCodeMethodNotAllowed: 'This action is not supported here.',
+    problemCodeNotAcceptable: 'The requested response format is not available.',
+    problemCodeFeatureDisabled: 'This feature is not enabled on this instance.',
+    problemCodeSmtpNotConfigured: 'Email is not configured on this instance.',
+    problemCodeInternalError: 'The server encountered an internal error.',
+    problemCodeImageQuotaExceeded: 'The image storage quota would be exceeded.',
+    problemCodeImageStillReferenced:
+      'This image is still referenced by a note or a retained version.',
+    problemCodeImageStorageUnavailable: 'Image storage is temporarily unavailable.',
+
+    sessionsRevokeFailed: 'The session could not be revoked.',
+    sessionsRevokeOthersFailed: 'Other sessions could not be revoked.',
+    sessionsLoadFailed: 'Sessions could not be loaded.',
+
+    transferPreparingExport: 'Preparing export…',
+    transferInspectingImport: 'Inspecting import…',
+    transferApplyingImport: 'Applying import…',
+    transferFailed: 'The transfer could not be completed.',
+
+    authSignInFailed: 'Sign in failed. Check your details and try again.',
+    authSignInNetworkFailure: 'Sign in failed. Check your connection and try again.',
+    authInvitationInvalid: 'This invitation is invalid or expired.',
+    authAccountActivationFailed: 'Account activation failed.',
+    authResetLinkInvalid: 'The reset link is invalid or expired.',
+    authVerifyLinkInvalid: 'This verification link is invalid or expired.',
+    authVerifyEmailChangeTitle: 'Verify email change',
+    authVerifyEmailChangeBusy: 'Verifying your new email address…',
+    authEmailChangedSuccess: 'Your email address was changed. Sign in again with the new address.',
+    authContinueToSignIn: 'Continue to sign in',
+    authReturnToSignIn: 'Return to sign in',
+
+    setupRequiredField: 'This field is required',
+    setupEmailInvalid: 'Enter a valid email address',
+    setupMinLength: 'Use at least {length} characters',
+    setupMaxLength: 'Use no more than {length} characters',
+    setupPasswordsMustMatch: 'Passwords do not match',
+    setupPasswordNoWhitespace: 'Password must not contain whitespace',
+    setupUsernamePattern: 'Use letters, numbers, dots, underscores, or hyphens',
+    setupCheckValue: 'Check this value',
+    setupCouldNotComplete: 'Setup could not be completed. Check the server and try again.',
+
+    adminInstanceSettings: 'Instance settings',
+    adminInstanceSettingsIntro:
+      'Leave domains empty to allow invitations to any valid email address. Enter one exact domain per line.',
+    adminLoadingInstanceSettings: 'Loading instance settings…',
+    adminIdentityAndPublicLinks: 'Identity and public links',
+    adminInstanceName: 'Instance name',
+    adminDefaultLanguage: 'Default language',
+    adminPublicBaseUrl: 'Public base URL',
+    adminSmtpSenderName: 'SMTP sender name',
+    adminSmtpSenderAddress: 'SMTP sender address',
+    adminInstanceLogo: 'Instance logo',
+    adminRemoveLogo: 'Remove logo',
+    adminChooseLogo: 'Choose logo',
+    adminAcceptedImageUploads: 'Accepted image uploads',
+    adminAccountAndRetentionPolicy: 'Account and retention policy',
+    adminSaveSettings: 'Save settings',
+    adminInstanceSettingsSaved: 'Instance settings saved.',
+    adminInstanceLogoUpdated: 'Instance logo updated.',
+    adminInstanceLogoRemoved: 'Instance logo removed.',
+    adminSmtpTestSent: 'Test email sent.',
+    adminSmtpTestFailed: 'SMTP test failed.',
+    adminAccountUpdated: 'Account updated.',
+    adminAccountDeletionScheduled:
+      'Account deletion scheduled. It can be restored until the due time.',
+    adminAccountDeletionCanceled: 'Scheduled deletion canceled.',
+    adminBlindImportCompleted: 'Blind import completed and was recorded in the audit log.',
+    adminActionCompleted: 'Action completed.',
+    adminSettingsLoadFailed: 'Settings could not be loaded.',
+    adminSettingsSaveFailed: 'Settings could not be saved.',
+    adminInstanceLogoUpdateFailed: 'Instance logo could not be updated.',
+    adminInstanceLogoRemoveFailed: 'Instance logo could not be removed.',
+    adminSmtpStatusLoadFailed: 'SMTP status could not be loaded.',
+    adminSmtpTestUnavailable: 'SMTP test could not be completed.',
+    adminUserConfirmSave: 'Apply these account changes? Role changes revoke all sessions.',
+    adminUserConfirmSchedule:
+      'Schedule this account for retained deletion? Access is revoked immediately.',
+    adminUserDeleteTypePrompt: 'Type {username} to permanently delete this account now.',
+    adminUserActionRevokesAccess: 'This action immediately revokes access. Continue?',
+    adminUserActionFailed: 'The action could not be completed.',
+    adminSettingsLogoAlt: 'Current instance logo',
+    adminSettingsLogoHint:
+      'PNG, JPEG, or WebP; maximum 2 MB. Logo bytes are stored with instance data.',
+    adminSettingsFooterNote:
+      'Image storage, SMTP enablement, metrics, and full backups are deployment-managed settings. They are read-only here and require an application restart. Secrets are never accepted by this form.',
+    adminSettingsAllowedEmailDomains: 'Allowed email domains',
+    adminSettingsInvitationHours: 'Invitation expiration (hours)',
+    adminSettingsResetMinutes: 'Password reset expiration (minutes)',
+    adminSettingsEmailChangeMinutes: 'Email verification expiration (minutes)',
+    adminSettingsNormalSessionMinutes: 'Normal session duration (minutes)',
+    adminSettingsRememberSessionMinutes: 'Remember-me duration (minutes)',
+    adminSettingsMaximumImageMb: 'Maximum normalized image (MB)',
+    adminSettingsQuotaMb: 'Per-user image quota (MB)',
+    adminSettingsOrphanGraceHours: 'Unreferenced image grace period (hours)',
+    adminSettingsNoteVersionMaximumCount: 'Maximum note versions',
+    adminSettingsNoteVersionRetentionDays: 'Note version retention (days)',
+    adminSettingsUserExportsEnabled: 'Allow users to export portable data',
+    adminSettingsDefaultTrashDays: 'Default trash retention (days)',
+    adminSettingsUsersMayDisableAutoPurge: 'Users may disable automatic trash cleanup',
+    adminSettingsAdminDeletionRetentionDays: 'Retained account deletion (days)',
+    adminSettingsAuditRetentionDays: 'Audit retention (days)',
+    adminSettingsOperationalLogRetentionDays: 'Operational log retention guidance (days)',
+    adminSettingsLoginDelayThreshold: 'Login delay threshold',
+    adminSettingsLoginLockThreshold: 'Login lock threshold',
+    adminSettingsLoginLockMinutes: 'Login lock duration (minutes)',
+    adminSettingsSelfDeletionEnabled: 'Allow immediate self-service account deletion',
+    adminSettingsCommonPasswordCheck: 'Reject common passwords',
+    adminSettingsPasswordHistory: 'Prevent reuse of previous passwords',
   },
   de: {
     notes: 'Notizen',
@@ -134,6 +292,173 @@ const messages = {
     deletePermanently: 'Konto endgültig löschen',
     loadingSettings: 'Kontoeinstellungen werden geladen…',
     changeFailed: 'Die Änderung konnte nicht gespeichert werden.',
+
+    languageEnglish: 'Englisch',
+    languageGerman: 'Deutsch',
+
+    commonReferenceLabel: 'Referenz',
+    commonSaving: 'Speichern…',
+    commonSave: 'Speichern',
+    commonCancel: 'Abbrechen',
+    commonCopy: 'Kopieren',
+    commonCopied: 'Kopiert.',
+    commonRequiredField: 'Dieses Feld ist erforderlich.',
+    commonMaxLength: 'Höchstens {length} Zeichen verwenden.',
+    commonCheckValue: 'Bitte diesen Wert prüfen.',
+
+    problemGeneric: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.',
+    problemNetwork:
+      'Der Server ist nicht erreichbar. Deine Änderungen bleiben in diesem Browser erhalten.',
+    problemNotFound: 'Dieses Element ist nicht mehr verfügbar.',
+    problemConflict: 'Das Element wurde in einer anderen Sitzung geändert.',
+    problemStatusFallback: 'Die Anfrage ist fehlgeschlagen ({status}).',
+
+    problemCodeAuthInvalidCredentials:
+      'Anmeldung fehlgeschlagen. Bitte Benutzername und Passwort prüfen.',
+    problemCodeAuthSessionExpired: 'Deine Sitzung ist abgelaufen. Bitte erneut anmelden.',
+    problemCodeAuthForbidden: 'Du bist nicht berechtigt, diese Aktion auszuführen.',
+    problemCodeAuthRateLimited:
+      'Zu viele Versuche. Bitte einen Moment warten und erneut versuchen.',
+    problemCodeCsrfInvalid: 'Die Anfrage konnte nicht bestätigt werden. Bitte die Seite neu laden.',
+    problemCodeSetupDenied: 'Die Einrichtung ist nicht erlaubt.',
+    problemCodeSetupUnavailable: 'Die Einrichtung ist derzeit nicht verfügbar.',
+    problemCodeSetupConflict: 'Die Instanz ist bereits eingerichtet.',
+    problemCodeSetupRateLimited: 'Zu viele Einrichtungsversuche. Bitte einen Moment warten.',
+    problemCodeLifecycleUnavailable: 'Dieser Kontodienst ist vorübergehend nicht verfügbar.',
+    problemCodeLifecycleRateLimited: 'Zu viele Anfragen. Bitte einen Moment warten.',
+    problemCodeIdentityConflict:
+      'Dieser Benutzername oder diese E-Mail-Adresse wird bereits verwendet.',
+    problemCodeAccountStateConflict: 'Diese Aktion ist im aktuellen Kontostatus nicht erlaubt.',
+    problemCodeLastAdminRequired: 'Mindestens ein Administrator muss verbleiben.',
+    problemCodeCurrentPasswordInvalid: 'Das aktuelle Passwort ist nicht korrekt.',
+    problemCodeTokenInvalidOrExpired: 'Dieser Link ist ungültig oder abgelaufen.',
+    problemCodeContentConflict:
+      'Dieses Element wird gerade anderweitig geändert. Bitte kurz erneut versuchen.',
+    problemCodeContentStateConflict:
+      'Dieses Element befindet sich in einem Zustand, der diese Aktion nicht erlaubt.',
+    problemCodeContentVersionConflict:
+      'Diese Notiz wurde an anderer Stelle geändert. Bitte neu laden, um die aktuelle Version zu sehen.',
+    problemCodeEntityNotFound: 'Das angeforderte Element wurde nicht gefunden.',
+    problemCodeValidationFailed: 'Die Anfrage enthält ungültige Werte.',
+    problemCodeRateLimited: 'Zu viele Anfragen. Bitte einen Moment warten.',
+    problemCodeRequestConflict: 'Die Anfrage steht im Konflikt mit dem aktuellen Zustand.',
+    problemCodeRequestInvalid: 'Die Anfrage konnte nicht verarbeitet werden.',
+    problemCodeRequestTooLarge: 'Die Anfrage ist zu groß.',
+    problemCodeRequestRejected: 'Die Anfrage wurde abgelehnt.',
+    problemCodeUnsupportedMediaType: 'Dieser Dateityp wird nicht unterstützt.',
+    problemCodeMethodNotAllowed: 'Diese Aktion wird hier nicht unterstützt.',
+    problemCodeNotAcceptable: 'Das angeforderte Antwortformat ist nicht verfügbar.',
+    problemCodeFeatureDisabled: 'Diese Funktion ist auf dieser Instanz nicht aktiviert.',
+    problemCodeSmtpNotConfigured: 'E-Mail ist auf dieser Instanz nicht eingerichtet.',
+    problemCodeInternalError: 'Auf dem Server ist ein interner Fehler aufgetreten.',
+    problemCodeImageQuotaExceeded: 'Der Speicherplatz für Bilder würde überschritten.',
+    problemCodeImageStillReferenced:
+      'Dieses Bild wird noch von einer Notiz oder einer Version verwendet.',
+    problemCodeImageStorageUnavailable: 'Der Bildspeicher ist vorübergehend nicht verfügbar.',
+
+    sessionsRevokeFailed: 'Die Sitzung konnte nicht beendet werden.',
+    sessionsRevokeOthersFailed: 'Andere Sitzungen konnten nicht beendet werden.',
+    sessionsLoadFailed: 'Sitzungen konnten nicht geladen werden.',
+
+    transferPreparingExport: 'Export wird vorbereitet…',
+    transferInspectingImport: 'Import wird geprüft…',
+    transferApplyingImport: 'Import wird angewendet…',
+    transferFailed: 'Die Übertragung konnte nicht abgeschlossen werden.',
+
+    authSignInFailed: 'Anmeldung fehlgeschlagen. Bitte Angaben prüfen und erneut versuchen.',
+    authSignInNetworkFailure:
+      'Anmeldung fehlgeschlagen. Bitte Verbindung prüfen und erneut versuchen.',
+    authInvitationInvalid: 'Diese Einladung ist ungültig oder abgelaufen.',
+    authAccountActivationFailed: 'Kontoaktivierung fehlgeschlagen.',
+    authResetLinkInvalid: 'Der Zurücksetzungs-Link ist ungültig oder abgelaufen.',
+    authVerifyLinkInvalid: 'Dieser Bestätigungs-Link ist ungültig oder abgelaufen.',
+    authVerifyEmailChangeTitle: 'E-Mail-Änderung bestätigen',
+    authVerifyEmailChangeBusy: 'Neue E-Mail-Adresse wird bestätigt…',
+    authEmailChangedSuccess:
+      'Deine E-Mail-Adresse wurde geändert. Bitte mit der neuen Adresse erneut anmelden.',
+    authContinueToSignIn: 'Weiter zur Anmeldung',
+    authReturnToSignIn: 'Zurück zur Anmeldung',
+
+    setupRequiredField: 'Dieses Feld ist erforderlich',
+    setupEmailInvalid: 'Bitte eine gültige E-Mail-Adresse eingeben',
+    setupMinLength: 'Mindestens {length} Zeichen verwenden',
+    setupMaxLength: 'Höchstens {length} Zeichen verwenden',
+    setupPasswordsMustMatch: 'Passwörter stimmen nicht überein',
+    setupPasswordNoWhitespace: 'Passwort darf keine Leerzeichen enthalten',
+    setupUsernamePattern: 'Buchstaben, Zahlen, Punkte, Unterstriche oder Bindestriche verwenden',
+    setupCheckValue: 'Bitte diesen Wert prüfen',
+    setupCouldNotComplete:
+      'Einrichtung konnte nicht abgeschlossen werden. Bitte Server prüfen und erneut versuchen.',
+
+    adminInstanceSettings: 'Instanzeinstellungen',
+    adminInstanceSettingsIntro:
+      'Domänen leer lassen, um Einladungen an jede gültige E-Mail-Adresse zu erlauben. Pro Zeile eine exakte Domäne eingeben.',
+    adminLoadingInstanceSettings: 'Instanzeinstellungen werden geladen…',
+    adminIdentityAndPublicLinks: 'Identität und öffentliche Links',
+    adminInstanceName: 'Instanzname',
+    adminDefaultLanguage: 'Standardsprache',
+    adminPublicBaseUrl: 'Öffentliche Basis-URL',
+    adminSmtpSenderName: 'SMTP-Absendername',
+    adminSmtpSenderAddress: 'SMTP-Absenderadresse',
+    adminInstanceLogo: 'Instanz-Logo',
+    adminRemoveLogo: 'Logo entfernen',
+    adminChooseLogo: 'Logo auswählen',
+    adminAcceptedImageUploads: 'Erlaubte Bild-Uploads',
+    adminAccountAndRetentionPolicy: 'Konto- und Aufbewahrungsrichtlinie',
+    adminSaveSettings: 'Einstellungen speichern',
+    adminInstanceSettingsSaved: 'Instanzeinstellungen gespeichert.',
+    adminInstanceLogoUpdated: 'Instanz-Logo aktualisiert.',
+    adminInstanceLogoRemoved: 'Instanz-Logo entfernt.',
+    adminSmtpTestSent: 'Test-E-Mail gesendet.',
+    adminSmtpTestFailed: 'SMTP-Test fehlgeschlagen.',
+    adminAccountUpdated: 'Konto aktualisiert.',
+    adminAccountDeletionScheduled:
+      'Kontolöschung geplant. Kann bis zum Fälligkeitszeitpunkt rückgängig gemacht werden.',
+    adminAccountDeletionCanceled: 'Geplante Löschung abgebrochen.',
+    adminBlindImportCompleted: 'Blinder Import abgeschlossen und im Audit-Log erfasst.',
+    adminActionCompleted: 'Aktion abgeschlossen.',
+    adminSettingsLoadFailed: 'Einstellungen konnten nicht geladen werden.',
+    adminSettingsSaveFailed: 'Einstellungen konnten nicht gespeichert werden.',
+    adminInstanceLogoUpdateFailed: 'Instanz-Logo konnte nicht aktualisiert werden.',
+    adminInstanceLogoRemoveFailed: 'Instanz-Logo konnte nicht entfernt werden.',
+    adminSmtpStatusLoadFailed: 'SMTP-Status konnte nicht geladen werden.',
+    adminSmtpTestUnavailable: 'SMTP-Test konnte nicht abgeschlossen werden.',
+    adminUserConfirmSave:
+      'Diese Kontoänderungen anwenden? Rollenänderungen beenden alle Sitzungen.',
+    adminUserConfirmSchedule:
+      'Dieses Konto für aufbewahrte Löschung planen? Der Zugriff wird sofort entzogen.',
+    adminUserDeleteTypePrompt: '{username} eingeben, um dieses Konto jetzt endgültig zu löschen.',
+    adminUserActionRevokesAccess: 'Diese Aktion entzieht den Zugriff sofort. Fortfahren?',
+    adminUserActionFailed: 'Die Aktion konnte nicht abgeschlossen werden.',
+    adminSettingsLogoAlt: 'Aktuelles Instanz-Logo',
+    adminSettingsLogoHint:
+      'PNG, JPEG oder WebP; höchstens 2 MB. Logo-Bytes werden mit den Instanzdaten gespeichert.',
+    adminSettingsFooterNote:
+      'Bildspeicher, SMTP-Aktivierung, Metriken und vollständige Backups sind deployment-verwaltete Einstellungen. Sie sind hier schreibgeschützt und erfordern einen Anwendungsneustart. Geheimnisse werden von diesem Formular nie akzeptiert.',
+    adminSettingsAllowedEmailDomains: 'Erlaubte E-Mail-Domänen',
+    adminSettingsInvitationHours: 'Ablauf der Einladung (Stunden)',
+    adminSettingsResetMinutes: 'Ablauf der Passwortzurücksetzung (Minuten)',
+    adminSettingsEmailChangeMinutes: 'Ablauf der E-Mail-Bestätigung (Minuten)',
+    adminSettingsNormalSessionMinutes: 'Normale Sitzungsdauer (Minuten)',
+    adminSettingsRememberSessionMinutes: 'Dauer „Angemeldet bleiben" (Minuten)',
+    adminSettingsMaximumImageMb: 'Maximales normalisiertes Bild (MB)',
+    adminSettingsQuotaMb: 'Bildquota pro Nutzer:in (MB)',
+    adminSettingsOrphanGraceHours: 'Karenzzeit für unreferenzierte Bilder (Stunden)',
+    adminSettingsNoteVersionMaximumCount: 'Maximale Anzahl Notiz-Versionen',
+    adminSettingsNoteVersionRetentionDays: 'Aufbewahrung von Notiz-Versionen (Tage)',
+    adminSettingsUserExportsEnabled: 'Portable Datenexporte für Nutzer:innen erlauben',
+    adminSettingsDefaultTrashDays: 'Standard-Papierkorb-Aufbewahrung (Tage)',
+    adminSettingsUsersMayDisableAutoPurge:
+      'Nutzer:innen dürfen automatische Papierkorb-Leerung deaktivieren',
+    adminSettingsAdminDeletionRetentionDays: 'Aufbewahrte Kontolöschung (Tage)',
+    adminSettingsAuditRetentionDays: 'Audit-Aufbewahrung (Tage)',
+    adminSettingsOperationalLogRetentionDays: 'Aufbewahrungshinweis für Betriebsprotokolle (Tage)',
+    adminSettingsLoginDelayThreshold: 'Schwellwert für Anmeldeverzögerung',
+    adminSettingsLoginLockThreshold: 'Schwellwert für Anmeldesperre',
+    adminSettingsLoginLockMinutes: 'Dauer der Anmeldesperre (Minuten)',
+    adminSettingsSelfDeletionEnabled: 'Sofortige Selbstlöschung erlauben',
+    adminSettingsCommonPasswordCheck: 'Häufige Passwörter ablehnen',
+    adminSettingsPasswordHistory: 'Wiederverwendung früherer Passwörter verhindern',
   },
 } as const;
 
@@ -152,8 +477,13 @@ export class I18nService {
     document.documentElement.lang = language;
   }
 
-  t(key: MessageKey): string {
-    return messages[this.language()][key];
+  t(key: MessageKey, placeholders?: MessagePlaceholders): string {
+    const template: string = messages[this.language()][key];
+    if (!placeholders) return template;
+    return Object.entries(placeholders).reduce<string>(
+      (text, [name, value]) => text.replace(`{${name}}`, String(value)),
+      template,
+    );
   }
 
   formatDate(value: string | Date): string {
@@ -167,3 +497,5 @@ export class I18nService {
     return navigator.language.toLowerCase().startsWith('de') ? 'de' : 'en';
   }
 }
+
+export const __messagesForTest = messages;

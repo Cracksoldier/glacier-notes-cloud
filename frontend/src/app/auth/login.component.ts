@@ -4,6 +4,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthStore } from '../core/auth.store';
+import { I18nService } from '../core/i18n.service';
+import { ProblemService } from '../core/problem.service';
 import type { ProblemDetails } from '../shared/generated-api/model/problemDetails';
 
 interface LoginControlErrors {
@@ -20,6 +22,8 @@ interface LoginControlErrors {
 export class LoginComponent {
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly i18n = inject(I18nService);
+  private readonly problems = inject(ProblemService);
 
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -50,15 +54,21 @@ export class LoginComponent {
         this.submitting.set(false);
         this.form.controls.password.setValue('');
         if (error instanceof HttpErrorResponse) {
-          const problem = error.error as ProblemDetails | null;
           if (error.status === 429) {
             this.retryAfter.set(Number(error.headers.get('Retry-After') ?? 1));
           }
-          this.errorMessage.set(
-            problem?.detail ?? 'Sign in failed. Check your details and try again.',
-          );
+          if (error.status === 0) {
+            this.errorMessage.set(this.i18n.t('authSignInNetworkFailure'));
+            return;
+          }
+          const problem = error.error as ProblemDetails | null;
+          if (problem?.errorCode || problem?.title) {
+            this.errorMessage.set(this.problems.message(error));
+          } else {
+            this.errorMessage.set(this.i18n.t('authSignInFailed'));
+          }
         } else {
-          this.errorMessage.set('Sign in failed. Check your connection and try again.');
+          this.errorMessage.set(this.i18n.t('authSignInNetworkFailure'));
         }
       },
     });
@@ -68,8 +78,10 @@ export class LoginComponent {
     const control = this.form.controls[field];
     if (!control.touched || !control.errors) return null;
     const errors = control.errors as LoginControlErrors;
-    if (errors.required) return 'This field is required.';
-    if (errors.maxlength) return `Use no more than ${errors.maxlength.requiredLength} characters.`;
-    return 'Check this value.';
+    if (errors.required) return this.i18n.t('commonRequiredField');
+    if (errors.maxlength) {
+      return this.i18n.t('commonMaxLength', { length: errors.maxlength.requiredLength });
+    }
+    return this.i18n.t('commonCheckValue');
   }
 }

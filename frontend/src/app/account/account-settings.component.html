@@ -40,8 +40,8 @@
         <label
           >{{ i18n.t('language') }}
           <select name="language" [(ngModel)]="language">
-            <option value="en">English</option>
-            <option value="de">Deutsch</option>
+            <option value="en">{{ i18n.t('languageEnglish') }}</option>
+            <option value="de">{{ i18n.t('languageGerman') }}</option>
           </select></label
         >
         <label class="check-row"

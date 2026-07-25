@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { I18nService } from '../core/i18n.service';
 import { SetupService } from '../shared/generated-api/api/setup.service';
 import { InitialAdministratorRequestLanguageEnum } from '../shared/generated-api/model/initialAdministratorRequest';
 import type { ProblemDetails } from '../shared/generated-api/model/problemDetails';
@@ -23,6 +24,7 @@ interface ControlErrors {
 export class SetupComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly setupApi = inject(SetupService);
+  private readonly i18n = inject(I18nService);
 
   @Output() readonly initialized = new EventEmitter<void>();
 
@@ -68,7 +70,7 @@ export class SetupComponent {
 
     const values = this.form.getRawValue();
     if (values.password !== values.passwordConfirmation) {
-      this.fieldErrors.set({ passwordConfirmation: 'Passwords do not match' });
+      this.fieldErrors.set({ passwordConfirmation: this.i18n.t('setupPasswordsMustMatch') });
       return;
     }
 
@@ -107,23 +109,23 @@ export class SetupComponent {
     }
     const errors = control.errors as ControlErrors;
     if (errors.required) {
-      return 'This field is required';
+      return this.i18n.t('setupRequiredField');
     }
     if (errors.email) {
-      return 'Enter a valid email address';
+      return this.i18n.t('setupEmailInvalid');
     }
     if (errors.minlength) {
-      return `Use at least ${errors.minlength.requiredLength} characters`;
+      return this.i18n.t('setupMinLength', { length: errors.minlength.requiredLength });
     }
     if (errors.maxlength) {
-      return `Use no more than ${errors.maxlength.requiredLength} characters`;
+      return this.i18n.t('setupMaxLength', { length: errors.maxlength.requiredLength });
     }
     if (errors.pattern) {
       return field === 'password'
-        ? 'Password must not contain whitespace'
-        : 'Use letters, numbers, dots, underscores, or hyphens';
+        ? this.i18n.t('setupPasswordNoWhitespace')
+        : this.i18n.t('setupUsernamePattern');
     }
-    return 'Check this value';
+    return this.i18n.t('setupCheckValue');
   }
 
   private handleError(error: HttpErrorResponse): void {
@@ -137,9 +139,7 @@ export class SetupComponent {
       const seconds = Number.parseInt(error.headers.get('Retry-After') ?? '', 10);
       this.retryAfter.set(Number.isFinite(seconds) ? seconds : null);
     }
-    this.errorMessage.set(
-      problem?.detail ?? 'Setup could not be completed. Check the server and try again.',
-    );
+    this.errorMessage.set(problem?.detail ?? this.i18n.t('setupCouldNotComplete'));
   }
 
   private problemDetails(value: unknown): ProblemDetails | null {

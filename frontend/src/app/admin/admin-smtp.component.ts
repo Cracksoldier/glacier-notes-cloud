@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 
+import { I18nService } from '../core/i18n.service';
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
 import type { SmtpStatus } from '../shared/generated-api/model/smtpStatus';
 
@@ -29,6 +30,7 @@ import type { SmtpStatus } from '../shared/generated-api/model/smtpStatus';
 })
 export class AdminSmtpComponent {
   private readonly api = inject(AdministrationService);
+  private readonly i18n = inject(I18nService);
   readonly status = signal<SmtpStatus | null>(null);
   readonly testing = signal(false);
   readonly message = signal('');
@@ -38,7 +40,7 @@ export class AdminSmtpComponent {
     this.api.getAdminStatus().subscribe({
       next: (value) => this.status.set(value.smtp),
       error: (failure) =>
-        this.error.set(failure.error?.detail ?? 'SMTP status could not be loaded.'),
+        this.error.set(failure.error?.detail ?? this.i18n.t('adminSmtpStatusLoadFailed')),
     });
   }
 
@@ -50,11 +52,15 @@ export class AdminSmtpComponent {
     this.api.testSmtp().subscribe({
       next: (value) => {
         this.status.set(value);
-        this.message.set(value.state === 'SUCCEEDED' ? 'Test email sent.' : 'SMTP test failed.');
+        this.message.set(
+          value.state === 'SUCCEEDED'
+            ? this.i18n.t('adminSmtpTestSent')
+            : this.i18n.t('adminSmtpTestFailed'),
+        );
         this.testing.set(false);
       },
       error: (failure) => {
-        this.error.set(failure.error?.detail ?? 'SMTP test could not be completed.');
+        this.error.set(failure.error?.detail ?? this.i18n.t('adminSmtpTestUnavailable'));
         this.testing.set(false);
       },
     });

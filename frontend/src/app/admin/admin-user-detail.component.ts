@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '../core/auth.store';
+import { I18nService } from '../core/i18n.service';
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
 import { AdminDeletionRequestModeEnum } from '../shared/generated-api/model/adminDeletionRequest';
 import type { AdminUser } from '../shared/generated-api/model/adminUser';
@@ -21,6 +22,7 @@ export class AdminUserDetailComponent {
   private readonly api = inject(AdministrationService);
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly i18n = inject(I18nService);
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
   readonly user = signal<AdminUser | null>(null);
   readonly reset = signal<ResetLink | null>(null);
@@ -54,7 +56,7 @@ export class AdminUserDetailComponent {
   }
 
   save(): void {
-    if (!confirm('Apply these account changes? Role changes revoke all sessions.')) return;
+    if (!confirm(this.i18n.t('adminUserConfirmSave'))) return;
     this.api
       .updateUser(this.id, {
         username: this.username,
@@ -65,7 +67,7 @@ export class AdminUserDetailComponent {
       .subscribe({
         next: (value) => {
           this.user.set(value);
-          this.message.set('Account updated.');
+          this.message.set(this.i18n.t('adminAccountUpdated'));
           this.checkSelf(value);
         },
         error: (failure) => this.fail(failure),
@@ -96,14 +98,13 @@ export class AdminUserDetailComponent {
   }
 
   scheduleDeletion(): void {
-    if (!confirm('Schedule this account for retained deletion? Access is revoked immediately.'))
-      return;
+    if (!confirm(this.i18n.t('adminUserConfirmSchedule'))) return;
     this.api
       .scheduleUserDeletion(this.id, { mode: AdminDeletionRequestModeEnum.Retained })
       .subscribe({
         next: (value) => {
           this.user.set(value);
-          this.message.set('Account deletion scheduled. It can be restored until the due time.');
+          this.message.set(this.i18n.t('adminAccountDeletionScheduled'));
           this.checkSelf();
         },
         error: (failure) => this.fail(failure),
@@ -113,7 +114,9 @@ export class AdminUserDetailComponent {
   deleteImmediately(): void {
     const user = this.user();
     if (!user) return;
-    const confirmation = prompt(`Type ${user.username} to permanently delete this account now.`);
+    const confirmation = prompt(
+      this.i18n.t('adminUserDeleteTypePrompt', { username: user.username }),
+    );
     if (confirmation === null) return;
     this.api
       .scheduleUserDeletion(this.id, {
@@ -137,7 +140,7 @@ export class AdminUserDetailComponent {
     this.api.restoreUserDeletion(this.id).subscribe({
       next: (value) => {
         this.user.set(value);
-        this.message.set('Scheduled deletion canceled.');
+        this.message.set(this.i18n.t('adminAccountDeletionCanceled'));
       },
       error: (failure) => this.fail(failure),
     });
@@ -178,7 +181,7 @@ export class AdminUserDetailComponent {
       if (!completed || !this.activeImport(operation)) return;
       this.importJob.set(completed);
       if (completed.state === 'SUCCEEDED') {
-        this.message.set('Blind import completed and was recorded in the audit log.');
+        this.message.set(this.i18n.t('adminBlindImportCompleted'));
         this.load();
       }
     } catch (failure) {
@@ -228,13 +231,13 @@ export class AdminUserDetailComponent {
 
   copy(value: string): void {
     void navigator.clipboard.writeText(value);
-    this.message.set('Copied.');
+    this.message.set(this.i18n.t('commonCopied'));
   }
 
   private action(kind: 'activate' | 'deactivate' | 'unlock' | 'sessions'): void {
     if (
       (kind === 'deactivate' || kind === 'sessions') &&
-      !confirm('This action immediately revokes access. Continue?')
+      !confirm(this.i18n.t('adminUserActionRevokesAccess'))
     ) {
       return;
     }
@@ -248,7 +251,7 @@ export class AdminUserDetailComponent {
             : this.api.revokeUserSessions(this.id);
     request.subscribe({
       next: () => {
-        this.message.set('Action completed.');
+        this.message.set(this.i18n.t('adminActionCompleted'));
         const self = this.auth.session()?.user.id === this.id;
         if (kind === 'deactivate' || kind === 'sessions') this.checkSelf();
         if (!self) this.load();
@@ -265,6 +268,6 @@ export class AdminUserDetailComponent {
   }
 
   private fail(failure: { error?: { detail?: string } }): void {
-    this.error.set(failure.error?.detail ?? 'The action could not be completed.');
+    this.error.set(failure.error?.detail ?? this.i18n.t('adminUserActionFailed'));
   }
 }

@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { I18nService } from '../core/i18n.service';
 import { AuthenticationService } from '../shared/generated-api/api/authentication.service';
 
 @Component({
@@ -10,15 +11,15 @@ import { AuthenticationService } from '../shared/generated-api/api/authenticatio
     <main class="lifecycle-shell">
       <section class="lifecycle-card">
         <div class="mark" aria-hidden="true"><i class="fa-solid fa-envelope-circle-check"></i></div>
-        <h1>Verify email change</h1>
+        <h1>{{ i18n.t('authVerifyEmailChangeTitle') }}</h1>
         @if (busy()) {
-          <p aria-busy="true">Verifying your new email address…</p>
+          <p aria-busy="true">{{ i18n.t('authVerifyEmailChangeBusy') }}</p>
         } @else if (completed()) {
-          <p>Your email address was changed. Sign in again with the new address.</p>
-          <a routerLink="/login">Continue to sign in</a>
+          <p>{{ i18n.t('authEmailChangedSuccess') }}</p>
+          <a routerLink="/login">{{ i18n.t('authContinueToSignIn') }}</a>
         } @else {
           <p role="alert">{{ error() }}</p>
-          <a routerLink="/login">Return to sign in</a>
+          <a routerLink="/login">{{ i18n.t('authReturnToSignIn') }}</a>
         }
       </section>
     </main>
@@ -27,6 +28,7 @@ import { AuthenticationService } from '../shared/generated-api/api/authenticatio
 })
 export class VerifyEmailChangeComponent {
   private readonly api = inject(AuthenticationService);
+  protected readonly i18n = inject(I18nService);
   readonly busy = signal(true);
   readonly completed = signal(false);
   readonly error = signal('');
@@ -36,7 +38,7 @@ export class VerifyEmailChangeComponent {
     history.replaceState({}, '', '/verify-email-change');
     if (!token) {
       this.busy.set(false);
-      this.error.set('This verification link is invalid or expired.');
+      this.error.set(this.i18n.t('authVerifyLinkInvalid'));
       return;
     }
     this.api.completeEmailChange({ token }).subscribe({
@@ -46,7 +48,7 @@ export class VerifyEmailChangeComponent {
       },
       error: (failure) => {
         this.busy.set(false);
-        this.error.set(failure.error?.detail ?? 'This verification link is invalid or expired.');
+        this.error.set(failure.error?.detail ?? this.i18n.t('authVerifyLinkInvalid'));
       },
     });
   }

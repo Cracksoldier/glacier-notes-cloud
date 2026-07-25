@@ -2,6 +2,7 @@ import { Component, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
+import { I18nService } from '../core/i18n.service';
 import { ProblemService } from '../core/problem.service';
 import { TransfersService } from '../shared/generated-api/api/transfers.service';
 import {
@@ -30,6 +31,7 @@ export class TransferDialogComponent {
 
   private readonly api = inject(TransfersService);
   private readonly problems = inject(ProblemService);
+  private readonly i18n = inject(I18nService);
   protected readonly step = signal<Step>('menu');
   protected readonly job = signal<TransferJob | null>(null);
   protected readonly errors = signal<string[]>([]);
@@ -48,7 +50,7 @@ export class TransferDialogComponent {
       request.resourceId = this.exportNotebook;
     if (this.exportScope === ExportRequestScopeEnum.Note) request.resourceId = this.exportNote;
     if (this.exportScope !== ExportRequestScopeEnum.All && !request.resourceId) return;
-    const operation = this.begin('Preparing export…');
+    const operation = this.begin(this.i18n.t('transferPreparingExport'));
     try {
       const created = await firstValueFrom(this.api.createExport(request));
       if (!this.active(operation)) {
@@ -73,7 +75,7 @@ export class TransferDialogComponent {
 
   protected async inspect(file: File | null): Promise<void> {
     if (!file) return;
-    const operation = this.begin('Inspecting import…');
+    const operation = this.begin(this.i18n.t('transferInspectingImport'));
     try {
       const created = await firstValueFrom(this.api.createImport(file));
       if (!this.active(operation)) {
@@ -96,7 +98,7 @@ export class TransferDialogComponent {
   protected async apply(strategy: ImportApplyRequestStrategyEnum): Promise<void> {
     const current = this.job();
     if (!current) return;
-    const operation = this.begin('Applying import…');
+    const operation = this.begin(this.i18n.t('transferApplyingImport'));
     try {
       const queued = await firstValueFrom(this.api.applyImport(current.id, { strategy }));
       if (!this.active(operation)) return;
@@ -174,7 +176,7 @@ export class TransferDialogComponent {
 
   private fail(job: TransferJob): void {
     this.job.set(job);
-    this.errors.set(job.errors?.length ? job.errors : ['The transfer could not be completed.']);
+    this.errors.set(job.errors?.length ? job.errors : [this.i18n.t('transferFailed')]);
     this.step.set('error');
   }
 

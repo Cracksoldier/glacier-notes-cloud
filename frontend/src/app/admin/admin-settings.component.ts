@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { I18nService } from '../core/i18n.service';
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
 import type { AdminSettings } from '../shared/generated-api/model/adminSettings';
 import {
@@ -16,6 +17,7 @@ import {
 })
 export class AdminSettingsComponent {
   private readonly api = inject(AdministrationService);
+  protected readonly i18n = inject(I18nService);
   readonly message = signal('');
   readonly error = signal('');
   readonly loading = signal(true);
@@ -61,7 +63,7 @@ export class AdminSettingsComponent {
         this.loading.set(false);
       },
       error: (failure) => {
-        this.error.set(failure.error?.detail ?? 'Settings could not be loaded.');
+        this.error.set(failure.error?.detail ?? this.i18n.t('adminSettingsLoadFailed'));
         this.loading.set(false);
       },
     });
@@ -113,11 +115,11 @@ export class AdminSettingsComponent {
       .subscribe({
         next: (value) => {
           this.apply(value);
-          this.message.set('Instance settings saved.');
+          this.message.set(this.i18n.t('adminInstanceSettingsSaved'));
           this.saving.set(false);
         },
         error: (failure) => {
-          this.error.set(failure.error?.detail ?? 'Settings could not be saved.');
+          this.error.set(failure.error?.detail ?? this.i18n.t('adminSettingsSaveFailed'));
           this.saving.set(false);
         },
       });
@@ -137,11 +139,11 @@ export class AdminSettingsComponent {
     this.api.updateInstanceLogo(file).subscribe({
       next: (value) => {
         this.apply(value);
-        this.message.set('Instance logo updated.');
+        this.message.set(this.i18n.t('adminInstanceLogoUpdated'));
         this.saving.set(false);
       },
       error: (failure) => {
-        this.error.set(failure.error?.detail ?? 'Instance logo could not be updated.');
+        this.error.set(failure.error?.detail ?? this.i18n.t('adminInstanceLogoUpdateFailed'));
         this.saving.set(false);
       },
     });
@@ -153,11 +155,11 @@ export class AdminSettingsComponent {
     this.api.deleteInstanceLogo().subscribe({
       next: () => {
         this.instanceLogoUrl = '';
-        this.message.set('Instance logo removed.');
+        this.message.set(this.i18n.t('adminInstanceLogoRemoved'));
         this.saving.set(false);
       },
       error: (failure) => {
-        this.error.set(failure.error?.detail ?? 'Instance logo could not be removed.');
+        this.error.set(failure.error?.detail ?? this.i18n.t('adminInstanceLogoRemoveFailed'));
         this.saving.set(false);
       },
     });

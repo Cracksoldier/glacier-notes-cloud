@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 
 import { AuthStore } from '../core/auth.store';
+import { I18nService } from '../core/i18n.service';
 import { SessionsService } from '../shared/generated-api/api/sessions.service';
 import type { SessionSummary } from '../shared/generated-api/model/sessionSummary';
 
@@ -14,6 +15,7 @@ import type { SessionSummary } from '../shared/generated-api/model/sessionSummar
 export class SessionsComponent {
   private readonly sessionsApi = inject(SessionsService);
   private readonly auth = inject(AuthStore);
+  private readonly i18n = inject(I18nService);
 
   protected readonly sessions = signal<SessionSummary[]>([]);
   protected readonly loading = signal(true);
@@ -33,14 +35,14 @@ export class SessionsComponent {
         }
         this.sessions.update((current) => current.filter((item) => item.id !== session.id));
       },
-      error: () => this.error.set('The session could not be revoked.'),
+      error: () => this.error.set(this.i18n.t('sessionsRevokeFailed')),
     });
   }
 
   protected revokeOthers(): void {
     this.sessionsApi.revokeOtherSessions().subscribe({
       next: () => this.sessions.update((current) => current.filter((item) => item.current)),
-      error: () => this.error.set('Other sessions could not be revoked.'),
+      error: () => this.error.set(this.i18n.t('sessionsRevokeOthersFailed')),
     });
   }
 
@@ -51,7 +53,7 @@ export class SessionsComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Sessions could not be loaded.');
+        this.error.set(this.i18n.t('sessionsLoadFailed'));
         this.loading.set(false);
       },
     });
