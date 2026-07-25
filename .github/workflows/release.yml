@@ -232,11 +232,16 @@ jobs:
           docker run --detach --name glacier-release-restore \
             --env POSTGRES_PASSWORD=clean-restore-password \
             --env POSTGRES_DB=glacier_restore postgres:18.3-alpine
+          restore_db_ready=false
           for attempt in $(seq 1 60); do
-            if docker exec glacier-release-restore \
-              pg_isready -U postgres -d glacier_restore; then break; fi
+            if docker exec --env PGPASSWORD=clean-restore-password glacier-release-restore \
+              psql -U postgres -d glacier_restore --quiet --command 'select 1' >/dev/null 2>&1; then
+              restore_db_ready=true
+              break
+            fi
             sleep 1
           done
+          test "$restore_db_ready" = "true"
           docker cp /tmp/glacier-backup-contents/database.dump \
             glacier-release-restore:/tmp/database.dump
           docker exec --env PGPASSWORD=clean-restore-password glacier-release-restore \
