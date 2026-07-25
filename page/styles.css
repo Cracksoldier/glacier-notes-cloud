@@ -112,6 +112,21 @@ code, pre {
   color: var(--text);
 }
 
+.button i,
+.feature-card h3 i,
+.setup-block h3 i {
+  color: var(--accent);
+  margin-right: 0.5em;
+}
+
+.button.primary i {
+  color: inherit;
+}
+
+footer a i {
+  margin-right: 0.35em;
+}
+
 .button.primary {
   background: var(--accent);
   border-color: var(--accent);

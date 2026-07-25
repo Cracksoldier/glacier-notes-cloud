@@ -6,6 +6,9 @@
   <title>Glacier Notes Cloud</title>
   <meta name="description" content="Self-hosted, multi-user notes web application. Quarkus backend, Angular frontend, PostgreSQL persistence." />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="vendor/fontawesome/css/fontawesome.min.css" />
+  <link rel="stylesheet" href="vendor/fontawesome/css/solid.min.css" />
+  <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -25,8 +28,9 @@
         <li>Docker Compose</li>
       </ul>
       <div class="hero-actions">
-        <a class="button primary" href="#setup">Get started</a>
-        <a class="button" href="#features">See features</a>
+        <a class="button primary" href="#setup"><i class="fa-solid fa-rocket"></i> Get started</a>
+        <a class="button" href="#features"><i class="fa-solid fa-list-check"></i> See features</a>
+        <a class="button" href="https://github.com/Cracksoldier/glacier-notes-cloud"><i class="fa-brands fa-github"></i> View on GitHub</a>
       </div>
     </div>
   </header>
@@ -37,7 +41,7 @@
 
       <div class="feature-grid">
         <article class="feature-card">
-          <h3>Notes &amp; organization</h3>
+          <h3><i class="fa-solid fa-note-sticky"></i> Notes &amp; organization</h3>
           <ul>
             <li>Owner-scoped notebooks, notes, checklists, and labels with archive and trash</li>
             <li>Sanitized Markdown editing and rendering</li>
@@ -49,7 +53,7 @@
         </article>
 
         <article class="feature-card">
-          <h3>Portability &amp; account</h3>
+          <h3><i class="fa-solid fa-right-left"></i> Portability &amp; account</h3>
           <ul>
             <li>Portable <code>.glacier.json</code> import/export, desktop-compatible</li>
             <li>Full account, notebook, or single-note export scope</li>
@@ -60,7 +64,7 @@
         </article>
 
         <article class="feature-card">
-          <h3>Administration</h3>
+          <h3><i class="fa-solid fa-user-shield"></i> Administration</h3>
           <ul>
             <li>User management and invitations</li>
             <li>Immutable audit event log, exportable as CSV or JSON</li>
@@ -72,7 +76,7 @@
         </article>
 
         <article class="feature-card">
-          <h3>Security &amp; operations</h3>
+          <h3><i class="fa-solid fa-lock"></i> Security &amp; operations</h3>
           <ul>
             <li>Opaque session tokens with keyed hashes and double-submit CSRF protection</li>
             <li>Argon2id password hashing and progressive login throttling</li>
@@ -89,7 +93,7 @@
       <h2>Setup guide</h2>
 
       <article class="setup-block">
-        <h3>1. Local setup (for testing)</h3>
+        <h3><i class="fa-solid fa-laptop-code"></i> 1. Local setup (for testing)</h3>
         <p>
           Regenerate the OpenAPI-generated contracts, install frontend dependencies, then run the
           backend and frontend side by side. Backend requires a Docker daemon for Dev Services
@@ -111,7 +115,7 @@ cd frontend &amp;&amp; npm start
       </article>
 
       <article class="setup-block">
-        <h3>2. Production setup (real use)</h3>
+        <h3><i class="fa-solid fa-server"></i> 2. Production setup (real use)</h3>
         <p>
           Generate real secrets, then build and start the full Compose deployment (Quarkus app image
           plus PostgreSQL).
@@ -133,7 +137,7 @@ docker compose down --volumes</code></pre>
       </article>
 
       <article class="setup-block">
-        <h3>3. Running all tests</h3>
+        <h3><i class="fa-solid fa-vial"></i> 3. Running all tests</h3>
         <p>
           The full verification loop mirrors CI: backend build and tests, then the frontend
           contract/lint/build/unit chain, plus the security gates added for the release candidate.
@@ -163,7 +167,11 @@ npm run test:e2e</code></pre>
   </main>
 
   <footer class="wrap">
-    <p>Glacier Notes Cloud &mdash; <a href="https://github.com/Cracksoldier/glacier-notes-cloud/blob/main/LICENSE">MIT licensed</a>.</p>
+    <p>
+      <a href="https://github.com/Cracksoldier/glacier-notes-cloud"><i class="fa-brands fa-github"></i> Glacier Notes Cloud</a>
+      &mdash;
+      <a href="https://github.com/Cracksoldier/glacier-notes-cloud/blob/main/LICENSE"><i class="fa-solid fa-scale-balanced"></i> MIT licensed</a>
+    </p>
     <p class="note">This page is a standalone static document; it is not part of the Angular application.</p>
   </footer>
 </body>
