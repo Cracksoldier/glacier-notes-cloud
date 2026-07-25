@@ -1,10 +1,25 @@
 # Changelog
 
-All notable changes to Glacier Notes Cloud are recorded here, grouped by milestone. This project has
-not yet made a numbered release; entries are milestone-scoped until the first tagged version.
+All notable changes to Glacier Notes Cloud are recorded here, grouped by milestone. Entries before
+v0.1.0 are milestone-scoped, since the project had not yet made a numbered release.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Full acceptance
 criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.md`.
+
+## v0.1.0 — M13: Version 1 release
+
+### Added
+
+- Tag-triggered release workflow (`.github/workflows/release.yml`) publishing a signed, immutable
+  image to `ghcr.io/cracksoldier/glacier-notes-cloud`.
+- CycloneDX software bill of materials (Syft) generated against the published image and attached as
+  a signed cosign attestation, alongside a standalone signed SBOM file and `SHA256SUMS`.
+- Keyless image signing via cosign/GitHub OIDC — see `docs/adr/0008-release-and-signing-process.md`.
+- A versioned, immutable-image Docker Compose release artifact
+  (`deployment/docker/compose.release-template.yaml`, rendered per release).
+- `docs/UPGRADE.md`, the operator-facing upgrade and rollback procedure.
+- GitHub issue and pull request templates.
+- Finalized `docs/RELEASE_NOTES.md` for the v0.1.0 release, including an explicit non-goals section.
 
 ## M12 — Security hardening and release candidate
 

@@ -1,0 +1,120 @@
+name: glacier-notes-cloud
+
+# Rendered per-release by .github/workflows/release.yml (sed replacing the
+# __RELEASE_TAG__ token with the release tag, e.g. v0.1.0) and attached to the GitHub
+# Release as compose-vX.Y.Z.yaml. A plain token is used instead of envsubst because
+# envsubst would also try to interpret this file's own docker-compose ${VAR:-default}
+# syntax and garble it. Pulls the immutable, signed ghcr.io image instead of building
+# locally. Every other line must stay identical to the root compose.yaml this is derived
+# from — same volumes, secrets, and hardening satisfy the same acceptance criteria.
+
+services:
+  postgres:
+    image: postgres:18.3-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: glacier_notes
+      POSTGRES_USER: glacier_notes
+      POSTGRES_PASSWORD_FILE: /run/secrets/database_password
+    secrets:
+      - database_password
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glacier_notes -d glacier_notes"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+  app:
+    image: ghcr.io/cracksoldier/glacier-notes-cloud:__RELEASE_TAG__
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GLACIER_DATABASE_URL: jdbc:postgresql://postgres:5432/glacier_notes
+      GLACIER_DATABASE_USERNAME: glacier_notes
+      GLACIER_DATABASE_PASSWORD_FILE: /run/secrets/database_password
+      GLACIER_BOOTSTRAP_TOKEN_FILE: /run/secrets/bootstrap_token
+      GLACIER_SECURITY_SESSION_SECRET_FILE: /run/secrets/session_secret
+      GLACIER_PUBLIC_BASE_URL: ${GLACIER_PUBLIC_BASE_URL:-http://localhost:8080}
+      GLACIER_METRICS_ENABLED: ${GLACIER_METRICS_ENABLED:-true}
+      GLACIER_BACKUP_ENABLED: ${GLACIER_BACKUP_ENABLED:-false}
+      GLACIER_BACKUP_DIRECTORY: ${GLACIER_BACKUP_DIRECTORY:-/var/lib/glacier-notes/backups}
+      GLACIER_BUILD_IDENTIFIER: ${GLACIER_BUILD_IDENTIFIER:-__RELEASE_TAG__}
+      GLACIER_SMTP_ENABLED: ${GLACIER_SMTP_ENABLED:-false}
+      GLACIER_SMTP_HOST: ${GLACIER_SMTP_HOST:-localhost}
+      GLACIER_SMTP_PORT: ${GLACIER_SMTP_PORT:-587}
+      GLACIER_SMTP_START_TLS: ${GLACIER_SMTP_START_TLS:-REQUIRED}
+      GLACIER_SMTP_TLS: ${GLACIER_SMTP_TLS:-false}
+      GLACIER_SMTP_USERNAME: ${GLACIER_SMTP_USERNAME:-}
+      GLACIER_SMTP_PASSWORD_FILE: /run/secrets/smtp_password
+      GLACIER_SMTP_SENDER_NAME: ${GLACIER_SMTP_SENDER_NAME:-Glacier Notes}
+      GLACIER_SMTP_SENDER_ADDRESS: ${GLACIER_SMTP_SENDER_ADDRESS:-noreply@localhost}
+      GLACIER_IMAGE_BACKEND: ${GLACIER_IMAGE_BACKEND:-FILESYSTEM}
+      GLACIER_IMAGE_FILESYSTEM_ROOT: /var/lib/glacier-notes/images
+      GLACIER_TRANSFER_TEMPORARY_ROOT: /var/lib/glacier-notes/transfers
+      GLACIER_TRANSFER_UPLOAD_ROOT: /var/lib/glacier-notes/transfers/uploads
+      GLACIER_TRANSFER_MAXIMUM_UPLOAD_BYTES: ${GLACIER_TRANSFER_MAXIMUM_UPLOAD_BYTES:-1610612736}
+      GLACIER_TRANSFER_MAXIMUM_DECODED_IMAGE_BYTES: ${GLACIER_TRANSFER_MAXIMUM_DECODED_IMAGE_BYTES:-1073741824}
+      GLACIER_TRANSFER_RETENTION_HOURS: ${GLACIER_TRANSFER_RETENTION_HOURS:-24}
+      GLACIER_HTTP_DEFAULT_MAXIMUM_BODY_BYTES: ${GLACIER_HTTP_DEFAULT_MAXIMUM_BODY_BYTES:-10485760}
+      GLACIER_HTTP_MULTIPART_OVERHEAD_BYTES: ${GLACIER_HTTP_MULTIPART_OVERHEAD_BYTES:-1048576}
+      GLACIER_HTTP_ABSOLUTE_MAXIMUM_BODY_BYTES: ${GLACIER_HTTP_ABSOLUTE_MAXIMUM_BODY_BYTES:-1611661312}
+      GLACIER_S3_ENDPOINT: ${GLACIER_S3_ENDPOINT:-}
+      GLACIER_S3_REGION: ${GLACIER_S3_REGION:-us-east-1}
+      GLACIER_S3_BUCKET: ${GLACIER_S3_BUCKET:-glacier-notes}
+      GLACIER_S3_PATH_STYLE: ${GLACIER_S3_PATH_STYLE:-true}
+      GLACIER_S3_ACCESS_KEY_FILE: /run/secrets/s3_access_key
+      GLACIER_S3_SECRET_KEY_FILE: /run/secrets/s3_secret_key
+      GLACIER_S3_SERVER_SIDE_ENCRYPTION: ${GLACIER_S3_SERVER_SIDE_ENCRYPTION:-}
+      GLACIER_S3_API_CALL_TIMEOUT_SECONDS: ${GLACIER_S3_API_CALL_TIMEOUT_SECONDS:-30}
+      GLACIER_S3_API_CALL_ATTEMPT_TIMEOUT_SECONDS: ${GLACIER_S3_API_CALL_ATTEMPT_TIMEOUT_SECONDS:-10}
+    secrets:
+      - database_password
+      - bootstrap_token
+      - session_secret
+    ports:
+      - "${GLACIER_HTTP_BIND:-127.0.0.1}:${GLACIER_HTTP_PORT:-8080}:8080"
+      - "${GLACIER_MANAGEMENT_BIND:-127.0.0.1}:${GLACIER_MANAGEMENT_PORT:-9000}:9000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    volumes:
+      - image_data:/var/lib/glacier-notes/images
+      - backup_data:${GLACIER_BACKUP_DIRECTORY:-/var/lib/glacier-notes/backups}
+      - transfer_data:/var/lib/glacier-notes/transfers
+      - type: bind
+        source: ${GLACIER_SMTP_PASSWORD_FILE:-/dev/null}
+        target: /run/secrets/smtp_password
+        read_only: true
+      - type: bind
+        source: ${GLACIER_S3_ACCESS_KEY_FILE:-/dev/null}
+        target: /run/secrets/s3_access_key
+        read_only: true
+      - type: bind
+        source: ${GLACIER_S3_SECRET_KEY_FILE:-/dev/null}
+        target: /run/secrets/s3_secret_key
+        read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+secrets:
+  database_password:
+    file: ${GLACIER_DATABASE_PASSWORD_FILE:-./deployment/secrets/database-password.txt}
+  bootstrap_token:
+    file: ${GLACIER_BOOTSTRAP_TOKEN_FILE:-./deployment/secrets/bootstrap-token.txt}
+  session_secret:
+    file: ${GLACIER_SESSION_SECRET_FILE:-./deployment/secrets/session-secret.txt}
+
+volumes:
+  postgres_data:
+  image_data:
+  backup_data:
+  transfer_data:

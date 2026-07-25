@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose new behavior for Glacier Notes Cloud
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can't you do today, and why does it matter?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: scope-guard
+    attributes:
+      label: Scope check
+      description: >-
+        Version 1's explicit non-goals are listed in `GLACIER_NOTES_CLOUD_MILESTONES_BIOME.md` §8
+        (offline PWA editing, real-time collaboration, shared notes/notebooks, public links,
+        OIDC/LDAP/passkeys/MFA, animated GIFs, Kubernetes support, horizontal scaling, virus
+        scanning, app-managed backup encryption, native mobile apps, desktop sync itself). If this
+        request falls into one of those, say so — it needs a scope amendment before it can be
+        planned, not just an implementation.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - backend
+        - frontend
+        - database
+        - security
+        - operations/deployment
+        - documentation
+        - other
+    validations:
+      required: true

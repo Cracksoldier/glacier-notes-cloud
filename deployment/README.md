@@ -27,6 +27,32 @@ enabled again. Readiness is available only on the separately bound management po
 Use `docker compose logs app` for startup failures and `docker compose down` to stop the deployment.
 Do not use `down --volumes` unless permanent deletion of all application data is intended.
 
+## Published releases
+
+Tagged releases (`vX.Y.Z`) publish a signed, immutable image to
+`ghcr.io/cracksoldier/glacier-notes-cloud:vX.Y.Z` instead of building locally. Each GitHub Release
+attaches a versioned Compose file (`compose-vX.Y.Z.yaml`) that pins that image, plus a CycloneDX SBOM
+and checksums. To deploy a published release instead of building from source:
+
+```bash
+mkdir -p deployment/secrets
+openssl rand -base64 36 > deployment/secrets/database-password.txt
+openssl rand -base64 36 > deployment/secrets/bootstrap-token.txt
+openssl rand -base64 48 > deployment/secrets/session-secret.txt
+chmod 600 deployment/secrets/*.txt
+
+curl -fLO https://github.com/Cracksoldier/glacier-notes-cloud/releases/download/v0.1.0/compose-v0.1.0.yaml
+cosign verify ghcr.io/cracksoldier/glacier-notes-cloud:v0.1.0 \
+  --certificate-identity-regexp \
+    'https://github.com/Cracksoldier/glacier-notes-cloud/.github/workflows/release.yml@refs/tags/v0.1.0' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+
+docker compose -f compose-v0.1.0.yaml up -d
+```
+
+See `docs/UPGRADE.md` for moving between released versions and `docs/adr/0008-release-and-signing-process.md`
+for why the image is published and signed this way.
+
 ## Configuration
 
 Copy `.env.example` to `.env` to change bind addresses, ports, or secret file locations. Secret files
