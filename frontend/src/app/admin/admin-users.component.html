@@ -1,7 +1,10 @@
 <h1>{{ i18n.t('adminUsersTitle') }}</h1>
 <form (ngSubmit)="load()">
   <label>{{ i18n.t('adminUsersSearch') }} <input name="query" [(ngModel)]="query"></label>
-  <button type="submit">{{ i18n.t('adminUsersSearch') }}</button>
+  <button type="submit">
+    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUsersSearch') }}</span>
+  </button>
 </form>
 @if (error()) {
 <p role="alert">{{ error() }}</p>
@@ -9,7 +12,8 @@
 <div class="list">
   @for (user of users(); track user.id) {
   <a class="card" href="/admin/users" [routerLink]="[user.id]">
-    <strong>{{ user.username }}</strong><span>{{ user.email }}</span>
+    <strong><i class="fa-solid fa-user" aria-hidden="true"></i>{{ user.username }}</strong
+    ><span>{{ user.email }}</span>
     <span>{{ user.role }} · {{ user.status }}</span>
     <span>{{ user.noteCount }} notes · {{ user.storageBytes }} bytes</span>
   </a>

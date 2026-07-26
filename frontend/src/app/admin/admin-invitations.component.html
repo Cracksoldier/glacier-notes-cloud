@@ -19,7 +19,10 @@
       <option value="ADMIN">ADMIN</option>
     </select></label
   >
-  <button type="submit">{{ i18n.t('adminInvitationsCreate') }}</button>
+  <button type="submit">
+    <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminInvitationsCreate') }}</span>
+  </button>
 </form>
 @if (delivery(); as value) {
 <div class="card">
@@ -27,12 +30,14 @@
   @if (value.activationUrl) {
   <input readonly [value]="value.activationUrl">
   <button type="button" (click)="copy(value.activationUrl)">
-    {{ i18n.t('adminInvitationsCopyActivationLink') }}
+    <i class="fa-solid fa-copy" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminInvitationsCopyActivationLink') }}</span>
   </button>
   } @if (value.token) {
   <label>{{ i18n.t('adminInvitationsFullToken') }}<input readonly [value]="value.token"></label>
   <button type="button" (click)="copy(value.token)">
-    {{ i18n.t('adminInvitationsCopyToken') }}
+    <i class="fa-solid fa-copy" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminInvitationsCopyToken') }}</span>
   </button>
   }
 </div>
@@ -52,7 +57,7 @@
 <div class="list">
   @for (invitation of invitations(); track invitation.id) {
   <article class="card">
-    <strong>{{ invitation.email }}</strong>
+    <strong><i class="fa-solid fa-envelope" aria-hidden="true"></i>{{ invitation.email }}</strong>
     <span
       >{{ invitation.role }}· {{ invitation.status }} ·
       {{ i18n.t('adminInvitationsExpires', { date: invitation.expiresAt }) }}</span
@@ -60,11 +65,13 @@
     @if (invitation.status === 'PENDING' || invitation.status === 'EXPIRED') {
     <div class="actions">
       <button type="button" (click)="resend(invitation.id)">
-        {{ i18n.t('adminInvitationsRegenerate') }}
+        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+        <span>{{ i18n.t('adminInvitationsRegenerate') }}</span>
       </button>
       @if (invitation.status === 'PENDING') {
-      <button type="button" (click)="revoke(invitation.id)">
-        {{ i18n.t('adminInvitationsRevoke') }}
+      <button type="button" class="button-danger" (click)="revoke(invitation.id)">
+        <i class="fa-solid fa-ban" aria-hidden="true"></i>
+        <span>{{ i18n.t('adminInvitationsRevoke') }}</span>
       </button>
       }
     </div>

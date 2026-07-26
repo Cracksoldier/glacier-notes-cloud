@@ -17,9 +17,12 @@ import type { SmtpStatus } from '../shared/generated-api/model/smtpStatus';
         <div><dt>{{ i18n.t('adminSmtpLastSuccess') }}</dt><dd>{{ value.lastSuccessfulAt ?? i18n.t('adminSmtpNever') }}</dd></div>
         <div><dt>{{ i18n.t('adminSmtpLastFailure') }}</dt><dd>{{ value.lastFailureCategory ?? i18n.t('adminSmtpNone') }}</dd></div>
       </dl>
-      <button type="button" [disabled]="!value.configured || testing()" (click)="test()">
-        {{ testing() ? i18n.t('adminSmtpSending') : i18n.t('adminSmtpSendTestEmail') }}
-      </button>
+      <div class="actions">
+        <button type="button" [disabled]="!value.configured || testing()" (click)="test()">
+          <i class="fa-solid fa-vial" aria-hidden="true"></i>
+          <span>{{ testing() ? i18n.t('adminSmtpSending') : i18n.t('adminSmtpSendTestEmail') }}</span>
+        </button>
+      </div>
     } @else {
       <p role="status">{{ i18n.t('adminSmtpLoading') }}</p>
     }

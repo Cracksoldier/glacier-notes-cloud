@@ -17,11 +17,20 @@ import type { AuditEvent } from '../shared/generated-api/model/auditEvent';
         <option value="">{{ i18n.t('adminAuditAny') }}</option><option value="SUCCESS">{{ i18n.t('adminAuditSuccess') }}</option>
         <option value="FAILURE">{{ i18n.t('adminAuditFailure') }}</option><option value="DENIED">{{ i18n.t('adminAuditDenied') }}</option>
       </select></label>
-      <button type="submit">{{ i18n.t('adminAuditApplyFilters') }}</button>
+      <button type="submit">
+        <i class="fa-solid fa-filter" aria-hidden="true"></i>
+        <span>{{ i18n.t('adminAuditApplyFilters') }}</span>
+      </button>
     </form>
     <div class="actions">
-      <button type="button" (click)="export('csv')">{{ i18n.t('adminAuditExportCsv') }}</button>
-      <button type="button" (click)="export('json')">{{ i18n.t('adminAuditExportJson') }}</button>
+      <button type="button" (click)="export('csv')">
+        <i class="fa-solid fa-file-csv" aria-hidden="true"></i>
+        <span>{{ i18n.t('adminAuditExportCsv') }}</span>
+      </button>
+      <button type="button" (click)="export('json')">
+        <i class="fa-solid fa-file-code" aria-hidden="true"></i>
+        <span>{{ i18n.t('adminAuditExportJson') }}</span>
+      </button>
     </div>
     @if (loading()) { <p role="status">{{ i18n.t('adminAuditLoading') }}</p> }
     @if (error()) { <p role="alert">{{ error() }}</p> }
@@ -40,7 +49,10 @@ import type { AuditEvent } from '../shared/generated-api/model/auditEvent';
       </table>
     </div>
     @if (nextCursor()) {
-      <button type="button" (click)="loadMore()">{{ i18n.t('adminAuditLoadMore') }}</button>
+      <button type="button" (click)="loadMore()">
+        <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+        <span>{{ i18n.t('adminAuditLoadMore') }}</span>
+      </button>
     }
   `,
   styleUrl: './admin.css',

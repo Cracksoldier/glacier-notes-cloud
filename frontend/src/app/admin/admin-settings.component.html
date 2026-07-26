@@ -34,16 +34,16 @@
       @if (instanceLogoUrl) {
       <!-- biome-ignore lint/a11y/useAltText: alt is bound from I18nService -->
       <img class="instance-logo" [src]="instanceLogoUrl" [alt]="i18n.t('adminSettingsLogoAlt')">
-      <button type="button" (click)="removeLogo()">{{ i18n.t('adminRemoveLogo') }}</button>
+      <button type="button" class="button-danger" (click)="removeLogo()">
+        <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+        <span>{{ i18n.t('adminRemoveLogo') }}</span>
+      </button>
       }
-      <label class="file-button"
-        >{{ i18n.t('adminChooseLogo') }}
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          (change)="uploadLogo($event)"
-        ></label
-      >
+      <label class="file-button">
+        <i class="fa-solid fa-image" aria-hidden="true"></i>
+        <span>{{ i18n.t('adminChooseLogo') }}</span>
+        <input type="file" accept="image/png,image/jpeg,image/webp" (change)="uploadLogo($event)">
+      </label>
       <small>{{ i18n.t('adminSettingsLogoHint') }}</small>
     </div>
   </fieldset>
@@ -248,7 +248,8 @@
   </fieldset>
   <p class="full-width">{{ i18n.t('adminSettingsFooterNote') }}</p>
   <button type="submit" [disabled]="!loaded() || saving()">
-    {{ saving() ? i18n.t('commonSaving') : i18n.t('adminSaveSettings') }}
+    <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+    <span>{{ saving() ? i18n.t('commonSaving') : i18n.t('adminSaveSettings') }}</span>
   </button>
 </form>
 @if (message()) {

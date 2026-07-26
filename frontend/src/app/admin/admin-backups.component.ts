@@ -12,14 +12,17 @@ import type { BackupJob } from '../shared/generated-api/model/backupJob';
   template: `
     <h1>{{ i18n.t('adminBackupsTitle') }}</h1>
     <p role="note">{{ i18n.t('adminBackupsIntro') }}</p>
-    <button type="button" [disabled]="creating()" (click)="create()">
-      {{ creating() ? i18n.t('adminBackupsQueuing') : i18n.t('adminBackupsCreate') }}
-    </button>
+    <div class="actions">
+      <button type="button" [disabled]="creating()" (click)="create()">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        <span>{{ creating() ? i18n.t('adminBackupsQueuing') : i18n.t('adminBackupsCreate') }}</span>
+      </button>
+    </div>
     @if (error()) { <p role="alert">{{ error() }}</p> }
     <div class="list">
       @for (job of jobs(); track job.id) {
         <article class="card">
-          <strong>{{ job.state }}</strong>
+          <strong><i class="fa-solid fa-database" aria-hidden="true"></i>{{ job.state }}</strong>
           <span>{{ job.createdAt }}</span>
           <span>{{ i18n.t('adminBackupsInitiatedBy', { user: job.createdByUserId }) }}</span>
           @if (job.outputIdentifier) { <span>{{ i18n.t('adminBackupsServerIdentifier', { id: job.outputIdentifier }) }}</span> }

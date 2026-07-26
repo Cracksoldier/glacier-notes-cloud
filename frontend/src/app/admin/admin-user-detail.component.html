@@ -17,32 +17,54 @@
       <option value="ADMIN">ADMIN</option>
     </select></label
   >
-  <button type="submit">{{ i18n.t('adminUserSaveAccount') }}</button>
+  <button type="submit">
+    <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserSaveAccount') }}</span>
+  </button>
 </form>
 <div class="actions">
-  <button type="button" (click)="activate()">{{ i18n.t('adminUserActivate') }}</button>
-  <button type="button" (click)="deactivate()">{{ i18n.t('adminUserDeactivate') }}</button>
-  <button type="button" (click)="unlock()">{{ i18n.t('adminUserUnlock') }}</button>
-  <button type="button" (click)="revokeSessions()">{{ i18n.t('adminUserRevokeSessions') }}</button>
+  <button type="button" (click)="activate()">
+    <i class="fa-solid fa-user-check" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserActivate') }}</span>
+  </button>
+  <button type="button" (click)="deactivate()">
+    <i class="fa-solid fa-user-slash" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserDeactivate') }}</span>
+  </button>
+  <button type="button" (click)="unlock()">
+    <i class="fa-solid fa-unlock" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserUnlock') }}</span>
+  </button>
+  <button type="button" (click)="revokeSessions()">
+    <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserRevokeSessions') }}</span>
+  </button>
   <button type="button" (click)="resetPassword()">
-    {{ i18n.t('adminUserGenerateResetLink') }}
+    <i class="fa-solid fa-link" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserGenerateResetLink') }}</span>
   </button>
   @if (value.status === 'PENDING_DELETION') {
-  <button type="button" (click)="restoreDeletion()">{{ i18n.t('adminUserRestoreAccount') }}</button>
+  <button type="button" (click)="restoreDeletion()">
+    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserRestoreAccount') }}</span>
+  </button>
   } @else {
   <button type="button" (click)="scheduleDeletion()">
-    {{ i18n.t('adminUserScheduleDeletion') }}
+    <i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserScheduleDeletion') }}</span>
   </button>
-  <button type="button" class="danger" (click)="deleteImmediately()">
-    {{ i18n.t('adminUserDeleteImmediately') }}
+  <button type="button" class="button-danger" (click)="deleteImmediately()">
+    <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserDeleteImmediately') }}</span>
   </button>
   }
 </div>
 <section class="card blind-import">
   <h2>{{ i18n.t('adminUserBlindImportTitle') }}</h2>
   <p>{{ i18n.t('adminUserBlindImportIntro') }}</p>
-  <label class="file-button"
-    >{{ i18n.t('adminUserChooseImportFile') }}
+  <label class="file-button">
+    <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserChooseImportFile') }}</span>
     <input
       type="file"
       accept=".json,.glacier.json,application/json"
@@ -59,12 +81,17 @@
   } @if (job.state === 'READY' && job.hasConflicts) {
   <div class="actions">
     <button type="button" (click)="applyImport(ImportStrategy.AddAsCopies)">
-      {{ i18n.t('adminUserAddAsCopies') }}
+      <i class="fa-solid fa-plus" aria-hidden="true"></i>
+      <span>{{ i18n.t('adminUserAddAsCopies') }}</span>
     </button>
     <button type="button" (click)="applyImport(ImportStrategy.ReplaceById)">
-      {{ i18n.t('adminUserReplaceById') }}
+      <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>
+      <span>{{ i18n.t('adminUserReplaceById') }}</span>
     </button>
-    <button type="button" (click)="cancelImport()">{{ i18n.t('commonCancel') }}</button>
+    <button type="button" (click)="cancelImport()">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      <span>{{ i18n.t('commonCancel') }}</span>
+    </button>
   </div>
   } @if (job.errors?.length) {
   <ul role="alert">
@@ -76,7 +103,10 @@
 </section>
 @if (reset(); as link) {
 <label>{{ i18n.t('adminUserOneTimeResetUrl') }}<input readonly [value]="link.resetUrl"></label>
-<button type="button" (click)="copy(link.resetUrl)">{{ i18n.t('adminUserCopyResetLink') }}</button>
+<button type="button" (click)="copy(link.resetUrl)">
+  <i class="fa-solid fa-copy" aria-hidden="true"></i>
+  <span>{{ i18n.t('adminUserCopyResetLink') }}</span>
+</button>
 } } @if (message()) {
 <p role="status">{{ message() }}</p>
 } @if (error()) {

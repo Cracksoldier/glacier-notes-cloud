@@ -1,8 +1,8 @@
 .admin-shell {
   display: grid;
   grid-template-columns: minmax(11rem, 14rem) 1fr;
-  gap: 2rem;
-  padding: 2rem;
+  gap: 2.5rem;
+  padding: 2.5rem 2rem;
   max-width: 90rem;
   margin: auto;
 }
@@ -10,26 +10,106 @@
 aside {
   display: grid;
   align-content: start;
-  gap: 0.6rem;
+  gap: 0.35rem;
 }
 
-aside a,
-.card {
-  padding: 0.8rem;
-  border: 1px solid #29424e;
-  border-radius: 0.5rem;
-  color: #dcecf1;
+aside a {
+  display: inline-flex;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+aside a i {
+  width: 1.1rem;
+  font-size: 0.95rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  transition: color 120ms ease;
+}
+
+aside a:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+aside a:hover i {
+  color: var(--color-accent-muted);
 }
 
 aside .active {
-  background: #173442;
-  color: #fff;
+  background: var(--color-surface-elevated);
+  color: var(--color-accent);
+  border-color: var(--color-border);
+}
+
+aside .active i {
+  color: var(--color-accent);
 }
 
 .eyebrow {
-  color: #87c7d8;
+  color: var(--color-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  margin: 0 0 0.75rem;
+}
+
+section h1 {
+  margin: 0.35rem 0 1rem;
+  color: var(--color-text);
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+section > p {
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  max-width: 46rem;
+}
+
+.card {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 1px 2px var(--color-shadow);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+a.card {
+  text-decoration: none;
+}
+
+a.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-accent-muted);
+  box-shadow: 0 6px 14px var(--color-shadow);
+}
+
+.card strong {
+  display: inline-flex;
+  gap: 0.55rem;
+  align-items: center;
+  color: var(--color-text);
+}
+
+.card strong i {
+  color: var(--color-accent);
 }
 
 form,
@@ -43,11 +123,85 @@ form {
   gap: 1rem;
 }
 
+label {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
 input,
 select,
-button,
 textarea {
-  padding: 0.7rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 0.55rem;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--color-accent-muted);
+}
+
+button {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.05rem;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease,
+    transform 120ms ease;
+}
+
+button:hover {
+  background: var(--color-accent-muted);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button.button-secondary,
+button[type="button"]:not(.button-primary) {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+button.button-secondary:hover,
+button[type="button"]:not(.button-primary):hover {
+  background: var(--color-surface);
+  border-color: var(--color-accent-muted);
+  color: var(--color-text);
+}
+
+button.button-danger {
+  background: transparent;
+  color: var(--color-danger-text);
+  border-color: var(--color-border);
+}
+
+button.button-danger:hover {
+  background: var(--color-surface);
+  border-color: var(--color-danger-text);
 }
 
 .actions {
@@ -60,18 +214,24 @@ textarea {
 .blind-import {
   margin-top: 1.5rem;
 }
+
 .file-button {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
   width: fit-content;
   cursor: pointer;
 }
+
 .file-button input {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
   opacity: 0;
 }
+
 .file-button:focus-within {
-  outline: 2px solid #87c7d8;
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -90,17 +250,38 @@ textarea {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 1rem;
+  margin-top: 1.25rem;
 }
 
 .status-grid .card {
   display: grid;
   gap: 0.5rem;
-  text-decoration: none;
+}
+
+.status-grid .card span {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
 }
 
 .full-width,
 fieldset {
   grid-column: 1 / -1;
+}
+
+fieldset {
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+}
+
+legend {
+  padding: 0 0.4rem;
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .instance-logo {
@@ -112,20 +293,34 @@ fieldset {
 
 dl {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.55rem;
 }
 
 dl div {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.75rem;
-  border: 1px solid #29424e;
-  border-radius: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.55rem;
+  background: var(--color-surface);
+}
+
+dt {
+  display: inline-flex;
+  gap: 0.55rem;
+  align-items: center;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+dt i {
+  color: var(--color-accent);
 }
 
 dd {
   margin: 0;
+  color: var(--color-text);
 }
 
 .filters {
@@ -134,6 +329,9 @@ dd {
 
 .table-wrap {
   overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
 }
 
 table {
@@ -141,20 +339,73 @@ table {
   border-collapse: collapse;
 }
 
-th,
-td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #29424e;
+th {
+  padding: 0.75rem 0.9rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+td {
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  color: var(--color-text);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr {
+  transition: background 120ms ease;
+}
+
+tbody tr:hover {
+  background: var(--color-surface-elevated);
 }
 
 @media (max-width: 700px) {
-  .admin-shell,
+  .admin-shell {
+    grid-template-columns: 1fr;
+    padding: 1.5rem 1rem;
+    gap: 1.5rem;
+  }
+
   form {
     grid-template-columns: 1fr;
   }
 
   aside {
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.4rem;
+    margin: 0 -1rem;
+    padding: 0 1rem 0.25rem;
+  }
+
+  aside a {
+    flex: 0 0 auto;
+    padding: 0.55rem 0.75rem;
+  }
+
+  aside a span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  aside a i {
+    font-size: 1.05rem;
   }
 }
