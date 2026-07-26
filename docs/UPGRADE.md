@@ -36,6 +36,13 @@ There is no in-place schema downgrade — restoring the backup is the supported 
 
 ## Version history
 
+### v0.2.0
+
+Feature release. Ships full English/German runtime localization across every user-facing surface
+and a design-token refresh of the admin area with Font Awesome icons. No new required environment
+variables, no schema changes, and no operator-facing configuration changes — the default upgrade
+procedure above applies unchanged. Flyway runs its usual validation on startup.
+
 ### v0.1.0
 
 Initial release. No prior version to upgrade from.

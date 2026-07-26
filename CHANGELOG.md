@@ -6,6 +6,32 @@ v0.1.0 are milestone-scoped, since the project had not yet made a numbered relea
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Full acceptance
 criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.md`.
 
+## v0.2.0 — Internationalization and admin polish
+
+### Added
+
+- Full runtime English/German localization across the notes shell and editor, admin sub-pages
+  (overview, users, invitations, settings, SMTP, audit, status, backups, user detail), auth flows
+  (login, password reset, invitation acceptance, email verification), setup, and the app shell.
+- `I18nService` now backs problem toasts and every admin, auth, and setup string, so language changes
+  no longer require a reload of localized surfaces.
+- Admin area redesigned on the global design tokens (`--color-accent`, `--color-surface`,
+  `--color-surface-elevated`, `--color-border`, `--color-shadow`, `--color-text*`) so it follows the
+  app-wide dark/light theme, with Font Awesome icons on sidebar navigation, status/overview cards,
+  and primary action buttons. Adds primary/secondary/danger button variants and a mobile sidebar
+  that collapses to an icon strip.
+
+### Fixed
+
+- Preserved the red foreground on `.button-danger` hover by excluding it from the
+  `button[type="button"]:not(.button-primary)` catch-all in the admin stylesheet.
+
+### Docs
+
+- Early-development disclaimer added to the README and landing page.
+- Documented the published-release install path in the README and landing page.
+- Marked M13 complete in `docs/MILESTONE_STATUS.md` after the v0.1.0 release.
+
 ## v0.1.0 — M13: Version 1 release
 
 ### Added
