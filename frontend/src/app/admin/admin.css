@@ -180,14 +180,14 @@ button:disabled {
 }
 
 button.button-secondary,
-button[type="button"]:not(.button-primary) {
+button[type="button"]:not(.button-primary):not(.button-danger) {
   background: transparent;
   color: var(--color-text);
   border-color: var(--color-border);
 }
 
 button.button-secondary:hover,
-button[type="button"]:not(.button-primary):hover {
+button[type="button"]:not(.button-primary):not(.button-danger):hover {
   background: var(--color-surface);
   border-color: var(--color-accent-muted);
   color: var(--color-text);
