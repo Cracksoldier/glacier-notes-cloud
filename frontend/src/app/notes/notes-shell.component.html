@@ -146,13 +146,21 @@
       >
         <i class="fa-solid fa-circle-question"></i>
       </button>
-      <button
-        type="button"
-        [attr.aria-label]="i18n.t('notesSettingsAria')"
-        (click)="overlay.set('settings')"
-      >
-        <i class="fa-solid fa-gear"></i>
-      </button>
+      <details class="settings-menu account-menu" #settingsMenu>
+        <summary [attr.aria-label]="i18n.t('notesSettingsAria')">
+          <i class="fa-solid fa-gear"></i>
+        </summary>
+        <div>
+          <button type="button" (click)="settingsMenu.open = false; overlay.set('settings')">
+            <i class="fa-solid fa-gear"></i> {{ i18n.t('settings') }}
+          </button>
+          @if (auth.session()?.user?.role === 'ADMIN') {
+          <a href="/admin" routerLink="/admin"
+            ><i class="fa-solid fa-shield-halved"></i> {{ i18n.t('administration') }}</a
+          >
+          }
+        </div>
+      </details>
       <details class="account-menu">
         <summary [attr.aria-label]="i18n.t('notesAccountMenu')">
           <i class="fa-solid fa-user"></i>
