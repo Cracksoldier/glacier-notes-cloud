@@ -298,5 +298,15 @@
   "296": ".constructor",
   "297": ".constructor",
   "298": ".constructor",
-  "299": "emailChangeRequest.ts"
+  "299": "emailChangeRequest.ts",
+  "300": "App",
+  "301": "Argon2PasswordVerifier",
+  "302": ".writeArchive",
+  "303": "SessionView",
+  "304": "PingResource",
+  "305": ".initialize",
+  "306": "imageMetadata.ts",
+  "307": "mfaStatus.ts",
+  "308": "MfaAuditEvents",
+  "309": ".constructor"
 }
