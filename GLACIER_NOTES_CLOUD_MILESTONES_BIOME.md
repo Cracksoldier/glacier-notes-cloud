@@ -1732,7 +1732,7 @@ The following shall not be pulled into a milestone unless the specification is f
 - Real-time collaboration
 - Shared notes or notebooks
 - Public links
-- OIDC, LDAP, passkeys, or MFA
+- OIDC, LDAP, or passkeys
 - Animated GIF support
 - Automatic image-backend migration
 - Kubernetes support
@@ -1743,6 +1743,10 @@ The following shall not be pulled into a milestone unless the specification is f
 - Desktop synchronization itself
 
 Version 1 shall provide groundwork for future synchronization, not a partial untested sync implementation.
+
+MFA was removed from this guard on 2026-07-31 by formal amendment. It is specified in
+`GLACIER_NOTES_CLOUD_2FA_SPECIFICATION.md`, planned in `GLACIER_NOTES_CLOUD_MILESTONES_2FA.md`, and
+recorded in `docs/adr/0009-optional-second-authentication-factor.md`. The remaining items stand.
 
 ---
 

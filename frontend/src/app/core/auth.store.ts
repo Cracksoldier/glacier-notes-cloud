@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { catchError, finalize, map, Observable, of, shareReplay, tap } from 'rxjs';
 
 import { AuthenticationService } from '../shared/generated-api/api/authentication.service';
+import type { LoginOutcome } from '../shared/generated-api/model/loginOutcome';
 import type { LoginRequest } from '../shared/generated-api/model/loginRequest';
 import type { SessionContext } from '../shared/generated-api/model/sessionContext';
 
@@ -38,11 +39,13 @@ export class AuthStore {
     return this.restoration;
   }
 
-  login(request: LoginRequest): Observable<SessionContext> {
+  login(request: LoginRequest): Observable<LoginOutcome> {
     return this.authenticationApi.login(request).pipe(
-      tap((session) => {
-        this.session.set(session);
-        this.restored.set(true);
+      tap((outcome) => {
+        if (outcome.context) {
+          this.session.set(outcome.context);
+          this.restored.set(true);
+        }
       }),
     );
   }

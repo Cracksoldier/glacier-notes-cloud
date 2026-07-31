@@ -6,6 +6,19 @@ v0.1.0 are milestone-scoped, since the project had not yet made a numbered relea
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Full acceptance
 criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.md`.
 
+## [Unreleased]
+
+### Changed
+
+- **Breaking:** `POST /api/v1/auth/login` now returns a `LoginOutcome` envelope instead of a
+  `SessionContext`. A successful login responds with `{"result": "SESSION", "context": {…}}`, where
+  `context` is the object the endpoint previously returned at the top level — a field previously read
+  as `user` is now read as `context.user`, and `session` as `context.session`. This affects every
+  caller regardless of whether the account uses a second factor.
+  `GET /api/v1/auth/session` is unchanged and still returns a bare `SessionContext`.
+  The envelope's `MFA_REQUIRED` result and its `challenge` member are declared in the contract but
+  are not yet emitted; see `docs/adr/0009-optional-second-authentication-factor.md`.
+
 ## v0.2.0 — Internationalization and admin polish
 
 ### Added

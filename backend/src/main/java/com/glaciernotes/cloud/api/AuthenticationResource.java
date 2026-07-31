@@ -4,6 +4,7 @@ import com.glaciernotes.cloud.application.auth.AuthenticationFailure;
 import com.glaciernotes.cloud.application.auth.AuthenticationService;
 import com.glaciernotes.cloud.application.auth.SessionView;
 import com.glaciernotes.cloud.generated.api.AuthenticationApi;
+import com.glaciernotes.cloud.generated.model.LoginOutcome;
 import com.glaciernotes.cloud.generated.model.LoginRequest;
 import com.glaciernotes.cloud.generated.model.InvitationAcceptanceRequest;
 import com.glaciernotes.cloud.generated.model.InvitationInspection;
@@ -68,7 +69,7 @@ public class AuthenticationResource implements AuthenticationApi {
     }
 
     @Override
-    public SessionContext login(LoginRequest loginRequest) {
+    public LoginOutcome login(LoginRequest loginRequest) {
         var result = authentication.login(
             loginRequest.getIdentifier(),
             loginRequest.getPassword().toCharArray(),
@@ -80,7 +81,9 @@ public class AuthenticationResource implements AuthenticationApi {
         cookies.issue(
             response, result.token(), result.session().rememberMe(), result.cookieMaxAgeSeconds()
         );
-        return AuthenticationModels.context(result.session());
+        return new LoginOutcome()
+            .result(LoginOutcome.ResultEnum.SESSION)
+            .context(AuthenticationModels.context(result.session()));
     }
 
     @Override

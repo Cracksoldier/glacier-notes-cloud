@@ -36,6 +36,30 @@ There is no in-place schema downgrade — restoring the backup is the supported 
 
 ## Version history
 
+### Unreleased
+
+Contains a breaking API change to `POST /api/v1/auth/login`. The bundled web interface is updated
+with it, so an upgrade using only the browser needs no action beyond the procedure above. No new
+required environment variables and no schema changes — Flyway runs its usual validation on startup.
+
+If you have a script, monitoring probe, or integration that logs in against the API, it must be
+updated. The endpoint previously returned the session object directly:
+
+```json
+{"user": {"id": "…", "username": "…", "role": "ADMIN"}, "session": {"current": true}}
+```
+
+It now returns that object nested under `context`, inside an envelope with a `result` tag:
+
+```json
+{"result": "SESSION", "context": {"user": {"id": "…", "username": "…", "role": "ADMIN"}, "session": {"current": true}}}
+```
+
+Concretely, a `jq` expression reading `.user.username` becomes `.context.user.username`. The status
+code, the `Set-Cookie` headers, and the `401`/`429` error responses are unchanged, so a script that
+only checks the status code or extracts the `GLACIER_SESSION` cookie needs no change.
+`GET /api/v1/auth/session` is unchanged and still returns the object in its previous shape.
+
 ### v0.2.0
 
 Feature release. Ships full English/German runtime localization across every user-facing surface

@@ -49,7 +49,9 @@ model/invitationSummary.ts
 model/labelCreate.ts
 model/labelUpdate.ts
 model/labelView.ts
+model/loginOutcome.ts
 model/loginRequest.ts
+model/mfaChallenge.ts
 model/models.ts
 model/noteConversion.ts
 model/noteCreate.ts

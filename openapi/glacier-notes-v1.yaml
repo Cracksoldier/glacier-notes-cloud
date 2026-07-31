@@ -117,7 +117,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SessionContext'
+                $ref: '#/components/schemas/LoginOutcome'
         '401':
           $ref: '#/components/responses/ProblemResponse'
         '429':
@@ -1995,6 +1995,33 @@ components:
           $ref: '#/components/schemas/AuthenticatedUser'
         session:
           $ref: '#/components/schemas/SessionSummary'
+    LoginOutcome:
+      type: object
+      required: [result]
+      properties:
+        result:
+          type: string
+          enum: [SESSION, MFA_REQUIRED]
+        context:
+          $ref: '#/components/schemas/SessionContext'
+        challenge:
+          $ref: '#/components/schemas/MfaChallenge'
+    MfaChallenge:
+      type: object
+      required: [token, expiresAt, attemptsRemaining, acceptedFactors]
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        attemptsRemaining:
+          type: integer
+        acceptedFactors:
+          type: array
+          items:
+            type: string
+            enum: [TOTP, RECOVERY_CODE]
     AdminStatus:
       type: object
       required: [service, status, apiVersion, applicationVersion, buildIdentifier, database, imageStorageBackend, imageStorage, smtp, backupEnabled, metricsEnabled, jobsHealthy]

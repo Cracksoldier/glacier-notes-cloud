@@ -21,6 +21,8 @@ import { InvitationAcceptanceRequest } from '../model/invitationAcceptanceReques
 // @ts-ignore
 import { InvitationInspection } from '../model/invitationInspection';
 // @ts-ignore
+import { LoginOutcome } from '../model/loginOutcome';
+// @ts-ignore
 import { LoginRequest } from '../model/loginRequest';
 // @ts-ignore
 import { PasswordResetCompletionRequest } from '../model/passwordResetCompletionRequest';
@@ -377,9 +379,9 @@ export class AuthenticationService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public login(loginRequest: LoginRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<SessionContext>;
-    public login(loginRequest: LoginRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<SessionContext>>;
-    public login(loginRequest: LoginRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<SessionContext>>;
+    public login(loginRequest: LoginRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<LoginOutcome>;
+    public login(loginRequest: LoginRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<LoginOutcome>>;
+    public login(loginRequest: LoginRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<LoginOutcome>>;
     public login(loginRequest: LoginRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (loginRequest === null || loginRequest === undefined) {
             throw new Error('Required parameter loginRequest was null or undefined when calling login.');
@@ -422,7 +424,7 @@ export class AuthenticationService extends BaseService {
 
         let localVarPath = `/api/v1/auth/login`;
         const { basePath, withCredentials } = this.configuration;
-        return this.httpClient.request<SessionContext>('post', `${basePath}${localVarPath}`,
+        return this.httpClient.request<LoginOutcome>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 body: loginRequest,
