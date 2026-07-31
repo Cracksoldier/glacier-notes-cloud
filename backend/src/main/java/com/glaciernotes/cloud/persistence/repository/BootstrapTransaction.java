@@ -19,6 +19,7 @@ import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 
 import java.time.Instant;
+import java.util.Map;
 
 @ApplicationScoped
 public class BootstrapTransaction {
@@ -86,6 +87,57 @@ public class BootstrapTransaction {
         ));
         entityManager.flush();
         return now;
+    }
+
+    /**
+     * Reports only whether anything was cleared, and the caller must not surface that: an operator
+     * holding the bootstrap token must not thereby gain an account-enumeration oracle.
+     */
+    @Transactional
+    public boolean clearSecondFactor(String identifierNormalized, String correlationId) {
+        var user = entityManager.createQuery(
+                "select u from UserEntity u "
+                    + "where u.usernameNormalized = :identifier or u.emailNormalized = :identifier",
+                UserEntity.class
+            )
+            .setParameter("identifier", identifierNormalized)
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .setMaxResults(1)
+            .getResultStream()
+            .findFirst()
+            .orElse(null);
+        var now = timeProvider.now();
+        entityManager.persist(AuditEventEntity.administrative(
+            idGenerator.nextId(), "MFA_OPERATOR_RESET", null,
+            user == null ? null : user.id(), user == null ? null : "USER",
+            user == null ? null : user.id(), now, correlationId,
+            Map.of("matched", Boolean.toString(user != null))
+        ));
+        if (user == null) {
+            entityManager.flush();
+            return false;
+        }
+        entityManager.createQuery("delete from UserMfaRecoveryCodeEntity c where c.userId = :userId")
+            .setParameter("userId", user.id())
+            .executeUpdate();
+        entityManager.createQuery("delete from MfaChallengeEntity c where c.userId = :userId")
+            .setParameter("userId", user.id())
+            .executeUpdate();
+        int removed = entityManager.createQuery(
+                "delete from UserMfaTotpEntity t where t.userId = :userId"
+            )
+            .setParameter("userId", user.id())
+            .executeUpdate();
+        // A break-glass reset on a possibly compromised account must not leave its sessions alive.
+        entityManager.createQuery(
+                "update SessionEntity s set s.revokedAt = :now "
+                    + "where s.user.id = :userId and s.revokedAt is null"
+            )
+            .setParameter("now", now)
+            .setParameter("userId", user.id())
+            .executeUpdate();
+        entityManager.flush();
+        return removed > 0;
     }
 
     public record State(boolean initialized, long userCount) {

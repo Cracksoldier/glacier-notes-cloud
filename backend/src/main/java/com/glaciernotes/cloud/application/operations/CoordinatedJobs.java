@@ -58,6 +58,7 @@ public class CoordinatedJobs {
     @Scheduled(every = "1h", delayed = "5m") void audit() { run("audit-cleanup", cleanup::removeAuditEvents); }
     @Scheduled(every = "1m", delayed = "30s") void deletion() { run("account-deletion", deletion::finalizeDueAccounts); }
     @Scheduled(every = "1h", delayed = "6m") void transfers() { run("transfer-cleanup", transfers::cleanup); }
+    @Scheduled(every = "1h", delayed = "7m") void mfaChallenges() { run("mfa-challenge-cleanup", cleanup::removeMfaChallenges); }
 
     void run(String name, Runnable work) {
         UUID runId = leases.acquire(name, LEASE_DURATION);

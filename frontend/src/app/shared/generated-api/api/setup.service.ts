@@ -21,6 +21,8 @@ import { InitialAdministratorRequest } from '../model/initialAdministratorReques
 // @ts-ignore
 import { ProblemDetails } from '../model/problemDetails';
 // @ts-ignore
+import { SecondFactorResetRequest } from '../model/secondFactorResetRequest';
+// @ts-ignore
 import { SetupCompletion } from '../model/setupCompletion';
 // @ts-ignore
 import { SetupStatus } from '../model/setupStatus';
@@ -158,6 +160,80 @@ export class SetupService extends BaseService {
         return this.httpClient.request<SetupStatus>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Break-glass removal of an account\&#39;s second factor, authorized by the bootstrap token
+     * Operator escape hatch for an account that can no longer satisfy its second factor when no administrator is able to clear it. Responds identically whether or not the named account exists or had an enrollment, so that possession of the bootstrap token does not also confer the ability to enumerate accounts. 
+     * @endpoint post /api/v1/setup/second-factor-reset
+     * @param xBootstrapToken One-time bootstrap secret. It is never returned or persisted.
+     * @param secondFactorResetRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public resetSecondFactor(xBootstrapToken: string, secondFactorResetRequest: SecondFactorResetRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
+    public resetSecondFactor(xBootstrapToken: string, secondFactorResetRequest: SecondFactorResetRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
+    public resetSecondFactor(xBootstrapToken: string, secondFactorResetRequest: SecondFactorResetRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
+    public resetSecondFactor(xBootstrapToken: string, secondFactorResetRequest: SecondFactorResetRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (xBootstrapToken === null || xBootstrapToken === undefined) {
+            throw new Error('Required parameter xBootstrapToken was null or undefined when calling resetSecondFactor.');
+        }
+        if (secondFactorResetRequest === null || secondFactorResetRequest === undefined) {
+            throw new Error('Required parameter secondFactorResetRequest was null or undefined when calling resetSecondFactor.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+        if (xBootstrapToken !== undefined && xBootstrapToken !== null) {
+            localVarHeaders = localVarHeaders.set('X-Bootstrap-Token', String(xBootstrapToken));
+        }
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/setup/second-factor-reset`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<any>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: secondFactorResetRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

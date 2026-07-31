@@ -25,6 +25,8 @@ import { LoginOutcome } from '../model/loginOutcome';
 // @ts-ignore
 import { LoginRequest } from '../model/loginRequest';
 // @ts-ignore
+import { MfaLoginRequest } from '../model/mfaLoginRequest';
+// @ts-ignore
 import { PasswordResetCompletionRequest } from '../model/passwordResetCompletionRequest';
 // @ts-ignore
 import { PasswordResetRequest } from '../model/passwordResetRequest';
@@ -173,6 +175,74 @@ export class AuthenticationService extends BaseService {
             {
                 context: localVarHttpContext,
                 body: tokenRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Complete a login that requires a second factor
+     * Exchanges a challenge issued by the login operation for a session. The remember-me preference is taken from the challenge rather than the request, so session lifetime cannot be escalated after the password step. The challenge token authenticates the request, so no CSRF header is required, consistent with the login operation. 
+     * @endpoint post /api/v1/auth/login/mfa
+     * @param mfaLoginRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public completeMfaLogin(mfaLoginRequest: MfaLoginRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<SessionContext>;
+    public completeMfaLogin(mfaLoginRequest: MfaLoginRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<SessionContext>>;
+    public completeMfaLogin(mfaLoginRequest: MfaLoginRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<SessionContext>>;
+    public completeMfaLogin(mfaLoginRequest: MfaLoginRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (mfaLoginRequest === null || mfaLoginRequest === undefined) {
+            throw new Error('Required parameter mfaLoginRequest was null or undefined when calling completeMfaLogin.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/auth/login/mfa`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<SessionContext>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: mfaLoginRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

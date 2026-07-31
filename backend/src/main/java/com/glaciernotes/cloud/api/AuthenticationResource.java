@@ -2,10 +2,14 @@ package com.glaciernotes.cloud.api;
 
 import com.glaciernotes.cloud.application.auth.AuthenticationFailure;
 import com.glaciernotes.cloud.application.auth.AuthenticationService;
+import com.glaciernotes.cloud.application.auth.LoginResult;
+import com.glaciernotes.cloud.application.auth.MfaChallengeService;
 import com.glaciernotes.cloud.application.auth.SessionView;
 import com.glaciernotes.cloud.generated.api.AuthenticationApi;
 import com.glaciernotes.cloud.generated.model.LoginOutcome;
 import com.glaciernotes.cloud.generated.model.LoginRequest;
+import com.glaciernotes.cloud.generated.model.MfaChallenge;
+import com.glaciernotes.cloud.generated.model.MfaLoginRequest;
 import com.glaciernotes.cloud.generated.model.InvitationAcceptanceRequest;
 import com.glaciernotes.cloud.generated.model.InvitationInspection;
 import com.glaciernotes.cloud.generated.model.PasswordResetCompletionRequest;
@@ -26,11 +30,14 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Context;
 import org.jboss.logging.MDC;
 
+import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Objects;
 
 @ApplicationScoped
 public class AuthenticationResource implements AuthenticationApi {
     private final AuthenticationService authentication;
+    private final MfaChallengeService challenges;
     private final SessionRepository sessions;
     private final CookieManager cookies;
     private final SecurityIdentity identity;
@@ -46,6 +53,7 @@ public class AuthenticationResource implements AuthenticationApi {
 
     public AuthenticationResource(
         AuthenticationService authentication,
+        MfaChallengeService challenges,
         SessionRepository sessions,
         CookieManager cookies,
         SecurityIdentity identity,
@@ -54,6 +62,7 @@ public class AuthenticationResource implements AuthenticationApi {
         RequestAuditContext auditContext
     ) {
         this.authentication = authentication;
+        this.challenges = challenges;
         this.sessions = sessions;
         this.cookies = cookies;
         this.identity = identity;
@@ -76,14 +85,44 @@ public class AuthenticationResource implements AuthenticationApi {
             Boolean.TRUE.equals(loginRequest.getRememberMe()),
             clientAddress(),
             auditContext.clientDescription(),
-            Objects.toString(MDC.get("correlationId"), "unavailable")
+            correlationId()
+        );
+        return switch (result) {
+            case LoginResult.SessionIssued issued -> {
+                cookies.issue(
+                    response, issued.token(), issued.session().rememberMe(),
+                    issued.cookieMaxAgeSeconds()
+                );
+                yield new LoginOutcome()
+                    .result(LoginOutcome.ResultEnum.SESSION)
+                    .context(AuthenticationModels.context(issued.session()));
+            }
+            case LoginResult.SecondFactorRequired challenge -> new LoginOutcome()
+                .result(LoginOutcome.ResultEnum.MFA_REQUIRED)
+                .challenge(new MfaChallenge()
+                    .token(challenge.challengeToken())
+                    .expiresAt(challenge.expiresAt().atOffset(ZoneOffset.UTC))
+                    .attemptsRemaining(challenge.attemptsRemaining())
+                    .acceptedFactors(List.of(
+                        MfaChallenge.AcceptedFactorsEnum.TOTP,
+                        MfaChallenge.AcceptedFactorsEnum.RECOVERY_CODE
+                    )));
+        };
+    }
+
+    @Override
+    public SessionContext completeMfaLogin(MfaLoginRequest mfaLoginRequest) {
+        var issued = challenges.complete(
+            mfaLoginRequest.getChallengeToken(),
+            mfaLoginRequest.getCode(),
+            clientAddress(),
+            auditContext.clientDescription(),
+            correlationId()
         );
         cookies.issue(
-            response, result.token(), result.session().rememberMe(), result.cookieMaxAgeSeconds()
+            response, issued.token(), issued.session().rememberMe(), issued.cookieMaxAgeSeconds()
         );
-        return new LoginOutcome()
-            .result(LoginOutcome.ResultEnum.SESSION)
-            .context(AuthenticationModels.context(result.session()));
+        return AuthenticationModels.context(issued.session());
     }
 
     @Override

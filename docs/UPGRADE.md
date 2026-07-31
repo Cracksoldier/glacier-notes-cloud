@@ -63,6 +63,24 @@ code, the `Set-Cookie` headers, and the `401`/`429` error responses are unchange
 only checks the status code or extracts the `GLACIER_SESSION` cookie needs no change.
 `GET /api/v1/auth/session` is unchanged and still returns the object in its previous shape.
 
+This release also adds the optional TOTP second factor. It stays dormant unless you set
+`GLACIER_MFA_ENABLED=true` and supply `GLACIER_MFA_ENCRYPTION_SECRET` (or
+`GLACIER_MFA_ENCRYPTION_SECRET_FILE`); with the flag off, no account can enroll and login behaves
+exactly as before. Enabling it introduces two operational dependencies worth planning for:
+
+- **Instance clock accuracy becomes a correctness dependency.** TOTP codes are derived from wall
+  time, and the server accepts only the current 30-second step and its two neighbours. If the host
+  clock drifts more than roughly a minute, correct codes start being rejected. Keep NTP running.
+- **A lost authenticator needs an operator.** The break-glass procedure is documented in
+  `deployment/README.md`. Make sure whoever operates the instance can reach the bootstrap token
+  before the first account enrolls.
+
+The new operations are `GET /api/v1/me/mfa`, `POST /api/v1/me/mfa/totp`,
+`POST /api/v1/me/mfa/totp/confirm`, `DELETE /api/v1/me/mfa/totp/pending`,
+`POST /api/v1/me/mfa/totp/disable`, `POST /api/v1/me/mfa/recovery-codes`,
+`POST /api/v1/auth/login/mfa`, and `POST /api/v1/setup/second-factor-reset`. None of them affects a
+deployment that leaves the flag off.
+
 ### v0.2.0
 
 Feature release. Ships full English/German runtime localization across every user-facing surface

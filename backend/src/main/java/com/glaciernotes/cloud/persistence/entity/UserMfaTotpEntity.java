@@ -73,6 +73,7 @@ public class UserMfaTotpEntity {
     public int periodSeconds() { return periodSeconds; }
     public Long lastAcceptedStep() { return lastAcceptedStep; }
     public Instant createdAt() { return createdAt; }
+    public Instant confirmedAt() { return confirmedAt; }
 
     public boolean active() {
         return "ACTIVE".equals(status);

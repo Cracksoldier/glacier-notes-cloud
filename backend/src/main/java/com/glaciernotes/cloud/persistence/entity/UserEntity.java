@@ -107,8 +107,16 @@ public class UserEntity {
         return username;
     }
 
+    public String usernameNormalized() {
+        return usernameNormalized;
+    }
+
     public String email() {
         return email;
+    }
+
+    public String emailNormalized() {
+        return emailNormalized;
     }
 
     public String displayName() {
@@ -127,6 +135,7 @@ public class UserEntity {
         return lockedUntil;
     }
 
+    public Instant passwordChangedAt() { return passwordChangedAt; }
     public Instant createdAt() { return createdAt; }
     public Instant lastLoginAt() { return lastLoginAt; }
     public Instant pendingDeletionAt() { return pendingDeletionAt; }

@@ -30,6 +30,36 @@ works, how to run the CI security gates locally, and how to report a vulnerabili
 Angular router guards are navigation conveniences only. Every `USER`/`ADMIN`-gated operation is
 enforced server-side by Quarkus security identity roles regardless of what the router allows.
 
+## Optional second factor
+
+Off unless `GLACIER_MFA_ENABLED` is set, and opt-in per account even then. When an enrolled account
+submits a correct password, step 1 issues no session and no cookies — only a short-lived challenge.
+The session is created solely by step 2 (`POST /api/v1/auth/login/mfa`), which accepts either a
+TOTP code or one of ten single-use recovery codes.
+
+- **Stored material.** Authenticator secrets are encrypted with AES-GCM under a dedicated key
+  (`GLACIER_MFA_ENCRYPTION_SECRET`, separate from the session secret so session-key rotation cannot
+  invalidate enrollments). Recovery codes and challenge tokens are stored only as keyed hashes.
+  Plaintext secrets are zeroed after use and never logged; a secret and its recovery codes are
+  returned exactly once, in the response that creates them.
+- **Replay.** Each accepted TOTP step is recorded, and steps at or below it are refused, so a code
+  observed in transit cannot be reused — including the code that confirmed the enrollment.
+  A recovery code is consumed by a single conditional update, which is what makes concurrent use of
+  the same code resolve to one success.
+- **State changes between the steps.** Before verifying a code, step 2 re-checks that the account is
+  still active, unlocked, still enrolled, and that its password has not changed since the challenge
+  was issued. Every rejection — including an unknown or expired challenge — returns the same
+  `AUTH_MFA_CHALLENGE_INVALID` response, so a caller holding only a password learns nothing about
+  account state.
+- **Guessing.** A challenge dies after a configurable number of wrong codes, failures feed a
+  dedicated per-IP limiter and the account's own lock counter, and the identifier limiter is
+  deliberately *not* cleared by a correct password alone — otherwise a caller who knows the password
+  could reset it indefinitely while brute-forcing the second factor. At most three challenges stay
+  open per account.
+- **Lost authenticator.** The break-glass reset in `deployment/README.md` requires the bootstrap
+  token, revokes the account's sessions, and answers identically whether or not the account existed.
+  Administrators cannot clear another account's second factor through the admin API.
+
 ## Running the dependency and image scans locally
 
 ### Backend (OWASP dependency-check)

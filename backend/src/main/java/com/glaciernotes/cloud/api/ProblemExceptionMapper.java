@@ -2,6 +2,7 @@ package com.glaciernotes.cloud.api;
 
 import com.glaciernotes.cloud.application.setup.SetupFailure;
 import com.glaciernotes.cloud.application.auth.AuthenticationFailure;
+import com.glaciernotes.cloud.application.auth.MfaFailure;
 import com.glaciernotes.cloud.application.lifecycle.LifecycleFailure;
 import com.glaciernotes.cloud.application.content.ContentFailure;
 import com.glaciernotes.cloud.application.image.ImageFailure;
@@ -91,6 +92,9 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
         }
         if (exception instanceof AuthenticationFailure authenticationFailure) {
             return describeAuthenticationFailure(authenticationFailure);
+        }
+        if (exception instanceof MfaFailure mfaFailure) {
+            return describeMfaFailure(mfaFailure);
         }
         if (exception instanceof LifecycleFailure lifecycleFailure) {
             return describeLifecycleFailure(lifecycleFailure);
@@ -235,6 +239,35 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
             );
             case CSRF_INVALID -> new Description(
                 403, "Request Verification Failed", "CSRF_INVALID",
+                failure.getMessage(), List.of(), 0
+            );
+        };
+    }
+
+    private Description describeMfaFailure(MfaFailure failure) {
+        return switch (failure.reason()) {
+            case INVALID_CODE -> new Description(
+                401, "Invalid Verification Code", "AUTH_MFA_INVALID_CODE",
+                failure.getMessage(), List.of(), 0
+            );
+            case CHALLENGE_INVALID -> new Description(
+                401, "Verification Request Invalid", "AUTH_MFA_CHALLENGE_INVALID",
+                failure.getMessage(), List.of(), 0
+            );
+            case ATTEMPTS_EXHAUSTED -> new Description(
+                429, "Too Many Requests", "AUTH_MFA_ATTEMPTS_EXCEEDED",
+                failure.getMessage(), List.of(), failure.retryAfterSeconds()
+            );
+            case ALREADY_ENROLLED -> new Description(
+                409, "Second Factor Already Active", "MFA_ALREADY_ENROLLED",
+                failure.getMessage(), List.of(), 0
+            );
+            case NOT_ENROLLED -> new Description(
+                409, "Second Factor Required", "MFA_NOT_ENROLLED",
+                failure.getMessage(), List.of(), 0
+            );
+            case UNAVAILABLE -> new Description(
+                503, "Second Factor Unavailable", "MFA_UNAVAILABLE",
                 failure.getMessage(), List.of(), 0
             );
         };

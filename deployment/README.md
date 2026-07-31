@@ -72,6 +72,8 @@ use `SameSite=Lax` and `Path=/`.
 | `GLACIER_BOOTSTRAP_TOKEN_FILE` | One-time setup token file; overrides `GLACIER_BOOTSTRAP_TOKEN` |
 | `GLACIER_SECURITY_SESSION_SECRET_FILE` | HMAC/session secret file; overrides the direct value |
 | `GLACIER_PUBLIC_BASE_URL` | External origin used for secure-cookie policy; default `http://localhost:8080` |
+| `GLACIER_MFA_ENABLED` | Allows accounts to enroll a TOTP second factor; default `false` |
+| `GLACIER_MFA_ENCRYPTION_SECRET_FILE` | Key file for encrypting stored TOTP secrets; overrides `GLACIER_MFA_ENCRYPTION_SECRET`. Required when the feature is enabled |
 | `GLACIER_METRICS_ENABLED` | Enables Micrometer and Prometheus metrics on the management port; default `true` |
 | `GLACIER_BACKUP_ENABLED` | Enables administrator-created server backups; default `false` |
 | `GLACIER_BUILD_IDENTIFIER` | Operator-provided build identifier recorded in backup manifests |
@@ -157,3 +159,55 @@ The environment-gated backup job and clean-restore procedure are documented in
 [`docs/BACKUP_RESTORE.md`](../docs/BACKUP_RESTORE.md). Backups contain sensitive user data and
 authentication hashes even though configuration secrets are excluded. Encrypt and protect external
 copies and the `backup_data` volume.
+
+## Optional second factor
+
+Accounts can protect their login with a TOTP authenticator app. The feature is off until you enable
+it, and enabling it does not force anyone to use it — each account decides for itself.
+
+```bash
+openssl rand -base64 48 > deployment/secrets/mfa-encryption-secret.txt
+chmod 600 deployment/secrets/mfa-encryption-secret.txt
+# then set GLACIER_MFA_ENABLED=true and GLACIER_MFA_ENCRYPTION_SECRET_FILE in .env
+docker compose up -d
+```
+
+The secret encrypts every stored authenticator secret and keys the hashes of recovery codes. It is
+deliberately separate from the session secret so that rotating session keys does not invalidate
+existing enrollments — and, for the same reason, **losing or changing it locks every enrolled
+account out of its second factor**. Back it up with the same care as the database password. Startup
+fails if the feature is enabled without a valid secret, rather than starting with enrollments it
+cannot read.
+
+Enabling the feature makes the host clock a correctness dependency. Codes are derived from wall
+time, and the server accepts only the current 30-second window and its two neighbours, so drift
+beyond about a minute makes correct codes fail. Keep time synchronization running on the host.
+
+### Break-glass: an account has lost its authenticator
+
+This is a recovery procedure, not routine administration. Users who still have their recovery codes
+should use one to log in and then re-enroll; administrators cannot clear another account's second
+factor through the admin interface, by design. The path below exists for the case where both the
+authenticator and the recovery codes are gone.
+
+It requires the bootstrap token — the same secret used to create the initial administrator — so
+whoever performs it holds instance-level authority, not merely administrator rights.
+
+```bash
+curl -sS -X POST http://127.0.0.1:8080/api/v1/setup/second-factor-reset \
+  -H "X-Bootstrap-Token: $(cat deployment/secrets/bootstrap-token.txt)" \
+  -H 'Content-Type: application/json' \
+  -d '{"identifier": "user@example.com"}'
+```
+
+The identifier is the account's username or email address. On success the endpoint returns `204` and
+no body: it clears the enrollment and its recovery codes, and revokes every session that account
+holds, since an account needing a break-glass reset may also be compromised. The user can then log
+in with their password alone and enroll again.
+
+`204` is also the answer when no such account exists, or when the account had no second factor. The
+response deliberately does not distinguish these cases, so possession of the bootstrap token cannot
+be turned into a way to test which accounts exist. Check the audit log to confirm what actually
+happened — every invocation is recorded as `MFA_OPERATOR_RESET` with no acting user and a `matched`
+flag. Invalid tokens are throttled by the same limiter as initial setup, so repeated guessing blocks
+the source address.

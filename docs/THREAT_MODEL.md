@@ -26,6 +26,8 @@ exist in this repository today; update it when a boundary, mitigation, or test c
 | Forged or attacker-supplied session token | Sessions use a 256-bit random token (`SessionTokenService.newToken`); only an HMAC-SHA256 keyed hash (`SessionTokenService.hashToken`) is persisted in `user_sessions.token_hash`, so a database read alone cannot produce a valid cookie | `SecurityAttackSimulationTest` (session fixation: an attacker-chosen cookie value is never adopted by login) |
 | Session cookie theft via XSS | `GLACIER_SESSION` is `HttpOnly`; `Secure` is enforced whenever the configured public base URL is `https` (`CookieManager.secureCookies`) | `CookieManager` construction, `SecurityHeadersFilter`'s `script-src 'self'` CSP |
 | Replayed session token after logout or forced revocation | Logout and password change call session revocation (`AccountService.changePassword` → `revokeAll`); revoked tokens are rejected on the next request | `SecurityAttackSimulationTest` (token replay after logout, token replay after forced revocation) |
+| A stolen or guessed password alone yielding a session | Optional per-account TOTP second factor: for an enrolled account the password step issues no session and no cookies, only a hashed, expiring challenge; the session is minted only by `POST /api/v1/auth/login/mfa` | `MfaLoginTest` (the password step creates no `user_sessions` row, sets no cookie, and leaves `last_login_at` untouched) |
+| A TOTP code observed in transit and replayed | Each accepted step is recorded in `user_mfa_totp.last_accepted_step`; that step and every earlier one are refused, including the code that confirmed the enrollment | `TotpVerifierTest`, `MfaLoginTest` (a code that completed a login fails on the next challenge) |
 
 ## Tampering
 

@@ -46,6 +46,13 @@ public class CleanupService {
     }
 
     @Transactional
+    public void removeMfaChallenges() {
+        entityManager.createNativeQuery("""
+            delete from mfa_challenges where expires_at <= :now or consumed_at is not null
+            """).setParameter("now", time.now()).executeUpdate();
+    }
+
+    @Transactional
     public void removeTombstones() {
         entityManager.createNativeQuery("delete from tombstones where expires_at <= :now")
             .setParameter("now", time.now()).executeUpdate();

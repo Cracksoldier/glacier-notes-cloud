@@ -92,6 +92,38 @@ paths:
           $ref: '#/components/responses/ProblemResponse'
         default:
           $ref: '#/components/responses/ProblemResponse'
+  /api/v1/setup/second-factor-reset:
+    post:
+      tags: [Setup]
+      summary: Break-glass removal of an account's second factor, authorized by the bootstrap token
+      description: >
+        Operator escape hatch for an account that can no longer satisfy its second factor when no
+        administrator is able to clear it. Responds identically whether or not the named account
+        exists or had an enrollment, so that possession of the bootstrap token does not also confer
+        the ability to enumerate accounts.
+      operationId: resetSecondFactor
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/BootstrapToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SecondFactorResetRequest'
+      responses:
+        '204':
+          description: Second factor cleared, if the account existed and had one
+        '403':
+          $ref: '#/components/responses/ProblemResponse'
+        '422':
+          $ref: '#/components/responses/ProblemResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitedProblemResponse'
+        '503':
+          $ref: '#/components/responses/ProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
   /api/v1/auth/login:
     post:
       tags: [Authentication]
@@ -119,6 +151,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/LoginOutcome'
         '401':
+          $ref: '#/components/responses/ProblemResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitedProblemResponse'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /api/v1/auth/login/mfa:
+    post:
+      tags: [Authentication]
+      summary: Complete a login that requires a second factor
+      description: >
+        Exchanges a challenge issued by the login operation for a session. The remember-me preference
+        is taken from the challenge rather than the request, so session lifetime cannot be escalated
+        after the password step. The challenge token authenticates the request, so no CSRF header is
+        required, consistent with the login operation.
+      operationId: completeMfaLogin
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaLoginRequest'
+      responses:
+        '200':
+          description: Authenticated session
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Set-Cookie:
+              description: Session and CSRF cookies.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionContext'
+        '401':
+          $ref: '#/components/responses/ProblemResponse'
+        '422':
           $ref: '#/components/responses/ProblemResponse'
         '429':
           $ref: '#/components/responses/RateLimitedProblemResponse'
@@ -393,6 +464,127 @@ paths:
         '202': { description: Irreversible deletion accepted }
         '403': { $ref: '#/components/responses/ProblemResponse' }
         '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/mfa:
+    get:
+      tags: [Current User]
+      summary: Get the current user's second-factor state
+      operationId: getMfaStatus
+      responses:
+        '200':
+          description: Second-factor state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MfaStatus' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/mfa/totp:
+    post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      tags: [Current User]
+      summary: Start authenticator enrollment and return the pending secret
+      description: >
+        Requires the current password. The enrollment is pending and has no effect on login until it
+        is confirmed. Starting a new enrollment discards any unconfirmed one.
+      operationId: startTotpEnrollment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MfaEnrollmentStartRequest' }
+      responses:
+        '200':
+          description: Pending enrollment secret and provisioning URI
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MfaEnrollmentStart' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/mfa/totp/confirm:
+    post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      tags: [Current User]
+      summary: Activate a pending enrollment and issue recovery codes
+      description: >
+        Recovery codes are returned in this response only and cannot be retrieved again.
+      operationId: confirmTotpEnrollment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MfaEnrollmentConfirmRequest' }
+      responses:
+        '200':
+          description: Enrollment activated, recovery codes returned once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MfaRecoveryCodes' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/mfa/totp/pending:
+    delete:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      tags: [Current User]
+      summary: Abandon an unconfirmed enrollment
+      description: >
+        Requires no password and no code, since a pending enrollment protects nothing.
+      operationId: cancelTotpEnrollment
+      responses:
+        '204': { description: Pending enrollment discarded }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/mfa/totp/disable:
+    post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      tags: [Current User]
+      summary: Disable the second factor and delete its recovery codes
+      operationId: disableTotp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MfaDisableRequest' }
+      responses:
+        '204': { description: Second factor disabled }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/me/mfa/recovery-codes:
+    post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      tags: [Current User]
+      summary: Replace the recovery-code set
+      description: >
+        Invalidates every previously issued code in the same transaction. The new codes are returned
+        in this response only.
+      operationId: regenerateRecoveryCodes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MfaRecoveryCodesRequest' }
+      responses:
+        '200':
+          description: Previous codes invalidated, new codes returned once
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MfaRecoveryCodes' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/me/sessions:
     get:
@@ -2022,6 +2214,64 @@ components:
           items:
             type: string
             enum: [TOTP, RECOVERY_CODE]
+    MfaLoginRequest:
+      type: object
+      required: [challengeToken, code]
+      description: >
+        A single code field accepts either a TOTP code or a recovery code. The two are deliberately
+        not distinguished, so that a failure discloses nothing about which was attempted.
+      properties:
+        challengeToken: { type: string, minLength: 1, maxLength: 128 }
+        code: { type: string, format: password, minLength: 1, maxLength: 64 }
+    MfaStatus:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [NONE, PENDING, ACTIVE] }
+        confirmedAt: { type: string, format: date-time }
+        recoveryCodesRemaining: { type: integer, minimum: 0 }
+    MfaEnrollmentStartRequest:
+      type: object
+      required: [currentPassword]
+      properties:
+        currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+    MfaEnrollmentStart:
+      type: object
+      required: [secret, provisioningUri, expiresAt, digits, periodSeconds]
+      properties:
+        secret: { type: string, description: Grouped uppercase Base32, for manual entry. }
+        provisioningUri: { type: string, description: 'otpauth:// URI, the only value a QR renderer receives.' }
+        expiresAt: { type: string, format: date-time }
+        digits: { type: integer }
+        periodSeconds: { type: integer }
+    MfaEnrollmentConfirmRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, format: password, minLength: 1, maxLength: 16 }
+    MfaDisableRequest:
+      type: object
+      required: [currentPassword]
+      properties:
+        currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+    MfaRecoveryCodesRequest:
+      type: object
+      required: [currentPassword]
+      properties:
+        currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+    MfaRecoveryCodes:
+      type: object
+      required: [codes, generatedAt]
+      properties:
+        codes:
+          type: array
+          items: { type: string }
+        generatedAt: { type: string, format: date-time }
+    SecondFactorResetRequest:
+      type: object
+      required: [identifier]
+      properties:
+        identifier: { type: string, minLength: 1, maxLength: 320 }
     AdminStatus:
       type: object
       required: [service, status, apiVersion, applicationVersion, buildIdentifier, database, imageStorageBackend, imageStorage, smtp, backupEnabled, metricsEnabled, jobsHealthy]

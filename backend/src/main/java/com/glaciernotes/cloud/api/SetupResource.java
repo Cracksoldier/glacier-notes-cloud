@@ -3,6 +3,7 @@ package com.glaciernotes.cloud.api;
 import com.glaciernotes.cloud.application.setup.BootstrapService;
 import com.glaciernotes.cloud.generated.api.SetupApi;
 import com.glaciernotes.cloud.generated.model.InitialAdministratorRequest;
+import com.glaciernotes.cloud.generated.model.SecondFactorResetRequest;
 import com.glaciernotes.cloud.generated.model.SetupCompletion;
 import com.glaciernotes.cloud.generated.model.SetupStatus;
 import io.vertx.core.http.HttpServerRequest;
@@ -41,6 +42,16 @@ public class SetupResource implements SetupApi {
         return new SetupCompletion()
             .initialized(true)
             .initializedAt(initializedAt.atOffset(ZoneOffset.UTC));
+    }
+
+    @Override
+    public void resetSecondFactor(String bootstrapToken, SecondFactorResetRequest request) {
+        bootstrapService.resetSecondFactor(
+            bootstrapToken,
+            request.getIdentifier(),
+            clientAddress(),
+            Objects.toString(MDC.get("correlationId"), "unavailable")
+        );
     }
 
     @Override

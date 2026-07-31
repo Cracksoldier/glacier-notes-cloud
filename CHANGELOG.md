@@ -15,6 +15,19 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
   column, four bounded `instance_settings` tunables (challenge lifetime, attempt cap,
   pending-enrollment expiry, step-up grace window), and an `MFA_IP` rate-limit scope. No endpoint
   reads or writes these tables yet and login behavior is unchanged.
+- Optional TOTP second factor, reachable through the API and off unless `GLACIER_MFA_ENABLED` is
+  set. An account can enroll (`POST /api/v1/me/mfa/totp`), confirm with a code from its
+  authenticator app and receive ten single-use recovery codes
+  (`POST /api/v1/me/mfa/totp/confirm`), inspect its state (`GET /api/v1/me/mfa`), abandon a pending
+  enrollment (`DELETE /api/v1/me/mfa/totp/pending`), regenerate recovery codes
+  (`POST /api/v1/me/mfa/recovery-codes`), and turn the factor off
+  (`POST /api/v1/me/mfa/totp/disable`). Enrolled accounts complete login in two stages, the second
+  being `POST /api/v1/auth/login/mfa`. There is no user interface yet — the browser client is
+  unchanged and cannot reach these operations.
+- `POST /api/v1/setup/second-factor-reset`, a break-glass operation authenticated with the
+  bootstrap token that clears an account's second factor and revokes its sessions when its
+  authenticator is lost. It answers `204` whether or not the account existed, so it cannot be used
+  to enumerate accounts, and it is throttled by the same limiter as initial setup.
 - `GLACIER_MFA_ENABLED` (default `false`) and `GLACIER_MFA_ENCRYPTION_SECRET`
   / `GLACIER_MFA_ENCRYPTION_SECRET_FILE`. The secret is validated at startup only when the flag is
   enabled, so existing deployments upgrade without new configuration. It is kept separate from the
@@ -28,8 +41,9 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
   as `user` is now read as `context.user`, and `session` as `context.session`. This affects every
   caller regardless of whether the account uses a second factor.
   `GET /api/v1/auth/session` is unchanged and still returns a bare `SessionContext`.
-  The envelope's `MFA_REQUIRED` result and its `challenge` member are declared in the contract but
-  are not yet emitted; see `docs/adr/0009-optional-second-authentication-factor.md`.
+  An account that has enrolled a second factor now receives `{"result": "MFA_REQUIRED",
+  "challenge": {…}}` and no cookies until it completes `POST /api/v1/auth/login/mfa`; an account
+  without one is unaffected. See `docs/adr/0009-optional-second-authentication-factor.md`.
 
 ## v0.2.0 — Internationalization and admin polish
 

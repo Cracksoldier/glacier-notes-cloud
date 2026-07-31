@@ -52,6 +52,14 @@ model/labelView.ts
 model/loginOutcome.ts
 model/loginRequest.ts
 model/mfaChallenge.ts
+model/mfaDisableRequest.ts
+model/mfaEnrollmentConfirmRequest.ts
+model/mfaEnrollmentStart.ts
+model/mfaEnrollmentStartRequest.ts
+model/mfaLoginRequest.ts
+model/mfaRecoveryCodes.ts
+model/mfaRecoveryCodesRequest.ts
+model/mfaStatus.ts
 model/models.ts
 model/noteConversion.ts
 model/noteCreate.ts
@@ -76,6 +84,7 @@ model/passwordResetRequest.ts
 model/pingResponse.ts
 model/problemDetails.ts
 model/resetLink.ts
+model/secondFactorResetRequest.ts
 model/selfDeletionRequest.ts
 model/sessionContext.ts
 model/sessionSummary.ts

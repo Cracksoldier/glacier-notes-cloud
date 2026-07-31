@@ -1,6 +1,7 @@
 package com.glaciernotes.cloud.api;
 
 import com.glaciernotes.cloud.application.auth.AuthenticationFailure;
+import com.glaciernotes.cloud.application.auth.MfaEnrollmentService;
 import com.glaciernotes.cloud.application.auth.SessionView;
 import com.glaciernotes.cloud.application.image.ImageService;
 import com.glaciernotes.cloud.application.lifecycle.AccountService;
@@ -15,6 +16,7 @@ import io.vertx.core.http.HttpServerResponse;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -35,6 +37,7 @@ import java.util.UUID;
 public class CurrentUserResource implements CurrentUserApi {
     private final AccountService accounts;
     private final ImageService images;
+    private final MfaEnrollmentService mfa;
     private final SecurityIdentity identity;
     private final CookieManager cookies;
 
@@ -44,10 +47,12 @@ public class CurrentUserResource implements CurrentUserApi {
     @Context
     HttpServerResponse response;
 
-    public CurrentUserResource(AccountService accounts, ImageService images, SecurityIdentity identity,
+    public CurrentUserResource(AccountService accounts, ImageService images,
+                               MfaEnrollmentService mfa, SecurityIdentity identity,
                                CookieManager cookies) {
         this.accounts = accounts;
         this.images = images;
+        this.mfa = mfa;
         this.identity = identity;
         this.cookies = cookies;
     }
@@ -114,6 +119,52 @@ public class CurrentUserResource implements CurrentUserApi {
     public void deleteCurrentUser(SelfDeletionRequest selfDeletionRequest) {
         accounts.deleteSelf(userId(), selfDeletionRequest, correlationId());
         cookies.clear(response);
+    }
+
+    @Override
+    @GET
+    @Path("/mfa")
+    @Produces(MediaType.APPLICATION_JSON)
+    public MfaStatus getMfaStatus() { return mfa.status(userId()); }
+
+    @Override
+    @POST
+    @Path("/mfa/totp")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public MfaEnrollmentStart startTotpEnrollment(MfaEnrollmentStartRequest request) {
+        return mfa.start(userId(), request.getCurrentPassword().toCharArray(), correlationId());
+    }
+
+    @Override
+    @POST
+    @Path("/mfa/totp/confirm")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public MfaRecoveryCodes confirmTotpEnrollment(MfaEnrollmentConfirmRequest request) {
+        return mfa.confirm(userId(), request.getCode(), correlationId());
+    }
+
+    @Override
+    @DELETE
+    @Path("/mfa/totp/pending")
+    public void cancelTotpEnrollment() { mfa.cancel(userId(), correlationId()); }
+
+    @Override
+    @POST
+    @Path("/mfa/totp/disable")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void disableTotp(MfaDisableRequest request) {
+        mfa.disable(userId(), request.getCurrentPassword().toCharArray(), correlationId());
+    }
+
+    @Override
+    @POST
+    @Path("/mfa/recovery-codes")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public MfaRecoveryCodes regenerateRecoveryCodes(MfaRecoveryCodesRequest request) {
+        return mfa.regenerate(userId(), request.getCurrentPassword().toCharArray(), correlationId());
     }
 
     private UUID userId() {

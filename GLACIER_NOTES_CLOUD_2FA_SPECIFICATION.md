@@ -1,7 +1,7 @@
 # Glacier Notes Cloud — Two-Factor Authentication Specification
 
-**Status:** All specification decisions resolved — milestone T0 approved and delivered, T1–T5 pending approval
-**Specification version:** 0.5
+**Status:** All specification decisions resolved — milestones T0, T1, and T2a approved and delivered, T2b–T5 pending approval
+**Specification version:** 0.6
 **Date:** 2026-07-31
 **Feature:** Optional time-based one-time password (TOTP) second factor with recovery codes
 **Extends:** `GLACIER_NOTES_CLOUD_SPECIFICATION.md` section 8 (Authentication)
@@ -497,7 +497,7 @@ establishment.
 | `startTotpEnrollment` | `POST /api/v1/me/mfa/totp` | session + CSRF | Password-gated; returns secret and provisioning URI |
 | `confirmTotpEnrollment` | `POST /api/v1/me/mfa/totp/confirm` | session + CSRF | Activates; returns recovery codes once |
 | `cancelTotpEnrollment` | `DELETE /api/v1/me/mfa/totp/pending` | session + CSRF | Abandons an unconfirmed enrollment |
-| `disableTotp` | `DELETE /api/v1/me/mfa/totp` | session + CSRF | Password + second factor required |
+| `disableTotp` | `POST /api/v1/me/mfa/totp/disable` | session + CSRF | Password + second factor required |
 | `regenerateRecoveryCodes` | `POST /api/v1/me/mfa/recovery-codes` | session + CSRF | Password + second factor required |
 
 Existing operations gain an optional second-factor code field to satisfy section 5.4: account
@@ -959,3 +959,22 @@ contract; no behavior depends on it.
 
 Declaring the full target shape in T0 keeps the committed generated client changing exactly once
 rather than twice, and keeps the dormant branch visible to reviewers of the contract from the outset.
+
+### 21.5 Resolved in version 0.6
+
+Resolved while planning milestone T2a, the milestone that made the feature reachable through the API.
+
+| Decision | Outcome | Sections |
+| --- | --- | --- |
+| HTTP method for `disableTotp` | `POST /api/v1/me/mfa/totp/disable`, not `DELETE /api/v1/me/mfa/totp` | 8.2 |
+| Where the operator escape hatch lives | `POST /api/v1/setup/second-factor-reset`, reusing the bootstrap-token flow | 8.3.1 |
+| Whether disable ships before the second-factor code requirement | Yes, password-gated only in T2a; T3 adds the code to the same operation | 5.5, 8.2 |
+
+Disabling carries the current password in the request body, and a `DELETE` with a body generates
+awkwardly in the typescript-angular client. The house precedent for a password-carrying destructive
+self-service operation is `POST /api/v1/me/deletion`, so `disableTotp` follows it.
+`cancelTotpEnrollment` keeps `DELETE`, because it has no body.
+
+Shipping disable password-gated in T2a keeps the delivery principle that each stage leaves a working
+instance: without it, the only exit from an enrollment would be the break-glass path. T2 and T3
+release together, so the password-only shape never reaches a release.

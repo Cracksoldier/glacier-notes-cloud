@@ -9,8 +9,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Locale;
 
 @ApplicationScoped
 public class BootstrapService {
@@ -85,6 +87,30 @@ public class BootstrapService {
         } finally {
             Arrays.fill(password, '\0');
         }
+    }
+
+    /**
+     * Break-glass path for an account that can no longer satisfy its second factor. Returns nothing:
+     * a caller must not be able to tell an unknown account from a cleared one.
+     */
+    public void resetSecondFactor(
+        String suppliedToken,
+        String identifier,
+        String clientAddress,
+        String correlationId
+    ) {
+        var configuredToken = validSecret(secretProvider.bootstrapToken().orElse(null));
+        var clientKey = clientKeyHasher.hash(clientAddress);
+        rateLimiter.checkAllowed(clientKey);
+        if (!matches(configuredToken, suppliedToken)) {
+            rateLimiter.recordFailure(clientKey);
+            throw SetupFailure.denied();
+        }
+        rateLimiter.clear(clientKey);
+        var normalized = Normalizer
+            .normalize(identifier == null ? "" : identifier.strip(), Normalizer.Form.NFKC)
+            .toLowerCase(Locale.ROOT);
+        transaction.clearSecondFactor(normalized, correlationId);
     }
 
     public void validateProductionSecrets() {

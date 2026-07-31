@@ -18,6 +18,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -105,6 +106,22 @@ class AuthenticationResourceTest {
         given().cookie("GLACIER_SESSION", sessionCookie)
             .when().get("/api/v1/admin/status")
             .then().statusCode(200).body("database", equalTo("up"));
+    }
+
+    @Test
+    void anAccountWithoutASecondFactorNeverSeesTheSecondStage() throws SQLException {
+        login("normal.user", PASSWORD, false).then()
+            .statusCode(200)
+            .body("result", equalTo("SESSION"))
+            .body("challenge", nullValue())
+            .body("context.session.current", equalTo(true));
+
+        try (var connection = dataSource.getConnection();
+             var statement = connection.createStatement();
+             var rows = statement.executeQuery("select count(*) from mfa_challenges")) {
+            assertTrue(rows.next());
+            assertTrue(rows.getInt(1) == 0);
+        }
     }
 
     @Test

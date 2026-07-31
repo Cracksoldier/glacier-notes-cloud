@@ -5,11 +5,10 @@ import com.glaciernotes.cloud.domain.IdGenerator;
 import com.glaciernotes.cloud.domain.TimeProvider;
 import com.glaciernotes.cloud.persistence.entity.AuditEventEntity;
 import com.glaciernotes.cloud.persistence.entity.InstanceSettingsEntity;
-import com.glaciernotes.cloud.persistence.entity.SessionEntity;
 import com.glaciernotes.cloud.persistence.entity.UserEntity;
 import com.glaciernotes.cloud.persistence.repository.LoginRateLimiter;
+import com.glaciernotes.cloud.persistence.repository.MfaRepository;
 import com.glaciernotes.cloud.security.ClientKeyHasher;
-import com.glaciernotes.cloud.security.SessionTokenService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -26,29 +25,35 @@ import java.util.Locale;
 public class AuthenticationService {
     private final EntityManager entityManager;
     private final PasswordVerifier passwordVerifier;
-    private final SessionTokenService tokenService;
     private final ClientKeyHasher keyHasher;
     private final LoginRateLimiter rateLimiter;
     private final TimeProvider timeProvider;
     private final IdGenerator idGenerator;
+    private final MfaRepository mfaRepository;
+    private final MfaChallengeService challenges;
+    private final SessionIssuer sessionIssuer;
     private final String dummyPasswordHash;
 
     public AuthenticationService(
         EntityManager entityManager,
         PasswordVerifier passwordVerifier,
-        SessionTokenService tokenService,
         ClientKeyHasher keyHasher,
         LoginRateLimiter rateLimiter,
         TimeProvider timeProvider,
-        IdGenerator idGenerator
+        IdGenerator idGenerator,
+        MfaRepository mfaRepository,
+        MfaChallengeService challenges,
+        SessionIssuer sessionIssuer
     ) {
         this.entityManager = entityManager;
         this.passwordVerifier = passwordVerifier;
-        this.tokenService = tokenService;
         this.keyHasher = keyHasher;
         this.rateLimiter = rateLimiter;
         this.timeProvider = timeProvider;
         this.idGenerator = idGenerator;
+        this.mfaRepository = mfaRepository;
+        this.challenges = challenges;
+        this.sessionIssuer = sessionIssuer;
         this.dummyPasswordHash = passwordVerifier.hash("not-a-real-glacier-user-password".toCharArray());
     }
 
@@ -110,17 +115,20 @@ public class AuthenticationService {
                 throw AuthenticationFailure.invalidCredentials();
             }
 
-            user.recordSuccessfulLogin(now);
+            var enrollment = mfaRepository.findEnrollment(user.id()).orElse(null);
+            if (enrollment != null && enrollment.active()) {
+                // Deliberately no recordSuccessfulLogin and no clearIdentifier: a correct password
+                // alone must not reset the identifier limiter, or it could be replayed to brute
+                // force the second factor indefinitely.
+                return challenges.issue(
+                    user, rememberMe, now, settings, parseAddress(clientAddress), clientDescription
+                );
+            }
+
             rateLimiter.clearIdentifier(identifierKey);
-            var token = tokenService.newToken();
-            var durationMinutes = settings.sessionDurationMinutes(rememberMe);
-            var session = new SessionEntity(
-                idGenerator.nextId(), user, tokenService.hashToken(token), rememberMe, now,
-                now.plusSeconds(durationMinutes * 60L), parseAddress(clientAddress), clientDescription
+            return sessionIssuer.issue(
+                user, rememberMe, now, settings, parseAddress(clientAddress), clientDescription
             );
-            entityManager.persist(session);
-            entityManager.flush();
-            return new LoginResult(token, view(session), durationMinutes * 60L);
         } finally {
             Arrays.fill(password, '\0');
         }
@@ -135,7 +143,7 @@ public class AuthenticationService {
         return normalized;
     }
 
-    private String normalizeClientDescription(String value) {
+    static String normalizeClientDescription(String value) {
         if (value == null) {
             return null;
         }
@@ -146,7 +154,7 @@ public class AuthenticationService {
         return normalized.substring(0, Math.min(normalized.length(), 512));
     }
 
-    private InetAddress parseAddress(String value) {
+    static InetAddress parseAddress(String value) {
         try {
             return InetAddress.getByName(value);
         } catch (Exception ignored) {
@@ -154,19 +162,7 @@ public class AuthenticationService {
         }
     }
 
-    private long secondsUntil(Instant blockedUntil, Instant now) {
+    static long secondsUntil(Instant blockedUntil, Instant now) {
         return Math.max(1, Duration.between(now, blockedUntil).toSeconds());
-    }
-
-    private SessionView view(SessionEntity session) {
-        var user = session.user();
-        return new SessionView(
-            session.id(), user.id(), user.username(), user.email(), user.displayName(), user.role(),
-            session.rememberMe(), session.createdAt(), session.lastSeenAt(), session.expiresAt(),
-            session.clientDescription()
-        );
-    }
-
-    public record LoginResult(String token, SessionView session, long cookieMaxAgeSeconds) {
     }
 }

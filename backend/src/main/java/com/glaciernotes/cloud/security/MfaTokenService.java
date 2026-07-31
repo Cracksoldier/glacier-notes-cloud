@@ -38,6 +38,13 @@ public class MfaTokenService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
+    /** 160 bits, the width RFC 4226 specifies for an HMAC-SHA1 shared secret. */
+    public byte[] newTotpSecret() {
+        var bytes = new byte[20];
+        RANDOM.nextBytes(bytes);
+        return bytes;
+    }
+
     public String hashChallengeToken(String token) {
         return HexFormat.of().formatHex(hmac("mfa-challenge:" + token));
     }
