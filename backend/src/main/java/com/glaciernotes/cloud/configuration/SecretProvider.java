@@ -31,6 +31,14 @@ public class SecretProvider {
         );
     }
 
+    public Optional<String> enrollmentSecret() {
+        return resolve(
+            configuration.mfa().encryptionSecretFile(),
+            configuration.mfa().encryptionSecret(),
+            "enrollment encryption secret"
+        );
+    }
+
     private Optional<String> resolve(
         Optional<Path> configuredFile,
         Optional<String> configuredValue,

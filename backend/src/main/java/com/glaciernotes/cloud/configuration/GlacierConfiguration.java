@@ -12,6 +12,8 @@ public interface GlacierConfiguration {
 
     Security security();
 
+    Mfa mfa();
+
     Optional<String> publicBaseUrl();
 
     Password password();
@@ -45,6 +47,15 @@ public interface GlacierConfiguration {
         Optional<String> sessionSecret();
 
         Optional<Path> sessionSecretFile();
+    }
+
+    interface Mfa {
+        @WithDefault("false")
+        boolean enabled();
+
+        Optional<String> encryptionSecret();
+
+        Optional<Path> encryptionSecretFile();
     }
 
     interface Password {

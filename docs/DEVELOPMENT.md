@@ -73,6 +73,13 @@ The Angular development server proxies `/api` to Quarkus on port 8080, so the ge
 uses the same relative URL in development and in the integrated application container introduced
 in M2.
 
+Second-factor support is off by default, so an ordinary `quarkus:dev` run needs no additional
+variable — do not add one to the standard incantation. To work on it, set `GLACIER_MFA_ENABLED=true`
+together with `GLACIER_MFA_ENCRYPTION_SECRET` (or `GLACIER_MFA_ENCRYPTION_SECRET_FILE`), which must
+hold 32–512 non-whitespace characters. Enabling the flag without a valid secret is a startup failure
+by design. The secret is deliberately separate from the session secret: rotating the session secret
+only ends sessions, whereas rotating this one would invalidate stored enrollments and recovery codes.
+
 ## Formatting and editors
 
 Biome is the only frontend formatter. The repository recommends the Biome VS Code extension

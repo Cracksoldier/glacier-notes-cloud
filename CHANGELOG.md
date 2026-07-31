@@ -8,6 +8,18 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
 
 ## [Unreleased]
 
+### Added
+
+- Groundwork for the optional TOTP second factor: migration `V13` adds `user_mfa_totp`,
+  `user_mfa_recovery_codes`, and `mfa_challenges`, a `user_sessions.second_factor_verified_at`
+  column, four bounded `instance_settings` tunables (challenge lifetime, attempt cap,
+  pending-enrollment expiry, step-up grace window), and an `MFA_IP` rate-limit scope. No endpoint
+  reads or writes these tables yet and login behavior is unchanged.
+- `GLACIER_MFA_ENABLED` (default `false`) and `GLACIER_MFA_ENCRYPTION_SECRET`
+  / `GLACIER_MFA_ENCRYPTION_SECRET_FILE`. The secret is validated at startup only when the flag is
+  enabled, so existing deployments upgrade without new configuration. It is kept separate from the
+  session secret so that rotating session keys cannot invalidate stored enrollments.
+
 ### Changed
 
 - **Breaking:** `POST /api/v1/auth/login` now returns a `LoginOutcome` envelope instead of a

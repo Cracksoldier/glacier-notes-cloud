@@ -39,8 +39,11 @@ There is no in-place schema downgrade — restoring the backup is the supported 
 ### Unreleased
 
 Contains a breaking API change to `POST /api/v1/auth/login`. The bundled web interface is updated
-with it, so an upgrade using only the browser needs no action beyond the procedure above. No new
-required environment variables and no schema changes — Flyway runs its usual validation on startup.
+with it, so an upgrade using only the browser needs no action beyond the procedure above. There are
+no new required environment variables. Migration `V13` runs on startup and is purely additive: it
+creates three empty tables for the forthcoming optional second factor, adds nullable and defaulted
+columns, and widens one check constraint to accept an additional value. Nothing is dropped or
+narrowed, so it needs no operator action beyond the usual restart.
 
 If you have a script, monitoring probe, or integration that logs in against the API, it must be
 updated. The endpoint previously returned the session object directly:

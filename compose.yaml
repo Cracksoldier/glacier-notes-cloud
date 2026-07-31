@@ -73,6 +73,8 @@ services:
       GLACIER_S3_SERVER_SIDE_ENCRYPTION: ${GLACIER_S3_SERVER_SIDE_ENCRYPTION:-}
       GLACIER_S3_API_CALL_TIMEOUT_SECONDS: ${GLACIER_S3_API_CALL_TIMEOUT_SECONDS:-30}
       GLACIER_S3_API_CALL_ATTEMPT_TIMEOUT_SECONDS: ${GLACIER_S3_API_CALL_ATTEMPT_TIMEOUT_SECONDS:-10}
+      GLACIER_MFA_ENABLED: ${GLACIER_MFA_ENABLED:-false}
+      GLACIER_MFA_ENCRYPTION_SECRET_FILE: /run/secrets/mfa_encryption_secret
     secrets:
       - database_password
       - bootstrap_token
@@ -98,6 +100,10 @@ services:
       - type: bind
         source: ${GLACIER_S3_SECRET_KEY_FILE:-/dev/null}
         target: /run/secrets/s3_secret_key
+        read_only: true
+      - type: bind
+        source: ${GLACIER_MFA_ENCRYPTION_SECRET_FILE:-/dev/null}
+        target: /run/secrets/mfa_encryption_secret
         read_only: true
     cap_drop:
       - ALL

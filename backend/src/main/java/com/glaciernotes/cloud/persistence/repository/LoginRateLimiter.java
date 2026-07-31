@@ -49,6 +49,34 @@ public class LoginRateLimiter {
         return Math.max(identifierDelay, ipDelay);
     }
 
+    public void assertSecondFactorAllowed(String ipKey, Instant now) {
+        var blockedValue = entityManager.createNativeQuery("""
+                select max(blocked_until)
+                  from login_rate_limits
+                 where scope = 'MFA_IP' and key_hash = :ipKey
+                   and blocked_until > :now
+                """)
+            .setParameter("ipKey", ipKey)
+            .setParameter("now", now)
+            .getSingleResult();
+        var blockedUntil = asInstant(blockedValue);
+        if (blockedUntil != null) {
+            throw AuthenticationFailure.rateLimited(secondsUntil(blockedUntil, now));
+        }
+    }
+
+    public long recordSecondFactorFailure(String ipKey, Instant now, InstanceSettingsEntity settings) {
+        return record("MFA_IP", ipKey, now, settings);
+    }
+
+    public void clearSecondFactor(String ipKey) {
+        entityManager.createNativeQuery(
+                "delete from login_rate_limits where scope = 'MFA_IP' and key_hash = :key"
+            )
+            .setParameter("key", ipKey)
+            .executeUpdate();
+    }
+
     public void clearIdentifier(String identifierKey) {
         entityManager.createNativeQuery(
                 "delete from login_rate_limits where scope = 'IDENTIFIER' and key_hash = :key"

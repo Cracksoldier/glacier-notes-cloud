@@ -71,6 +71,14 @@ public class InstanceSettingsEntity {
     private int auditRetentionDays;
     @Column(name = "operational_log_retention_days")
     private int operationalLogRetentionDays;
+    @Column(name = "mfa_challenge_lifetime_minutes")
+    private int mfaChallengeLifetimeMinutes;
+    @Column(name = "mfa_challenge_attempt_limit")
+    private int mfaChallengeAttemptLimit;
+    @Column(name = "mfa_pending_enrollment_minutes")
+    private int mfaPendingEnrollmentMinutes;
+    @Column(name = "mfa_step_up_grace_minutes")
+    private int mfaStepUpGraceMinutes;
 
     protected InstanceSettingsEntity() {
     }
@@ -121,6 +129,10 @@ public class InstanceSettingsEntity {
     public String smtpSenderAddress() { return smtpSenderAddress; }
     public int auditRetentionDays() { return auditRetentionDays; }
     public int operationalLogRetentionDays() { return operationalLogRetentionDays; }
+    public int mfaChallengeLifetimeMinutes() { return mfaChallengeLifetimeMinutes; }
+    public int mfaChallengeAttemptLimit() { return mfaChallengeAttemptLimit; }
+    public int mfaPendingEnrollmentMinutes() { return mfaPendingEnrollmentMinutes; }
+    public int mfaStepUpGraceMinutes() { return mfaStepUpGraceMinutes; }
 
     public void updateLifecycle(List<String> domains, Integer invitationHours, Integer resetMinutes) {
         if (domains != null) allowedEmailDomains = domains.toArray(String[]::new);
