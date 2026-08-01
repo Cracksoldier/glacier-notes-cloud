@@ -1,16 +1,16 @@
 # Graph Report - glacier-notes-cloud  (2026-08-01)
 
 ## Corpus Check
-- 511 files · ~265,688 words
+- 513 files · ~269,172 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4698 nodes · 11485 edges · 308 communities (212 shown, 96 thin omitted)
-- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 1137 edges (avg confidence: 0.8)
+- 4808 nodes · 11721 edges · 325 communities (220 shown, 105 thin omitted)
+- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 1166 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8bfa5f07`
+- Built from commit: `f27a5940`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -88,7 +88,6 @@
 - Storage Operation Retry
 - Frontend Package Dependencies
 - Checklist Item Entity
-- System Content Scope & Orphans
 - Transfer Models & Service
 - Authentication Resource Tests
 - Argon2 Password Hashing Config
@@ -139,7 +138,7 @@
 - Request Completion Log Filter
 - Session Token Service
 - Secret Policy
-- User Usage Repository
+- InstanceLogoResource.java
 - Security Headers Filter
 - Backup Transaction Tests
 - Frontend Ignore/Include Config
@@ -161,7 +160,7 @@
 - Migration Upgrade Tests
 - SPA Resource Tests
 - M11 Review Findings
-- Transfers Service (Frontend)
+- ProblemService
 - Administration Transaction Boundary Tests
 - Portable Schema & Compatibility Docs
 - OpenAPI Codegen & Toolchain Docs
@@ -171,7 +170,7 @@
 - Labels Service (Frontend)
 - Identity HTTP Parameter Codec
 - Email Sender Port
-- Exports Resource Tests
+- .rejectsStorageKeysThatEscapeTheFilesystemRoot
 - Portable Import/Export Docs
 - Repository Contracts Test Script
 - Setup Status Model
@@ -266,12 +265,12 @@
 - Backend Maven Module
 - TotpVerifier
 - Known issues
-- SessionView
+- RequestAuditContext
 - check-log-hygiene.sh
 - .constructor
 - .constructor
 - .constructor
-- .constructor
+- OwnedMutableEntity
 - SystemProviders.java
 - 7. Data Model
 - 8. API Contract
@@ -283,7 +282,7 @@
 - 11. Frontend Requirements
 - 16. Testing Requirements
 - transfer-dialog.component.spec.ts
-- 10. Auditing and Observability
+- V13__multi_factor_authentication.sql
 - 3. Goals and Non-Goals
 - 9. Administration and Policy
 - MfaAdminStepUpTest
@@ -291,44 +290,61 @@
 - Login
 - MfaTokenService
 - .service
-- CookieManager
+- auditEventPage.ts
 - BackupTransactionTest.java
-- AuthenticationFailure
+- BackupJob
 - SecondFactorTestSupport
 - .from
 - UserMfaRecoveryCodeEntity
+- PingResource
 - ImageBinaryStorage.java
 - IdentityNormalizer
-- MailMessages
+- SystemProviders.java
+- LoginComponent
 - MfaPasswordResetTest
 - IdentityHttpParameterCodec
 - CorrelationIds
+- V8__portable_transfer_jobs.sql
 - .constructor
-- .constructor
+- AcceptInvitationComponent
+- IdentityHttpParameterCodec
+- imageMetadata.ts
 - emailChangeRequest.ts
 - App
 - Argon2PasswordVerifier
 - S3StoragePolicy
+- V11__persistence_contract_integrity.sql
 - PingResource
 - .initialize
+- V12__administrative_operations.sql
 - mfaStatus.ts
-- MfaAuditEvents
+- V5__core_notes.sql
+- V6__image_assets.sql
 - .resolvesDownloadMetadataBeforeReturningAnOwnedStream
-- TransferJobMapper
+- AdminUsersComponent
+- adminDeletionRequest.ts
 - Profile
+- userProfile.ts
+- V3__authentication_security.sql
+- V4__user_lifecycle.sql
+- V9__account_lifecycle_preferences.sql
 - .constructor
 - .constructor
 - .constructor
+- MfaRecoveryCodes
+- V10__external_storage_operations.sql
+- V14__second_factor_step_up.sql
+- V2__bootstrap_rate_limits.sql
 
 ## God Nodes (most connected - your core abstractions)
 1. `OwnerId` - 173 edges
 2. `ContentService` - 98 edges
-3. `TimeProvider` - 89 edges
-4. `Configuration` - 82 edges
-5. `LifecycleService` - 77 edges
+3. `TimeProvider` - 92 edges
+4. `Configuration` - 83 edges
+5. `LifecycleService` - 80 edges
 6. `GlacierConfiguration` - 65 edges
-7. `InstanceSettingsEntity` - 64 edges
-8. `UserEntity` - 61 edges
+7. `InstanceSettingsEntity` - 65 edges
+8. `UserEntity` - 63 edges
 9. `CoreContentRepository` - 59 edges
 10. `NoteEditorComponent` - 55 edges
 
@@ -365,71 +381,71 @@
 - **CodeRabbit Carry-Forward Revalidation Chain (M5-M9)** — docs_reviews_m5_r4_m5_summary, docs_reviews_m6_r5_m6_summary, docs_reviews_m7_r6_m7_summary, docs_reviews_m8_r7_m8_summary, docs_reviews_m9_r8_m9_summary [INFERRED 0.85]
 - **Batch 3 Async Remediation Findings Group** — docs_reviews_m6_r5_m6_summary_stale_loadmore_finding, docs_reviews_m6_r5_m6_summary_dialog_mock_leak_finding, docs_reviews_m8_r7_m8_summary_editor_close_finding, docs_reviews_m9_r8_m9_summary_transfer_polling_finding [INFERRED 0.85]
 
-## Communities (308 total, 96 thin omitted)
+## Communities (325 total, 105 thin omitted)
 
 ### Community 0 - "Administration API & Resource"
-Cohesion: 0.14
-Nodes (10): AdministrationApi, AdministrationResource, ApplicationScoped, EntityManager, HttpServerRequest, HttpServerResponse, Override, RolesAllowed (+2 more)
+Cohesion: 0.13
+Nodes (9): AdministrationApi, AdministrationResource, ApplicationScoped, EntityManager, HttpServerRequest, HttpServerResponse, Override, RolesAllowed (+1 more)
 
 ### Community 1 - "Admin Service (Frontend Client)"
 Cohesion: 0.20
 Nodes (7): AfterEach, BeforeEach, DataSource, QuarkusTest, Response, Test, MfaLoginTest
 
 ### Community 2 - "Backend Cleanup Service"
-Cohesion: 0.08
-Nodes (20): ApplicationScoped, EntityManager, Logger, TrashRetentionService, CoordinatedJobs, ApplicationScoped, Logger, PreDestroy (+12 more)
+Cohesion: 0.24
+Nodes (4): ApplicationScoped, EntityManager, Transactional, JobLeaseRepository
 
 ### Community 3 - "Generated API Client Core"
 Cohesion: 0.03
-Nodes (88): NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, APIS, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, BaseService, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat (+80 more)
+Nodes (84): ControlErrors, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, APIS, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, BaseService, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat (+76 more)
 
 ### Community 4 - "Content Service & Entities"
-Cohesion: 0.09
-Nodes (4): Transactional, OwnerId, CoreContentRepository, VersionKey
+Cohesion: 0.07
+Nodes (9): ObjectMapper, ChecklistItemEntity, Entity, Table, CoreContentRepository, ApplicationScoped, EntityManager, SuppressWarnings (+1 more)
 
 ### Community 5 - "Core Content Resource Tests"
 Cohesion: 0.07
 Nodes (25): CoreContentResourceTest, AfterEach, BeforeEach, DataSource, QuarkusTest, RequestSpecification, Test, Session (+17 more)
 
 ### Community 6 - "Note Domain & Repository"
-Cohesion: 0.10
-Nodes (15): Notebook, NotebookRepository, Override, OwnedEntityId, ApplicationScoped, EntityManager, Override, Transactional (+7 more)
+Cohesion: 0.07
+Nodes (23): Note, NoteRepository, Notebook, NotebookRepository, OwnerId, Override, OwnedEntityId, ApplicationScoped (+15 more)
 
 ### Community 7 - "Correlation ID & SMTP Profile"
 Cohesion: 0.33
 Nodes (7): QuarkusTest, Test, TestProfile, RequestBodyLimitTest, BodyPublisher, HttpResponse, URI
 
 ### Community 9 - "Note Editor Spec Tests"
-Cohesion: 0.14
-Nodes (12): AuthenticationService, ApplicationScoped, EntityManager, InetAddress, Transactional, LoginResult, SecondFactorRequired, SessionIssued (+4 more)
+Cohesion: 0.08
+Nodes (19): AuthenticationService, ApplicationScoped, EntityManager, InetAddress, Transactional, LoginResult, SecondFactorRequired, SessionIssued (+11 more)
 
 ### Community 10 - "Notebooks Resource & Security"
-Cohesion: 0.13
-Nodes (11): LifecycleFailure, Reason, CONFLICT, INVALID_CREDENTIALS, INVALID_INPUT, INVALID_STATE, INVALID_TOKEN, LAST_ADMIN (+3 more)
+Cohesion: 0.10
+Nodes (13): LifecycleFailure, Reason, CONFLICT, INVALID_CREDENTIALS, INVALID_INPUT, INVALID_STATE, INVALID_TOKEN, LAST_ADMIN (+5 more)
 
 ### Community 11 - "Lifecycle Service & Invitations"
-Cohesion: 0.10
-Nodes (7): ApplicationScoped, LockModeType, Transactional, LifecycleService, NormalizedIdentity, FieldViolation, Transactional
+Cohesion: 0.12
+Nodes (6): StepUpCredentials, ApplicationScoped, LockModeType, Transactional, LifecycleService, Transactional
 
 ### Community 12 - "Bootstrap Service"
-Cohesion: 0.08
-Nodes (17): AdminOverviewComponent, Component, AdminShellComponent, Component, AdminUsersComponent, Component, Component, VerifyEmailChangeComponent (+9 more)
+Cohesion: 0.20
+Nodes (6): CoordinatedJobs, ApplicationScoped, Logger, PreDestroy, Scheduled, LeaseLostException
 
 ### Community 13 - "Account Settings & App Shell"
-Cohesion: 0.10
-Nodes (3): Entity, Table, TransferJobEntity
+Cohesion: 0.20
+Nodes (17): CurrentUserResource, ApplicationScoped, Consumes, DELETE, GET, HttpServerRequest, HttpServerResponse, Override (+9 more)
 
 ### Community 14 - "Admin Shell & Users Component"
-Cohesion: 0.14
-Nodes (9): Note, NoteRepository, Entity, Table, ApplicationScoped, EntityManager, Override, Transactional (+1 more)
+Cohesion: 0.07
+Nodes (6): NotesDataAccess, Injectable, NotebookOrderEntry, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, NotebookReorder, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
 
 ### Community 15 - "Account Lifecycle Scheduling"
 Cohesion: 0.08
-Nodes (8): AccountDeletionService, ApplicationScoped, EntityManager, LockModeType, Transactional, Entity, Table, UserEntity
+Nodes (3): Entity, Table, UserEntity
 
 ### Community 16 - "Correlation IDs & Body Limit Filter"
-Cohesion: 0.19
-Nodes (9): CorrelationIds, Pattern, ApplicationScoped, Pattern, RoutingContext, RequestBodyLimitFilter, BodyHandler, Route (+1 more)
+Cohesion: 0.16
+Nodes (10): AfterEach, BeforeEach, MockMailbox, Override, QuarkusTest, Response, Test, TestProfile (+2 more)
 
 ### Community 17 - "Angular Build Configuration"
 Cohesion: 0.05
@@ -440,7 +456,7 @@ Cohesion: 0.13
 Nodes (13): PreferencesService, Injectable, GlacierTheme, ThemeService, Injectable, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, UserSettings, UserSettingsLanguageEnum (+5 more)
 
 ### Community 19 - "Instance Settings Entity"
-Cohesion: 0.08
+Cohesion: 0.09
 Nodes (3): InstanceSettingsEntity, Entity, Table
 
 ### Community 20 - "Generated API Package Config"
@@ -448,44 +464,44 @@ Cohesion: 0.05
 Nodes (39): author, description, devDependencies, @angular/common, @angular/compiler, @angular/compiler-cli, @angular/core, @angular/platform-browser (+31 more)
 
 ### Community 21 - "Admin Audit Component"
-Cohesion: 0.07
-Nodes (21): Notes Settings Overlay Is Partially English, PasswordAction, Step, PendingAction, TERMINAL_CODES, GlacierLanguage, I18nService, MessageKey (+13 more)
+Cohesion: 0.06
+Nodes (26): AdminOverviewComponent, Component, AdminShellComponent, Component, PendingAction, ForgotPasswordComponent, Component, LoginControlErrors (+18 more)
 
 ### Community 22 - "Image & Authentication Services"
 Cohesion: 0.25
-Nodes (5): ExternalStorageWorker, ApplicationScoped, Logger, Scheduled, UnsafeLocation
+Nodes (6): Operation, ExternalStorageWorker, ApplicationScoped, Logger, Scheduled, UnsafeLocation
 
 ### Community 23 - "Content Service Pagination"
-Cohesion: 0.08
-Nodes (22): Entity, Table, TombstoneEntity, CollectionState, ACTIVE, ALL, ARCHIVED, Cursor (+14 more)
+Cohesion: 0.09
+Nodes (23): ApplicationScoped, Pattern, Entity, Table, TombstoneEntity, CollectionState, ACTIVE, ALL (+15 more)
 
 ### Community 24 - "Transfer Job Entity"
-Cohesion: 0.16
-Nodes (4): ApplicationScoped, EntityManager, Transactional, TransferJobStore
+Cohesion: 0.09
+Nodes (3): Entity, Table, TransferJobEntity
 
 ### Community 25 - "Milestone Review Findings (M4-M9)"
 Cohesion: 0.09
 Nodes (37): M4 Test Results, R4 CodeRabbit Review Summary — M5, CoreContentRepository N+1 Note Loading Finding, Unbounded Note/Checklist Payload Limits Finding, M5 Test Results, R5 CodeRabbit Review Summary — M6, Dialog Prototype Mock Leak Finding, Multiline Code Action Malformed Fence Finding (+29 more)
 
 ### Community 26 - "Note Card & Notes Store"
-Cohesion: 0.12
-Nodes (12): ImageService, ApplicationScoped, EntityManager, Transactional, ImageWriteTransactions, ApplicationScoped, Transactional, SystemContentScope (+4 more)
+Cohesion: 0.18
+Nodes (4): ApplicationScoped, EntityManager, Transactional, TransferJobStore
 
 ### Community 27 - "Tombstone Entity & Content Repository"
-Cohesion: 0.10
-Nodes (20): LoginComponent, LoginControlErrors, Component, SecondFactorComponent, render(), Component, AuthenticatedUser, AuthenticatedUserRoleEnum (+12 more)
+Cohesion: 0.08
+Nodes (27): SecondFactorComponent, render(), Component, adminGuard(), anonymousGuard(), authGuard(), authInterceptor(), LOGIN_PATHS (+19 more)
 
 ### Community 28 - "Image Binary Storage"
-Cohesion: 0.15
-Nodes (10): Download, StoredObject, ImageBinaryStorage, ApplicationScoped, DataSource, Inject, Override, PostConstruct (+2 more)
+Cohesion: 0.18
+Nodes (9): ImageBinaryStorage, ApplicationScoped, DataSource, Inject, Override, PostConstruct, PreDestroy, files (+1 more)
 
 ### Community 29 - "Portable Transfer Codec"
 Cohesion: 0.11
-Nodes (6): Backup, HttpLimits, Images, Transfer, ConfigMapping, WithDefault
+Nodes (5): Backup, HttpLimits, Images, Transfer, WithDefault
 
 ### Community 30 - "Notes Store (Frontend)"
-Cohesion: 0.11
-Nodes (5): NotesStore, Injectable, ContentNote, LabelView, NoteSummary
+Cohesion: 0.10
+Nodes (4): NotesStore, Injectable, ContentNote, LabelView
 
 ### Community 31 - "Graphify Skill Reference Docs"
 Cohesion: 0.07
@@ -499,33 +515,37 @@ Nodes (32): css, formatter, linter, formatter, enabled, indentStyle, indentWidth
 Cohesion: 0.17
 Nodes (7): IdMap, ApplicationScoped, EntityManager, JsonNode, Pattern, Transactional, TransferApplyService
 
+### Community 35 - "Notes View & Shell Component"
+Cohesion: 0.09
+Nodes (3): NotesView, NotesShellComponent, Component
+
 ### Community 36 - "Admin Shell & User Detail"
 Cohesion: 0.09
-Nodes (23): AdminUser, AdminUserPage, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, AuditEventPage, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, BackupJob, BackupJobStateEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat (+15 more)
+Nodes (18): AdminAuditComponent, Component, AdminSmtpComponent, Component, AdminStatusComponent, Component, AdminStatus, AdminStatusApiVersionEnum (+10 more)
 
 ### Community 37 - "Graphify Update/Cluster Reference"
 Cohesion: 0.08
 Nodes (29): Cluster-Only Rebuild (--cluster-only), Incremental Update (--update), Manifest Stamping Guard (unstamp failed chunks so they re-queue), Part A: AST Structural Extraction, Step 5: Label Communities, Semantic Extraction Cache (Step B0), Step 4: Build Graph, Cluster, Analyze, /graphify Skill (+21 more)
 
 ### Community 38 - "Notes Data Access"
-Cohesion: 0.07
-Nodes (7): NotesDataAccess, Injectable, NotebookOrderEntry, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, NotebookReorder, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, NotePage
+Cohesion: 0.19
+Nodes (7): AfterEach, BeforeEach, MeterRegistry, QuarkusTest, Response, Test, MfaAdministrativeClearTest
 
 ### Community 39 - "Setup Component & Auth Guards"
-Cohesion: 0.14
-Nodes (10): Override, Profile, Override, SmtpProfile, Override, Profile, Profile, Override (+2 more)
+Cohesion: 0.12
+Nodes (12): Override, Profile, Override, SmtpProfile, Override, Profile, Override, Profile (+4 more)
 
 ### Community 40 - "Content Failure Model"
-Cohesion: 0.12
-Nodes (9): ApplicationScoped, Override, RolesAllowed, SecurityIdentity, NotebooksResource, Entity, Table, NotebookEntity (+1 more)
+Cohesion: 0.25
+Nodes (6): ApplicationScoped, Override, RolesAllowed, SecurityIdentity, NotebooksResource, NotebooksApi
 
 ### Community 41 - "Backup Service"
-Cohesion: 0.13
-Nodes (5): AdminSettingsComponent, Component, AdminUserDetailComponent, Component, ImportApplyRequestStrategyEnum
+Cohesion: 0.10
+Nodes (6): AdminInvitationsComponent, Component, AdminSettingsComponent, Component, AdminUserDetailComponent, Component
 
 ### Community 42 - "Problem Service (Error Handling)"
-Cohesion: 0.19
-Nodes (4): StartupEvent, InstanceStateEntity, Entity, Table
+Cohesion: 0.28
+Nodes (3): InstanceStateEntity, Entity, Table
 
 ### Community 43 - "Authentication Service (Frontend)"
 Cohesion: 0.27
@@ -536,24 +556,24 @@ Cohesion: 0.07
 Nodes (26): compilerOptions, declaration, downlevelIteration, emitDecoratorMetadata, exactOptionalPropertyTypes, experimentalDecorators, lib, module (+18 more)
 
 ### Community 45 - "External Storage Worker"
-Cohesion: 0.31
-Nodes (5): ApplicationScoped, HttpServerRequest, Override, SetupResource, SetupApi
+Cohesion: 0.19
+Nodes (21): app_users, audit_events, backup_jobs, checklist_items, image_assets, instance_settings, instance_state, invitations (+13 more)
 
 ### Community 46 - "Sessions Resource"
 Cohesion: 0.23
 Nodes (13): ImagesResource, ApplicationScoped, Consumes, DELETE, Download, FileUpload, GET, Path (+5 more)
 
 ### Community 47 - "Image Asset Entity"
-Cohesion: 0.11
-Nodes (3): ImageAssetEntity, Entity, Table
+Cohesion: 0.15
+Nodes (4): Transactional, BackupWorker, ApplicationScoped, Scheduled
 
 ### Community 48 - "Portable Transfer Codec (Backend)"
 Cohesion: 0.37
 Nodes (5): Cancellation, Connection, RowConsumer, JsonGenerator, ResultSet
 
 ### Community 49 - "Transfer Job Store"
-Cohesion: 0.08
-Nodes (12): GlacierConfiguration, Mfa, Security, ApplicationScoped, StartupEvent, MfaStartupValidator, SecretProvider, ApplicationScoped (+4 more)
+Cohesion: 0.16
+Nodes (6): Mfa, ApplicationScoped, StartupEvent, MfaStartupValidator, Test, MfaStartupValidatorTest
 
 ### Community 50 - "Lifecycle Resource Tests"
 Cohesion: 0.21
@@ -564,24 +584,24 @@ Cohesion: 0.21
 Nodes (6): ApplicationScoped, Override, RolesAllowed, SecurityIdentity, NotesResource, NotesApi
 
 ### Community 52 - "Admin Status & Token Encoding"
-Cohesion: 0.16
-Nodes (10): BackupService, AgroalDataSource, ApplicationScoped, EntityManager, Logger, ObjectMapper, Transactional, BackupWorker (+2 more)
+Cohesion: 0.19
+Nodes (9): BackupService, AgroalDataSource, ApplicationScoped, EntityManager, Logger, ObjectMapper, SuppressWarnings, MessageDigest (+1 more)
 
 ### Community 53 - "Exports Resource"
-Cohesion: 0.16
+Cohesion: 0.17
 Nodes (13): ExportsResource, ApplicationScoped, Consumes, DELETE, GET, Path, POST, Produces (+5 more)
 
 ### Community 54 - "Transfers Resource"
-Cohesion: 0.16
-Nodes (14): ApplicationScoped, Consumes, DELETE, FileUpload, GET, Path, POST, Produces (+6 more)
+Cohesion: 0.18
+Nodes (13): ApplicationScoped, Consumes, DELETE, FileUpload, GET, Path, POST, Produces (+5 more)
 
 ### Community 55 - "Account Service"
-Cohesion: 0.09
-Nodes (17): AdminAuditComponent, Component, AdminSmtpComponent, Component, AdminStatusApiVersionEnum, AdminStatusDatabaseEnum, AdminStatusImageStorageBackendEnum, AdminStatusImageStorageEnum (+9 more)
+Cohesion: 0.17
+Nodes (3): Entity, Table, UserMfaTotpEntity
 
 ### Community 56 - "Lifecycle & Password Manager"
-Cohesion: 0.09
-Nodes (25): StepUpCredentials, ApplicationScoped, EntityManager, Transactional, StepUpService, EntityManager, EntityManager, ApplicationScoped (+17 more)
+Cohesion: 0.08
+Nodes (35): ApplicationScoped, Event, MfaAdministration, ApplicationScoped, EntityManager, Event, MfaChallengeService, ApplicationScoped (+27 more)
 
 ### Community 57 - "Invitation Entity & Delivery"
 Cohesion: 0.14
@@ -589,23 +609,23 @@ Nodes (3): InvitationEntity, Entity, Table
 
 ### Community 58 - "Image Header Decoding"
 Cohesion: 0.15
-Nodes (13): DecodedImage, FieldConsumer, FormatException, Header, ApplicationScoped, DataSource, Inject, JsonNode (+5 more)
+Nodes (14): DecodedImage, FieldConsumer, FormatException, Header, Inspection, ApplicationScoped, DataSource, Inject (+6 more)
 
 ### Community 59 - "Admin Settings Component"
-Cohesion: 0.21
-Nodes (8): AfterEach, BeforeEach, MockMailbox, QuarkusTest, Response, Test, TestProfile, MfaNotificationTest
+Cohesion: 0.23
+Nodes (6): AuthenticationFailure, Reason, CSRF_INVALID, INVALID_CREDENTIALS, RATE_LIMITED, SESSION_NOT_FOUND
 
 ### Community 60 - "Admin Invitations Component"
-Cohesion: 0.12
-Nodes (16): 10.1 Audit events, 10.2 Metrics, 10. Auditing and Observability, 12.1 Documentation updates, 12. Configuration and Deployment, 13. Backup, Restore, and Key Rotation, 14.1 Breaking API change, 14. Compatibility (+8 more)
+Cohesion: 0.15
+Nodes (13): 12.1 Documentation updates, 12. Configuration and Deployment, 13. Backup, Restore, and Key Rotation, 14.1 Breaking API change, 14. Compatibility, 15. Implementation Notes, 17. Rollout, 18. Acceptance Criteria (+5 more)
 
 ### Community 61 - "Images Resource"
-Cohesion: 0.15
-Nodes (8): AcceptInvitationComponent, Component, ForgotPasswordComponent, Component, ResetPasswordComponent, Component, InvitationAcceptanceRequestLanguageEnum, Glacier Notes Cloud OpenAPI 3.1 Contract
+Cohesion: 0.23
+Nodes (7): ExportRequest, ExportRequestScopeEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, ImportApplyRequestStrategyEnum, Step, TransferDialogComponent, Component
 
 ### Community 62 - "Instance Logo Resource"
-Cohesion: 0.17
-Nodes (12): InstanceLogoResource, ApplicationScoped, GET, Path, Produces, Response, Download, InstanceLogoService (+4 more)
+Cohesion: 0.21
+Nodes (6): Transactional, Download, InstanceLogoService, ApplicationScoped, EntityManager, Transactional
 
 ### Community 63 - "Lifecycle Failure Model"
 Cohesion: 0.27
@@ -620,24 +640,24 @@ Cohesion: 0.11
 Nodes (18): Ownership and Privacy by Default: Administrators Cannot Access Note Content, Decision: Biome Replaces Prettier for Angular Tooling, deployment/README.md, docs/BACKUP_RESTORE.md, docs/DEVELOPMENT.md, docs/MILESTONE_STATUS.md, docs/PORTABLE_TRANSFERS.md, docs/reviews/m11/R10-M11-summary.md (+10 more)
 
 ### Community 66 - "Image Write Transactions"
-Cohesion: 0.20
-Nodes (13): DatabaseHealth, ImageStorageHealth, AgroalDataSource, ApplicationScoped, Override, JobSubsystemHealth, OperationalHealthChecks, ProcessHealth (+5 more)
+Cohesion: 0.21
+Nodes (12): DatabaseHealth, ImageStorageHealth, AgroalDataSource, ApplicationScoped, Override, JobSubsystemHealth, OperationalHealthChecks, ProcessHealth (+4 more)
 
 ### Community 67 - "Audit Event Entity"
 Cohesion: 0.18
 Nodes (4): AuditEventEntity, Entity, InetAddress, Table
 
 ### Community 68 - "Admin Backups Component"
-Cohesion: 0.05
-Nodes (41): CorrelationIdFilter, ContainerRequestContext, ContainerResponseContext, Override, Priority, Provider, Description, Logger (+33 more)
+Cohesion: 0.22
+Nodes (8): Description, Logger, Override, Provider, Response, ProblemExceptionMapper, ExceptionMapper, UriInfo
 
 ### Community 69 - "Backup Job Entity"
 Cohesion: 0.16
 Nodes (3): BackupJobEntity, Entity, Table
 
 ### Community 70 - "Storage Operation Retry"
-Cohesion: 0.14
-Nodes (11): ExternalStorageOperations, ApplicationScoped, EntityManager, Transactional, Operation, ExternalStorageOperationsTest, AfterEach, DataSource (+3 more)
+Cohesion: 0.06
+Nodes (19): Download, ImageService, ApplicationScoped, EntityManager, StartupEvent, Transactional, ImageWriteTransactions, ApplicationScoped (+11 more)
 
 ### Community 71 - "Frontend Package Dependencies"
 Cohesion: 0.09
@@ -647,72 +667,72 @@ Nodes (23): @angular/forms, @angular/router, @fortawesome/fontawesome-free, depe
 Cohesion: 0.15
 Nodes (13): 1.1 Relationship to the v1 milestone plan, 1. Purpose, 2.1 OpenAPI first, 2.2 Fail closed, 2.3 No enumeration regression, 2.4 Non-enrolled accounts observe nothing, 2.5 Secrets are never logged, audited, exported, or backed up in the clear, 2.6 Each stage leaves a working instance (+5 more)
 
-### Community 73 - "System Content Scope & Orphans"
-Cohesion: 0.22
-Nodes (4): SuppressWarnings, files, MessageDigest, ZipOutputStream
-
 ### Community 74 - "Transfer Models & Service"
-Cohesion: 0.16
-Nodes (8): ApplicationScoped, EntityManager, FileUpload, PostConstruct, Transactional, TransferService, IdGenerator, FunctionalInterface
+Cohesion: 0.23
+Nodes (6): ApplicationScoped, EntityManager, FileUpload, PostConstruct, Transactional, TransferService
 
 ### Community 75 - "Authentication Resource Tests"
 Cohesion: 0.39
 Nodes (5): RFC-6238, currentStep(), decodeBase32(), generate(), nextCode()
 
 ### Community 76 - "Argon2 Password Hashing Config"
-Cohesion: 0.18
-Nodes (7): ApplicationScoped, EntityManager, Logger, Transactional, LifecycleEmailService, Mail, Mailer
+Cohesion: 0.14
+Nodes (11): ApplicationScoped, Logger, Transactional, SecondFactorNotifications, ApplicationScoped, EntityManager, Logger, Transactional (+3 more)
 
 ### Community 77 - "Labels Resource"
-Cohesion: 0.27
-Nodes (6): ApplicationScoped, Override, RolesAllowed, SecurityIdentity, LabelsResource, LabelsApi
+Cohesion: 0.21
+Nodes (7): ApplicationScoped, Override, RolesAllowed, SecurityIdentity, LabelsResource, AuthenticationIdentity, LabelsApi
 
 ### Community 78 - "Problem Exception Mapper"
-Cohesion: 0.06
-Nodes (45): AuthenticationApi, AuthenticationModels, AuthenticationResource, ApplicationScoped, HttpServerRequest, HttpServerResponse, Override, RolesAllowed (+37 more)
+Cohesion: 0.07
+Nodes (21): AuthenticationApi, AuthenticationModels, AuthenticationResource, ApplicationScoped, HttpServerRequest, HttpServerResponse, Override, RolesAllowed (+13 more)
+
+### Community 79 - "Setup Failure Model"
+Cohesion: 0.22
+Nodes (4): ExternalStorageOperations, ApplicationScoped, EntityManager, Transactional
 
 ### Community 80 - "Session Entity"
-Cohesion: 0.16
-Nodes (4): Entity, InetAddress, Table, SessionEntity
+Cohesion: 0.29
+Nodes (4): AccountDeletionService, ApplicationScoped, LockModeType, Transactional
 
 ### Community 81 - "S3 Storage Configuration"
-Cohesion: 0.17
+Cohesion: 0.18
 Nodes (3): S3, Test, S3StoragePolicyTest
 
 ### Community 82 - "SMTP Configuration"
-Cohesion: 0.27
-Nodes (3): Smtp, Test, SmtpStartupValidatorTest
+Cohesion: 0.18
+Nodes (6): Smtp, ApplicationScoped, StartupEvent, SmtpStartupValidator, Test, SmtpStartupValidatorTest
 
 ### Community 83 - "Frontend Build Tooling Dependencies"
 Cohesion: 0.12
 Nodes (17): @angular/build, @angular/cli, @biomejs/biome, devDependencies, @angular/build, @angular/cli, @angular/compiler-cli, @biomejs/biome (+9 more)
 
 ### Community 84 - "Login Rate Limiter"
-Cohesion: 0.08
-Nodes (21): Base32Codec, AfterEach, BeforeEach, DataSource, QuarkusTest, RequestSpecification, Response, Test (+13 more)
+Cohesion: 0.07
+Nodes (22): Base32Codec, TotpProvisioningUri, AfterEach, BeforeEach, DataSource, QuarkusTest, RequestSpecification, Response (+14 more)
 
 ### Community 85 - "M0-M1 Review Findings"
 Cohesion: 0.12
 Nodes (17): Global OpenAPI CSRF-on-Reads Defect, Owner-Scope Repository Save Finding, Generated git_push.sh Token/Staging Risk, R0 CodeRabbit Review Summary — M0/M1, M0–M1 Test Results, Duplicate Bootstrap Token Delivery Finding, Missing Negative failure_count Migration Test, Generic 4xx Problem Mapper Defect (+9 more)
 
 ### Community 86 - "Session Authentication & Identity Provider"
-Cohesion: 0.11
-Nodes (16): AuthenticationRequestContext, ApplicationScoped, EntityManager, Transactional, SessionRepository, SessionAuthenticationRequest, ApplicationScoped, Override (+8 more)
+Cohesion: 0.12
+Nodes (14): AuthenticationRequestContext, EntityManager, ApplicationScoped, EntityManager, Transactional, SessionRepository, SessionAuthenticationRequest, ApplicationScoped (+6 more)
 
 ### Community 87 - "Image Failure Model"
-Cohesion: 0.19
+Cohesion: 0.18
 Nodes (7): ImageFailure, Reason, CONFLICT, INVALID, NOT_FOUND, TOO_LARGE, UNAVAILABLE
 
 ### Community 88 - "Lifecycle Domain Normalization"
-Cohesion: 0.38
-Nodes (3): AdminInvitationsComponent, Component, InvitationCreateRequestRoleEnum
+Cohesion: 0.21
+Nodes (11): Settings Audit Metadata Misclassified, settings, AdminSettings, AdminSettingsAllowedImageTypesEnum, AdminSettingsDefaultLanguageEnum, AdminSettingsRestartRequiredSettingsEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, AdminSettingsUpdate (+3 more)
 
 ### Community 89 - "Audit Service"
-Cohesion: 0.18
-Nodes (8): Reason, ALREADY_INITIALIZED, CONFLICT, DENIED, INVALID_INPUT, RATE_LIMITED, UNAVAILABLE, SetupFailure
+Cohesion: 0.27
+Nodes (6): BeforeEach, EntityManager, QuarkusTest, Test, Transactional, OperationalJobsTest
 
 ### Community 90 - "Portable Transfer Codec Tests"
-Cohesion: 0.29
+Cohesion: 0.26
 Nodes (3): QuarkusTest, Test, PortableTransferCodecTest
 
 ### Community 91 - "Setup Resource Tests"
@@ -724,7 +744,7 @@ Cohesion: 0.15
 Nodes (13): 5. Release-Blocking Severity, 6. Traceability Requirements, 7. Recommended Issue Structure, 8. Approval, Blocker, Critical, Deliverables, Exit Gate (+5 more)
 
 ### Community 93 - "Image Processor"
-Cohesion: 0.29
+Cohesion: 0.28
 Nodes (5): ImageProcessor, ApplicationScoped, Override, ProcessedImage, BufferedImage
 
 ### Community 94 - "Frontend Build/Check Scripts"
@@ -737,7 +757,7 @@ Nodes (5): Canceled, ApplicationScoped, Scheduled, StartupEvent, TransferWorker
 
 ### Community 96 - "System Ping Service"
 Cohesion: 0.29
-Nodes (5): PingResponse, PingResponseApiVersionEnum, PingResponseServiceEnum, PingResponseStatusEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
+Nodes (6): ExternalStorageOperationsTest, AfterEach, DataSource, QuarkusTest, Test, TestProfile
 
 ### Community 97 - "Security Token Entity"
 Cohesion: 0.16
@@ -752,72 +772,72 @@ Cohesion: 0.26
 Nodes (5): DatabaseSchemaTest, Connection, DataSource, QuarkusTest, Test
 
 ### Community 100 - "Images Service (Frontend)"
-Cohesion: 0.40
-Nodes (4): ImageMetadata, ImageMetadataMimeTypeEnum, ImageMetadataThumbnailMimeTypeEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
+Cohesion: 0.23
+Nodes (5): NotebooksService, Inject, Injectable, Optional, NotebookView
 
 ### Community 101 - "Authentication Failure Model"
-Cohesion: 0.09
-Nodes (5): MfaFailure, Entity, InetAddress, Table, MfaChallengeEntity
+Cohesion: 0.20
+Nodes (4): Entity, InetAddress, Table, MfaChallengeEntity
 
 ### Community 102 - "Authentication Service (Backend)"
-Cohesion: 0.17
-Nodes (3): Entity, Table, UserMfaTotpEntity
+Cohesion: 0.23
+Nodes (9): InvitationDelivery, InvitationDeliveryDeliveryEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, InvitationPage, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, InvitationSummary, InvitationSummaryRoleEnum, InvitationSummaryStatusEnum (+1 more)
 
 ### Community 103 - "Note Version History"
 Cohesion: 0.08
-Nodes (10): ContentService, ApplicationScoped, ObjectMapper, Pattern, SnapshotChecklistItem, SnapshotPayload, NoteEntity, SuppressWarnings (+2 more)
+Nodes (8): ContentService, Transactional, SnapshotChecklistItem, SnapshotPayload, Entity, Table, NoteEntity, VersionRow
 
 ### Community 104 - "Instance State Entity"
-Cohesion: 0.19
-Nodes (5): Bootstrap, BootstrapRateLimiter, ApplicationScoped, EntityManager, Transactional
+Cohesion: 0.48
+Nodes (4): ApplicationScoped, EntityManager, Logger, TrashRetentionService
 
 ### Community 105 - "External Storage Operations Tests"
 Cohesion: 0.08
 Nodes (24): Added, Added, Added, Added, Changed, Changelog, Docs, Fixed (+16 more)
 
 ### Community 106 - "Transfer Dialog Component"
-Cohesion: 0.25
+Cohesion: 0.27
 Nodes (8): AfterEach, BeforeEach, DataSource, MockMailbox, QuarkusTest, Test, TestProfile, LifecycleEmailTest
 
 ### Community 107 - "Transfer Dialog Component (UI)"
-Cohesion: 0.15
-Nodes (6): ApplicationScoped, EntityManager, Event, Transactional, MfaEnrollmentService, TotpProvisioningUri
+Cohesion: 0.08
+Nodes (10): Transactional, ApplicationScoped, EntityManager, Event, Transactional, MfaEnrollmentService, MfaFailure, Transactional (+2 more)
 
 ### Community 108 - "User Settings Entity"
-Cohesion: 0.29
+Cohesion: 0.26
 Nodes (3): Entity, Table, UserSettingsEntity
 
 ### Community 109 - "Transfer Inspector"
-Cohesion: 0.27
-Nodes (6): Inspection, ApplicationScoped, EntityManager, Transactional, Result, TransferInspector
+Cohesion: 0.31
+Nodes (5): ApplicationScoped, EntityManager, Transactional, Result, TransferInspector
 
 ### Community 110 - "Markdown Rendering Service"
 Cohesion: 0.23
 Nodes (6): dompurify, dompurify, MarkdownService, marked, renderer, Injectable
 
 ### Community 111 - "Account Settings Component"
-Cohesion: 0.28
-Nodes (10): AuthenticationRequest, ApplicationScoped, Override, RoutingContext, SecurityIdentity, Uni, SessionAuthenticationMechanism, ChallengeData (+2 more)
+Cohesion: 0.05
+Nodes (46): AuthenticationRequest, CorrelationIdFilter, ContainerRequestContext, ContainerResponseContext, Override, Priority, Provider, CorrelationIds (+38 more)
 
 ### Community 112 - "Generated API HTTP Params"
 Cohesion: 0.25
 Nodes (7): DataFormat, DataType, ParamLocation, ParamStyle, StandardDataFormat, StandardDataType, StandardParamStyle
 
 ### Community 113 - "CSRF Filter"
-Cohesion: 0.25
-Nodes (5): ApplicationScoped, EntityManager, InetAddress, Transactional, MfaRepository
+Cohesion: 0.24
+Nodes (5): TransferJobMapper, ApplyCommand, Counts, JobView, TransferModels
 
 ### Community 114 - "Note History Cleanup Tests"
 Cohesion: 0.29
 Nodes (6): AfterEach, Connection, DataSource, QuarkusTest, Test, NoteHistoryCleanupTest
 
 ### Community 115 - "Setup Resource"
-Cohesion: 0.24
-Nodes (3): Entity, Table, LabelEntity
+Cohesion: 0.08
+Nodes (6): Entity, Table, LabelEntity, Entity, Table, NotebookEntity
 
 ### Community 116 - "Backup Job Status Service"
-Cohesion: 0.21
-Nodes (11): Settings Audit Metadata Misclassified, settings, AdminSettings, AdminSettingsAllowedImageTypesEnum, AdminSettingsDefaultLanguageEnum, AdminSettingsRestartRequiredSettingsEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, AdminSettingsUpdate (+3 more)
+Cohesion: 0.67
+Nodes (3): 10.1 Audit events, 10.2 Metrics, 10. Auditing and Observability
 
 ### Community 117 - "Transfer Worker"
 Cohesion: 0.38
@@ -836,24 +856,24 @@ Cohesion: 0.25
 Nodes (7): AfterEach, BeforeEach, DataSource, QuarkusTest, Response, Test, SecurityAttackSimulationTest
 
 ### Community 121 - "Request Completion Log Filter"
-Cohesion: 0.14
-Nodes (5): ChecklistItemEntity, Entity, Table, OwnedMutableEntity, MappedSuperclass
+Cohesion: 0.33
+Nodes (6): CookieManager, ApplicationScoped, EntityManager, HttpServerResponse, Transactional, Cookie
 
 ### Community 122 - "Session Token Service"
 Cohesion: 0.31
 Nodes (4): BackupJobStatusService, ApplicationScoped, EntityManager, Transactional
 
 ### Community 123 - "Secret Policy"
-Cohesion: 0.31
-Nodes (3): RequestBodyLimitPolicy, Test, RequestBodyLimitPolicyTest
+Cohesion: 0.15
+Nodes (6): RequestBodyLimitPolicy, GlacierConfiguration, Security, Test, RequestBodyLimitPolicyTest, ConfigMapping
 
-### Community 124 - "User Usage Repository"
-Cohesion: 0.27
-Nodes (3): ApplicationScoped, MfaMetrics, MeterRegistry
+### Community 124 - "InstanceLogoResource.java"
+Cohesion: 0.33
+Nodes (7): InstanceLogoResource, ApplicationScoped, GET, Path, Produces, Response, Blocking
 
 ### Community 125 - "Security Headers Filter"
-Cohesion: 0.18
-Nodes (7): AccountSettingsComponent, profile, render(), settings, settle(), Component, MfaStatusStatusEnum
+Cohesion: 0.14
+Nodes (8): Notes Settings Overlay Is Partially English, AccountSettingsComponent, profile, render(), settings, settle(), Component, StepUpPrompt
 
 ### Community 126 - "Backup Transaction Tests"
 Cohesion: 0.17
@@ -864,8 +884,8 @@ Cohesion: 0.25
 Nodes (8): includes, !dist, !coverage, *.json, !src/app/shared/generated-api, src/**/*.css, src/**/*.html, src/**/*.ts
 
 ### Community 128 - "App Root Component"
-Cohesion: 0.14
-Nodes (7): ApplicationScoped, EntityManager, LoginRateLimiter, ApplicationScoped, LoginThrottlePolicy, Test, LoginThrottlePolicyTest
+Cohesion: 0.36
+Nodes (4): ApplicationScoped, LoginThrottlePolicy, Test, LoginThrottlePolicyTest
 
 ### Community 129 - "SPA Resource"
 Cohesion: 0.52
@@ -876,12 +896,12 @@ Cohesion: 0.40
 Nodes (4): ADR 0008: Release publication and signing process, Consequences, Context, Decision
 
 ### Community 131 - "Operations Recording & Metadata"
-Cohesion: 0.18
-Nodes (5): AuditService, ApplicationScoped, EntityManager, ObjectMapper, Transactional
+Cohesion: 0.07
+Nodes (28): MfaAuditEvents, SecondFactorEvent, body(), german(), MailMessages, EMAIL_CHANGE_VERIFICATION, EMAIL_CHANGED_NOTICE, INVITATION (+20 more)
 
 ### Community 133 - "Secret Provider Tests"
-Cohesion: 0.17
-Nodes (4): Test, SecretProviderTest, Override, StubConfiguration
+Cohesion: 0.09
+Nodes (8): Test, SecretProviderTest, Override, StubConfiguration, EnrollmentSecretCipherTest, Test, Test, MfaTokenServiceTest
 
 ### Community 134 - "Cookie Manager Tests"
 Cohesion: 0.48
@@ -900,7 +920,7 @@ Cohesion: 0.40
 Nodes (4): Behavior and migration impact, Screenshots, Summary, Verification
 
 ### Community 138 - "Content Failure Reasons"
-Cohesion: 0.16
+Cohesion: 0.15
 Nodes (7): ContentFailure, Reason, CONFLICT, INVALID, INVALID_STATE, NOT_FOUND, VERSION_CONFLICT
 
 ### Community 139 - "Trash Retention Service"
@@ -931,9 +951,9 @@ Nodes (3): QuarkusTest, Test, SpaResourceTest
 Cohesion: 0.33
 Nodes (6): Audit CSV Formula Injection Finding, Job Lock run_id Fencing Finding, pg_dump Indefinite Wait Finding, R10 CodeRabbit Review Summary — M11, Deployment Backup/Restore Exercise, M11 Test Results
 
-### Community 146 - "Transfers Service (Frontend)"
-Cohesion: 0.67
-Nodes (3): ApplicationScoped, Produces, SystemProviders
+### Community 146 - "ProblemService"
+Cohesion: 0.29
+Nodes (3): TERMINAL_CODES, ProblemService, Injectable
 
 ### Community 148 - "Portable Schema & Compatibility Docs"
 Cohesion: 0.40
@@ -955,15 +975,11 @@ Nodes (5): Export Scope/Resource Invariant Incomplete, Import/Export Resources R
 Cohesion: 0.40
 Nodes (4): name, packageManager, private, version
 
-### Community 153 - "Labels Service (Frontend)"
-Cohesion: 0.27
-Nodes (4): SessionsComponent, Component, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, SessionSummary
-
 ### Community 154 - "Identity HTTP Parameter Codec"
 Cohesion: 0.18
 Nodes (8): AfterEach, BeforeEach, MockMailbox, QuarkusTest, Response, Test, TestProfile, MfaStepUpTest
 
-### Community 156 - "Exports Resource Tests"
+### Community 156 - ".rejectsStorageKeysThatEscapeTheFilesystemRoot"
 Cohesion: 0.39
 Nodes (5): ImageStorageException, ImageBinaryStorageTest, ParameterizedTest, QuarkusTest, ValueSource
 
@@ -1001,7 +1017,7 @@ Nodes (23): Deployment prerequisites, Deployment prerequisites, Known limitation
 
 ### Community 165 - "Frontend DI Constructor Pattern"
 Cohesion: 0.05
-Nodes (31): AdministrationService, Inject, Injectable, Optional, AuthenticationService, Inject, Injectable, Optional (+23 more)
+Nodes (28): AdministrationService, Inject, Injectable, Optional, AuthenticationService, Inject, Injectable, Optional (+20 more)
 
 ### Community 166 - "Frontend DI Constructor Pattern"
 Cohesion: 0.18
@@ -1020,32 +1036,24 @@ Cohesion: 0.20
 Nodes (10): Acceptance Criteria, Deliverables, Exit Gate, Grace window, Notifications, Objective, Scope, Stage completion (+2 more)
 
 ### Community 253 - "TotpVerifier"
-Cohesion: 0.16
-Nodes (9): ApplicationScoped, MfaCodeVerifier, EncryptedSecret, EnrollmentSecretCipher, ApplicationScoped, SecureRandom, ApplicationScoped, TotpVerifier (+1 more)
+Cohesion: 0.05
+Nodes (19): InetAddress, ApplicationScoped, MfaCodeVerifier, SecretPolicy, ApplicationScoped, SecretProvider, InetAddress, ApplicationScoped (+11 more)
 
 ### Community 254 - "Known issues"
 Cohesion: 0.50
 Nodes (3): Dependency and image scan suppressions, Known issues, npm advisories
 
-### Community 255 - "SessionView"
-Cohesion: 0.32
-Nodes (5): importJob, user, AdminUserRoleEnum, AdminUserStatusEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
-
-### Community 257 - ".constructor"
-Cohesion: 0.20
-Nodes (4): SecretPolicy, EnrollmentSecret, Test, SecretPolicyTest
+### Community 255 - "RequestAuditContext"
+Cohesion: 0.43
+Nodes (4): HttpServerRequest, InetAddress, RequestAuditContext, RequestScoped
 
 ### Community 258 - ".constructor"
 Cohesion: 0.25
 Nodes (8): 6.1 No account enumeration, 6.2 Secret at rest, 6.3 Recovery code storage, 6.4 TOTP verification, 6.5 Rate limiting and abuse resistance, 6.6 Logging and disclosure, 6.7 Failure responses, 6. Security Requirements
 
 ### Community 259 - ".constructor"
-Cohesion: 0.22
+Cohesion: 0.21
 Nodes (6): AfterEach, BeforeEach, QuarkusTest, Response, Test, MfaGraceWindowTest
-
-### Community 260 - ".constructor"
-Cohesion: 0.33
-Nodes (4): AdminStatusComponent, Component, AdminStatus, SmtpStatus
 
 ### Community 261 - "SystemProviders.java"
 Cohesion: 0.33
@@ -1068,8 +1076,8 @@ Cohesion: 0.40
 Nodes (4): ADR 0009: Optional second authentication factor, Consequences, Context, Decision
 
 ### Community 266 - "21. Decision Log"
-Cohesion: 0.22
-Nodes (9): 21.1 Resolved in version 0.2, 21.2 Resolved in version 0.3, 21.3 Resolved in version 0.4, 21.4 Resolved in version 0.5, 21.5 Resolved in version 0.6, 21.6 Resolved in version 0.7, 21.7 Resolved in version 0.8, 21.8 Resolved in version 0.8 (+1 more)
+Cohesion: 0.20
+Nodes (10): 21.1 Resolved in version 0.2, 21.2 Resolved in version 0.3, 21.3 Resolved in version 0.4, 21.4 Resolved in version 0.5, 21.5 Resolved in version 0.6, 21.6 Resolved in version 0.7, 21.7 Resolved in version 0.8, 21.8 Resolved in version 0.8 (+2 more)
 
 ### Community 267 - "2. Scope"
 Cohesion: 0.40
@@ -1088,12 +1096,12 @@ Cohesion: 0.50
 Nodes (4): 16.1 Backend, 16.2 Frontend, 16.3 End-to-end, 16. Testing Requirements
 
 ### Community 271 - "transfer-dialog.component.spec.ts"
-Cohesion: 0.11
-Nodes (12): AdminBackupsComponent, Component, ExportRequestScopeEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, TransferCounts, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, TransferJobKindEnum, TransferJobPhaseEnum (+4 more)
+Cohesion: 0.09
+Nodes (15): AdminBackupsComponent, Component, enrolled, importJob, user, AdminUserRoleEnum, AdminUserStatusEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat (+7 more)
 
-### Community 272 - "10. Auditing and Observability"
-Cohesion: 0.33
-Nodes (4): ImagesService, Inject, Injectable, Optional
+### Community 272 - "V13__multi_factor_authentication.sql"
+Cohesion: 0.29
+Nodes (6): instance_settings, login_rate_limits, mfa_challenges, user_mfa_recovery_codes, user_mfa_totp, user_sessions
 
 ### Community 273 - "3. Goals and Non-Goals"
 Cohesion: 0.67
@@ -1104,7 +1112,7 @@ Cohesion: 0.67
 Nodes (3): 9.1 First release, 9.2 Enforcement policy — deferred, 9. Administration and Policy
 
 ### Community 275 - "MfaAdminStepUpTest"
-Cohesion: 0.23
+Cohesion: 0.25
 Nodes (6): AfterEach, BeforeEach, QuarkusTest, Response, Test, MfaAdminStepUpTest
 
 ### Community 276 - "TotpVerifierTest"
@@ -1112,28 +1120,32 @@ Cohesion: 0.33
 Nodes (4): CsvSource, ParameterizedTest, Test, TotpVerifierTest
 
 ### Community 277 - "Login"
-Cohesion: 0.29
-Nodes (6): AfterEach, BeforeEach, QuarkusTest, Test, MfaSessionRevocationTest, Login
+Cohesion: 0.32
+Nodes (5): AfterEach, BeforeEach, QuarkusTest, Test, MfaSessionRevocationTest
 
 ### Community 278 - "MfaTokenService"
-Cohesion: 0.13
-Nodes (9): ApplicationScoped, EntityManager, Event, InetAddress, Transactional, MfaChallengeService, ApplicationScoped, SecureRandom (+1 more)
+Cohesion: 0.22
+Nodes (6): ApplicationScoped, MeterRegistry, MfaMetrics, IdentityNormalizer, ApplicationScoped, Pattern
 
-### Community 280 - "CookieManager"
-Cohesion: 0.50
-Nodes (3): Counts, JobView, TransferModels
+### Community 279 - ".service"
+Cohesion: 0.43
+Nodes (6): note_versions, notes, refresh_note_checklist_search(), trg_checklist_search_delete, trg_checklist_search_insert, trg_checklist_search_update
+
+### Community 280 - "auditEventPage.ts"
+Cohesion: 0.38
+Nodes (5): AuditEvent, AuditEventResultEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, AuditEventPage, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
 
 ### Community 281 - "BackupTransactionTest.java"
 Cohesion: 0.31
 Nodes (7): BackupTransactionTest, ExpectedRollback, EntityManager, ParameterizedTest, QuarkusTest, Test, ValueSource
 
-### Community 282 - "AuthenticationFailure"
-Cohesion: 0.50
-Nodes (3): NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, UserProfile, UserProfileRoleEnum
+### Community 282 - "BackupJob"
+Cohesion: 0.38
+Nodes (5): BackupJob, BackupJobStateEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, BackupJobPage, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
 
 ### Community 283 - "SecondFactorTestSupport"
-Cohesion: 0.20
-Nodes (4): DataSource, RequestSpecification, Response, SecondFactorTestSupport
+Cohesion: 0.24
+Nodes (5): DataSource, RequestSpecification, Response, Login, SecondFactorTestSupport
 
 ### Community 284 - ".from"
 Cohesion: 0.24
@@ -1143,41 +1155,49 @@ Nodes (6): OperationalFailure, Reason, FEATURE_DISABLED, INVALID, NOT_FOUND, SMT
 Cohesion: 0.24
 Nodes (3): Entity, Table, UserMfaRecoveryCodeEntity
 
+### Community 286 - "PingResource"
+Cohesion: 0.53
+Nodes (4): ApplicationScoped, Inject, PingResource, SystemApi
+
 ### Community 287 - "ImageBinaryStorage.java"
 Cohesion: 0.05
-Nodes (57): DraftItem, SaveState, note, ToolbarAction, UploadState, NotesView, SearchFilters, content() (+49 more)
+Nodes (58): DraftItem, SaveState, note, ToolbarAction, UploadState, SearchFilters, content(), notebook (+50 more)
 
 ### Community 288 - "IdentityNormalizer"
-Cohesion: 0.24
+Cohesion: 0.20
 Nodes (4): AccountService, ApplicationScoped, LockModeType, Transactional
 
-### Community 290 - "MailMessages"
-Cohesion: 0.11
-Nodes (16): body(), german(), MailMessages, EMAIL_CHANGE_VERIFICATION, EMAIL_CHANGED_NOTICE, INVITATION, PASSWORD_RESET, RECOVERY_CODE_USED (+8 more)
+### Community 289 - "SystemProviders.java"
+Cohesion: 0.67
+Nodes (3): ApplicationScoped, Produces, SystemProviders
 
 ### Community 291 - "MfaPasswordResetTest"
 Cohesion: 0.29
 Nodes (7): AfterEach, BeforeEach, MockMailbox, QuarkusTest, Test, TestProfile, MfaPasswordResetTest
 
 ### Community 292 - "IdentityHttpParameterCodec"
-Cohesion: 0.27
-Nodes (3): ApplicationScoped, EnrollmentSecretCipherTest, Test
+Cohesion: 0.33
+Nodes (4): LabelsService, Inject, Injectable, Optional
 
-### Community 294 - ".constructor"
-Cohesion: 0.39
-Nodes (4): ApplicationScoped, Logger, Transactional, SecondFactorNotifications
+### Community 294 - "V8__portable_transfer_jobs.sql"
+Cohesion: 0.40
+Nodes (4): labels, notebooks, notes, transfer_jobs
 
 ### Community 295 - ".constructor"
-Cohesion: 0.23
-Nodes (5): ControlErrors, SetupComponent, Component, InitialAdministratorRequestLanguageEnum, Output
+Cohesion: 0.36
+Nodes (3): SetupComponent, Component, Output
+
+### Community 298 - "imageMetadata.ts"
+Cohesion: 0.40
+Nodes (4): ImageMetadata, ImageMetadataMimeTypeEnum, ImageMetadataThumbnailMimeTypeEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
 
 ### Community 299 - "emailChangeRequest.ts"
 Cohesion: 0.22
 Nodes (9): Reason, ALREADY_ENROLLED, ATTEMPTS_EXHAUSTED, CHALLENGE_INVALID, INVALID_CODE, NOT_ENROLLED, STEP_UP_PASSWORD_REQUIRED, STEP_UP_REQUIRED (+1 more)
 
 ### Community 300 - "App"
-Cohesion: 0.15
-Nodes (8): App, ApplicationState, appConfig, routes, Component, authInterceptor(), LOGIN_PATHS, index.html (application host page)
+Cohesion: 0.18
+Nodes (6): App, ApplicationState, appConfig, routes, Component, index.html (application host page)
 
 ### Community 301 - "Argon2PasswordVerifier"
 Cohesion: 0.17
@@ -1188,36 +1208,60 @@ Cohesion: 0.40
 Nodes (3): S3StoragePolicy, Builder, ClientOverrideConfiguration
 
 ### Community 304 - "PingResource"
-Cohesion: 0.36
-Nodes (5): ApplicationScoped, Inject, Override, PingResource, SystemApi
+Cohesion: 0.22
+Nodes (6): Override, PingResponse, PingResponseApiVersionEnum, PingResponseServiceEnum, PingResponseStatusEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
 
 ### Community 305 - ".initialize"
-Cohesion: 0.16
-Nodes (12): SecondFactorEvent, SetupCommand, BootstrapStartupValidator, ApplicationScoped, Logger, StartupEvent, BootstrapTransaction, ApplicationScoped (+4 more)
+Cohesion: 0.06
+Nodes (22): ApplicationScoped, HttpServerRequest, Override, SetupResource, BootstrapService, ApplicationScoped, Reason, ALREADY_INITIALIZED (+14 more)
+
+### Community 306 - "V12__administrative_operations.sql"
+Cohesion: 0.50
+Nodes (3): instance_settings, job_locks, scheduled_job_runs
 
 ### Community 307 - "mfaStatus.ts"
-Cohesion: 0.15
-Nodes (3): render(), Component, TwoFactorCardComponent
+Cohesion: 0.12
+Nodes (8): PasswordAction, render(), Step, Component, TwoFactorCardComponent, MfaStatus, MfaStatusStatusEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
+
+### Community 308 - "V5__core_notes.sql"
+Cohesion: 0.50
+Nodes (3): checklist_items, notebooks, notes
+
+### Community 309 - "V6__image_assets.sql"
+Cohesion: 0.50
+Nodes (3): image_assets, instance_settings, instance_state
+
+### Community 312 - "adminDeletionRequest.ts"
+Cohesion: 0.50
+Nodes (3): AdminDeletionRequest, AdminDeletionRequestModeEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
+
+### Community 313 - "Profile"
+Cohesion: 0.50
+Nodes (3): InvitationCreateRequest, InvitationCreateRequestRoleEnum, NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat
+
+### Community 314 - "userProfile.ts"
+Cohesion: 0.50
+Nodes (3): NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generat, UserProfile, UserProfileRoleEnum
 
 ## Knowledge Gaps
-- **538 isolated node(s):** `com.glaciernotes:glacier-notes-cloud-backend`, `check-log-hygiene.sh script`, `INVALID_CREDENTIALS`, `RATE_LIMITED`, `SESSION_NOT_FOUND` (+533 more)
+- **575 isolated node(s):** `com.glaciernotes:glacier-notes-cloud-backend`, `check-log-hygiene.sh script`, `INVALID_CREDENTIALS`, `RATE_LIMITED`, `SESSION_NOT_FOUND` (+570 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **96 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **105 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `PasswordVerifier` connect `Lifecycle & Password Manager` to `Admin Service (Frontend Client)`, `Core Content Resource Tests`, `Note Editor Spec Tests`, `Transfer Dialog Component`, `Lifecycle Service & Invitations`, `Authentication Service (Frontend)`, `Argon2PasswordVerifier`, `Account Lifecycle Scheduling`, `.initialize`, `Lifecycle Resource Tests`, `Login Rate Limiter`, `Note Card Component`, `Correlation ID Filter`, `SecondFactorTestSupport`?**
-  _High betweenness centrality (0.113) - this node is a cross-community bridge._
-- **Why does `LifecycleService` connect `Lifecycle Service & Invitations` to `Administration API & Resource`, `Transfer Models & Service`, `Transfer Dialog Component`, `Argon2 Password Hashing Config`, `Problem Exception Mapper`, `Account Lifecycle Scheduling`, `Transfer Job Store`, `Instance Settings Entity`, `Admin Status & Token Encoding`, `Session Authentication & Identity Provider`, `Lifecycle & Password Manager`, `Invitation Entity & Delivery`, `Setup Status Model`?**
+- **Why does `TimeProvider` connect `Lifecycle & Password Manager` to `Backend Cleanup Service`, `Operations Recording & Metadata`, `Content Service & Entities`, `Note Editor Spec Tests`, `Lifecycle Service & Invitations`, `Trash Retention Service`, `TotpVerifierTest`, `Content Service Pagination`, `Note Card & Notes Store`, `PingResource`, `IdentityNormalizer`, `SystemProviders.java`, `Transfer Apply Service`, `.initialize`, `Admin Status & Token Encoding`, `Storage Operation Retry`, `Transfer Models & Service`, `Argon2 Password Hashing Config`, `Setup Failure Model`, `Session Entity`, `Session Authentication & Identity Provider`, `Note Version History`, `Instance State Entity`, `Transfer Dialog Component (UI)`, `Session Token Service`, `TotpVerifier`?**
   _High betweenness centrality (0.095) - this node is a cross-community bridge._
-- **Why does `OwnerId` connect `Content Service & Entities` to `Note Domain & Repository`, `Content Failure Reasons`, `Lifecycle Service & Invitations`, `Admin Shell & Users Component`, `Account Lifecycle Scheduling`, `Content Service Pagination`, `Transfer Job Entity`, `Note Card & Notes Store`, `Setup Status Model`, `Transfer Apply Service`, `Content Failure Model`, `Sessions Resource`, `Image Asset Entity`, `.initialize`, `Notes Resource (Backend)`, `Storage Operation Retry`, `Labels Resource`, `Problem Exception Mapper`, `Note Version History`, `Setup Resource`?**
-  _High betweenness centrality (0.086) - this node is a cross-community bridge._
+- **Why does `OwnerId` connect `Note Domain & Repository` to `Operations Recording & Metadata`, `Content Service & Entities`, `Content Failure Reasons`, `Lifecycle Service & Invitations`, `Account Settings & App Shell`, `Account Lifecycle Scheduling`, `Content Service Pagination`, `Note Card & Notes Store`, `Setup Status Model`, `Transfer Apply Service`, `Content Failure Model`, `Sessions Resource`, `Notes Resource (Backend)`, `Storage Operation Retry`, `Labels Resource`, `Setup Failure Model`, `Session Entity`, `Session Authentication & Identity Provider`, `System Ping Service`, `Note Version History`, `Setup Resource`?**
+  _High betweenness centrality (0.089) - this node is a cross-community bridge._
+- **Why does `PasswordVerifier` connect `Lifecycle & Password Manager` to `Admin Service (Frontend Client)`, `Operations Recording & Metadata`, `Core Content Resource Tests`, `Note Editor Spec Tests`, `Transfer Dialog Component`, `Lifecycle Service & Invitations`, `Authentication Service (Frontend)`, `Argon2PasswordVerifier`, `Account Lifecycle Scheduling`, `Lifecycle Resource Tests`, `Login Rate Limiter`, `Note Card Component`, `Correlation ID Filter`, `SecondFactorTestSupport`?**
+  _High betweenness centrality (0.065) - this node is a cross-community bridge._
 - **Are the 13 inferred relationships involving `OwnerId` (e.g. with `.getCurrentUserStorage()` and `.finalizeAccount()`) actually correct?**
   _`OwnerId` has 13 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `com.glaciernotes:glacier-notes-cloud-backend`, `check-log-hygiene.sh script`, `INVALID_CREDENTIALS` to the rest of the system?**
-  _538 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _575 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Administration API & Resource` be split into smaller, more focused modules?**
-  _Cohesion score 0.1353658536585366 - nodes in this community are weakly interconnected._
-- **Should `Backend Cleanup Service` be split into smaller, more focused modules?**
-  _Cohesion score 0.08315863032844165 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.13240418118466898 - nodes in this community are weakly interconnected._
+- **Should `Generated API Client Core` be split into smaller, more focused modules?**
+  _Cohesion score 0.03074712643678161 - nodes in this community are weakly interconnected._
