@@ -69,7 +69,6 @@ const messages = {
       'Permanently delete your notebooks, notes, checklist items, labels, images, user settings, sessions, version history, and import/export state? This is immediate and cannot be undone.',
     deletePermanently: 'Permanently delete account',
     loadingSettings: 'Loading account settings…',
-    changeFailed: 'The change could not be saved.',
 
     languageEnglish: 'English',
     languageGerman: 'German',
@@ -132,6 +131,8 @@ const messages = {
     problemCodeAuthMfaChallengeInvalid:
       'The sign-in request is no longer valid. Please sign in again.',
     problemCodeAuthMfaAttemptsExceeded: 'Too many incorrect codes. Please sign in again.',
+    problemCodeAuthMfaStepUpRequired: 'This change needs a one-time code.',
+    problemCodeAuthStepUpPasswordRequired: 'Confirm your password to complete this change.',
     problemCodeMfaAlreadyEnrolled: 'Two-factor authentication is already active on this account.',
     problemCodeMfaNotEnrolled: 'Two-factor authentication is not active on this account.',
     problemCodeMfaUnavailable: 'Two-factor authentication is not available on this instance.',
@@ -205,7 +206,11 @@ const messages = {
       'Schedule this account for retained deletion? Access is revoked immediately.',
     adminUserDeleteTypePrompt: 'Type {username} to permanently delete this account now.',
     adminUserActionRevokesAccess: 'This action immediately revokes access. Continue?',
-    adminUserActionFailed: 'The action could not be completed.',
+    adminUserConfirmTitle: 'Confirm this action',
+    adminUserConfirmReset: 'Generate a one-time password reset link for this account?',
+    adminUserConfirmDelete: 'Delete this account and all of its content immediately?',
+    adminConfirmPassword: 'Your password',
+    adminConfirmSubmit: 'Confirm',
     adminSettingsLogoAlt: 'Current instance logo',
     adminSettingsLogoHint:
       'PNG, JPEG, or WebP; maximum 2 MB. Logo bytes are stored with instance data.',
@@ -651,6 +656,10 @@ const messages = {
       'Generate new recovery codes? Every code from the previous set stops working immediately.',
     mfaCardLoadFailed: 'The two-factor status could not be loaded.',
 
+    stepUpPrompt: 'Confirm this change with a one-time code.',
+    stepUpCodeLabel: 'One-time code',
+    stepUpCodeHint: 'From your authenticator app, or one of your recovery codes.',
+
     appShellServerUnavailable: 'Server unavailable',
     appShellCheckFailed: 'Glacier Notes could not check the instance setup status.',
     appShellTryAgain: 'Try again',
@@ -721,7 +730,6 @@ const messages = {
       'Notizbücher, Notizen, Checklisten, Schlagwörter, Bilder, Benutzereinstellungen, Sitzungen, Versionsverlauf sowie Import- und Exportstatus endgültig löschen? Dies kann nicht rückgängig gemacht werden.',
     deletePermanently: 'Konto endgültig löschen',
     loadingSettings: 'Kontoeinstellungen werden geladen…',
-    changeFailed: 'Die Änderung konnte nicht gespeichert werden.',
 
     languageEnglish: 'Englisch',
     languageGerman: 'Deutsch',
@@ -790,6 +798,9 @@ const messages = {
     problemCodeAuthMfaChallengeInvalid:
       'Die Anmeldeanfrage ist nicht mehr gültig. Bitte melden Sie sich erneut an.',
     problemCodeAuthMfaAttemptsExceeded: 'Zu viele falsche Codes. Bitte melden Sie sich erneut an.',
+    problemCodeAuthMfaStepUpRequired: 'Diese Änderung erfordert einen Einmalcode.',
+    problemCodeAuthStepUpPasswordRequired:
+      'Bestätigen Sie Ihr Passwort, um diese Änderung abzuschließen.',
     problemCodeMfaAlreadyEnrolled:
       'Die Zwei-Faktor-Authentifizierung ist für dieses Konto bereits aktiv.',
     problemCodeMfaNotEnrolled:
@@ -870,7 +881,12 @@ const messages = {
       'Dieses Konto für aufbewahrte Löschung planen? Der Zugriff wird sofort entzogen.',
     adminUserDeleteTypePrompt: '{username} eingeben, um dieses Konto jetzt endgültig zu löschen.',
     adminUserActionRevokesAccess: 'Diese Aktion entzieht den Zugriff sofort. Fortfahren?',
-    adminUserActionFailed: 'Die Aktion konnte nicht abgeschlossen werden.',
+    adminUserConfirmTitle: 'Aktion bestätigen',
+    adminUserConfirmReset:
+      'Einen einmaligen Link zum Zurücksetzen des Passworts für dieses Konto erzeugen?',
+    adminUserConfirmDelete: 'Dieses Konto und alle seine Inhalte sofort löschen?',
+    adminConfirmPassword: 'Ihr Passwort',
+    adminConfirmSubmit: 'Bestätigen',
     adminSettingsLogoAlt: 'Aktuelles Instanz-Logo',
     adminSettingsLogoHint:
       'PNG, JPEG oder WebP; höchstens 2 MB. Logo-Bytes werden mit den Instanzdaten gespeichert.',
@@ -1322,6 +1338,10 @@ const messages = {
     mfaCardRegenerateConfirm:
       'Neue Wiederherstellungscodes erzeugen? Alle Codes des bisherigen Satzes verlieren sofort ihre Gültigkeit.',
     mfaCardLoadFailed: 'Der Zwei-Faktor-Status konnte nicht geladen werden.',
+
+    stepUpPrompt: 'Bestätigen Sie diese Änderung mit einem Einmalcode.',
+    stepUpCodeLabel: 'Einmalcode',
+    stepUpCodeHint: 'Aus Ihrer Authenticator-App oder einem Ihrer Wiederherstellungscodes.',
 
     appShellServerUnavailable: 'Server nicht verfügbar',
     appShellCheckFailed: 'Glacier Notes konnte den Instanz-Einrichtungsstatus nicht prüfen.',

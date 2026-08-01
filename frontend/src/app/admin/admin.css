@@ -211,7 +211,8 @@ button.button-danger:hover {
   margin: 1.5rem 0;
 }
 
-.blind-import {
+.blind-import,
+.confirm-panel {
   margin-top: 1.5rem;
 }
 

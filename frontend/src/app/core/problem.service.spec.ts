@@ -45,6 +45,21 @@ describe('ProblemService', () => {
     );
   });
 
+  it('translates the step-up codes rather than echoing English server prose', () => {
+    const stepUp = httpError(401, {
+      errorCode: 'AUTH_MFA_STEP_UP_REQUIRED',
+      detail: 'Step-up authentication is required.',
+    });
+    const password = httpError(401, { errorCode: 'AUTH_STEP_UP_PASSWORD_REQUIRED' });
+    expect(service.message(stepUp)).toBe('This change needs a one-time code.');
+    expect(service.message(password)).toBe('Confirm your password to complete this change.');
+    i18n.set('de');
+    expect(service.message(stepUp)).toBe('Diese Änderung erfordert einen Einmalcode.');
+    expect(service.message(password)).toBe(
+      'Bestätigen Sie Ihr Passwort, um diese Änderung abzuschließen.',
+    );
+  });
+
   it('joins validation error messages when no known code is present', () => {
     const error = httpError(422, {
       validationErrors: [

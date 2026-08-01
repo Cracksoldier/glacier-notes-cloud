@@ -93,6 +93,12 @@ hold 32–512 non-whitespace characters. Enabling the flag without a valid secre
 by design. The secret is deliberately separate from the session secret: rotating the session secret
 only ends sessions, whereas rotating this one would invalidate stored enrollments and recovery codes.
 
+The step-up prompt on the gated operations is easy to miss while developing: verifying a code opens
+a grace window on that session, five minutes by default, and inside it the password alone is
+accepted, so no code field ever appears. To exercise the prompt, close the window by setting
+`mfa_step_up_grace_minutes` to `0` in the `instance_settings` row — there is no environment variable
+for it, and its administrative interface arrives in a later milestone.
+
 To see the notifications a second-factor change sends, point the instance at a local mail sink —
 `docker run --rm -p 1025:1025 -p 8025:8025 axllent/mailpit` — and start Quarkus with
 `GLACIER_SMTP_ENABLED=true`, `GLACIER_SMTP_HOST=localhost`, `GLACIER_SMTP_PORT=1025`,

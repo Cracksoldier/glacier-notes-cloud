@@ -115,6 +115,9 @@
             [(ngModel)]="emailPassword"
           ></label
         >
+        @if (emailPrompt.open()) {
+        <app-step-up-code [(code)]="emailPrompt.code" />
+        }
         <button type="submit" [disabled]="busy()">{{ i18n.t('sendVerification') }}</button>
       </form>
       } @else {
@@ -136,6 +139,9 @@
             [(ngModel)]="deletionPassword"
           ></label
         >
+        @if (deletionPrompt.open()) {
+        <app-step-up-code [(code)]="deletionPrompt.code" />
+        }
         <button type="submit" class="danger" [disabled]="busy()">
           {{ i18n.t('deletePermanently') }}
         </button>

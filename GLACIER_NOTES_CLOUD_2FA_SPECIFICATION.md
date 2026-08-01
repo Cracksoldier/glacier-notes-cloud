@@ -1041,3 +1041,41 @@ browser client keeps compiling and its buttons keep working, they just receive a
 until T3b adds the prompts. The one exception is the administrative password-reset link, whose
 request body is now required rather than absent, because a body-less `POST` carrying a JSON content
 type is not answered by the server at all.
+
+### 21.8 Resolved in version 0.8
+
+Resolved while planning milestone T3b, the browser half of the step-up gate. Nothing on the wire
+changed; every field these surfaces send already shipped with T3a.
+
+| Decision | Outcome | Sections |
+| --- | --- | --- |
+| When the code field appears | Only after the server refuses; the password is submitted alone first | 5.4, 8 |
+| How the gated administrative operations confirm | An inline panel replaces the browser `confirm()` and `prompt()` dialogs | 5.4 |
+| Whether the field distinguishes the two kinds of code | One field takes either; the server does not distinguish them here | 5.4, 6 |
+| How gated surfaces report failures | Through the translated problem-code mapping, not the server's English `detail` | 10 |
+| Where the prompt is tested | Vitest, with the refusal mocked; Playwright pins the grace-window path | 14 |
+
+The client is never told whether a code is needed, because the grace window is deliberately not on
+the wire (21.7). Submitting the password alone and growing the field on refusal is the only shape
+that honours that: it costs one round trip inside the window's lifetime and nothing at all for an
+account that has never enrolled, which is the common case and which must keep seeing exactly the
+form it saw before.
+
+The administrative operations were confirmed by native dialogs, which cannot grow a password field,
+let alone a second one that appears conditionally. Moving them into a panel also puts the typed
+username, the administrator's password, and the code in one place, so the operator sees the whole
+cost of the action before committing to it.
+
+Reproducing the login stage's authenticator/recovery toggle would imply the server treats the two
+differently at step-up. It does not — it tries the authenticator code and then the recovery codes —
+so a toggle would be decoration that can be set wrongly.
+
+Reading `detail` off the problem body put English server prose in a German session. The step-up
+codes make that visible on a security-critical path, so both surfaces now resolve the error code
+through the same dictionary the two-factor card already used.
+
+The grace window can only be changed from `instance_settings`, whose administrative interface
+arrives in T4. A browser session that has just signed in with a code therefore cannot observe the
+prompt without waiting the window out, so the prompt itself is covered by Vitest with the refusal
+mocked. Playwright asserts the other half — that inside the window the operations still complete
+with no code field shown — which pins the window's effect rather than leaving it incidental.

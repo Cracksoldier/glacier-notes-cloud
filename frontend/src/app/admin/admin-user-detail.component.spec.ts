@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -37,11 +38,17 @@ const importJob: TransferJob = {
   expiresAt: '2026-07-25T00:00:00Z',
 };
 
+function problem(status: number, body: Record<string, unknown>): HttpErrorResponse {
+  return new HttpErrorResponse({ status, statusText: 'Error', error: body });
+}
+
 describe('AdminUserDetailComponent', () => {
   const api = {
     getUser: vi.fn(),
     cancelAdminImport: vi.fn(),
     deactivateUser: vi.fn(),
+    createAdministrativePasswordReset: vi.fn(),
+    scheduleUserDeletion: vi.fn(),
   };
 
   beforeEach(() => {
@@ -49,7 +56,7 @@ describe('AdminUserDetailComponent', () => {
     api.getUser.mockReturnValue(of(user));
     api.deactivateUser.mockReturnValue(of(undefined));
     api.cancelAdminImport.mockReturnValue(
-      throwError(() => ({ error: { detail: 'Cancellation failed.' } })),
+      throwError(() => problem(409, { detail: 'Cancellation failed.' })),
     );
     TestBed.configureTestingModule({
       providers: [
@@ -90,7 +97,7 @@ describe('AdminUserDetailComponent', () => {
 
   it('shows an initial user-load failure without requiring a loaded user', () => {
     api.getUser.mockReturnValueOnce(
-      throwError(() => ({ error: { detail: 'Account could not be loaded.' } })),
+      throwError(() => problem(500, { detail: 'Account could not be loaded.' })),
     );
     const fixture = TestBed.createComponent(AdminUserDetailComponent);
     fixture.detectChanges();
@@ -98,6 +105,76 @@ describe('AdminUserDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
       'Account could not be loaded.',
     );
+  });
+
+  it('asks for the administrator password in a panel instead of a browser dialog', () => {
+    const confirmed = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    api.createAdministrativePasswordReset.mockReturnValue(of({ resetUrl: 'https://x/reset' }));
+    const fixture = TestBed.createComponent(AdminUserDetailComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.begin('reset');
+    fixture.detectChanges();
+
+    expect(confirmed).not.toHaveBeenCalled();
+    expect(api.createAdministrativePasswordReset).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('input[name="adminPassword"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('input[autocomplete="one-time-code"]')).toBeNull();
+  });
+
+  it('sends the administrator password, then adds the code the server asks for', () => {
+    api.createAdministrativePasswordReset
+      .mockReturnValueOnce(
+        throwError(() => problem(401, { errorCode: 'AUTH_MFA_STEP_UP_REQUIRED' })),
+      )
+      .mockReturnValueOnce(of({ resetUrl: 'https://x/reset' }));
+    const fixture = TestBed.createComponent(AdminUserDetailComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    component.begin('reset');
+    component.currentPassword = 'admin-password';
+    component.submitPending();
+    fixture.detectChanges();
+
+    expect(api.createAdministrativePasswordReset).toHaveBeenLastCalledWith(user.id, {
+      currentPassword: 'admin-password',
+      code: undefined,
+    });
+    expect(component.error()).toBe('');
+    expect(
+      fixture.nativeElement.querySelector('input[autocomplete="one-time-code"]'),
+    ).not.toBeNull();
+
+    component.prompt.code = '123456';
+    component.submitPending();
+    fixture.detectChanges();
+
+    expect(api.createAdministrativePasswordReset).toHaveBeenLastCalledWith(user.id, {
+      currentPassword: 'admin-password',
+      code: '123456',
+    });
+    expect(component.pending()).toBeNull();
+    expect(component.reset()?.resetUrl).toBe('https://x/reset');
+  });
+
+  it('collects the typed username alongside the password before deleting immediately', () => {
+    api.scheduleUserDeletion.mockReturnValue(of(undefined));
+    const fixture = TestBed.createComponent(AdminUserDetailComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    component.begin('delete');
+    component.confirmation = 'member';
+    component.currentPassword = 'admin-password';
+    component.submitPending();
+
+    expect(api.scheduleUserDeletion).toHaveBeenCalledWith(user.id, {
+      mode: 'IMMEDIATE',
+      confirmation: 'member',
+      currentPassword: 'admin-password',
+      code: undefined,
+    });
   });
 
   it('shows visible focus on the blind-import file control', () => {

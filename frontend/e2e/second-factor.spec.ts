@@ -91,6 +91,9 @@ test('a user enrolls a second factor, signs in with it, and turns it off again',
   await card.getByRole('button', { name: 'Turn off' }).click();
   await card.getByLabel('Current password').fill(password!);
   await card.getByRole('button', { name: 'Continue' }).click();
+  // The recovery-code sign-in above opened the step-up grace window, so the password alone suffices:
+  // were the window closed, the card would stay on this step and ask for a one-time code instead.
+  await expect(card.getByLabel('One-time code')).toHaveCount(0);
   await expect(card.getByText('Not set up')).toBeVisible();
 
   await signOut();

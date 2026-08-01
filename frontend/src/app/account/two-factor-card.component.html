@@ -14,6 +14,9 @@
         [(ngModel)]="password"
       ></label
     >
+    @if (prompt.open()) {
+    <app-step-up-code [(code)]="prompt.code" />
+    }
     <button type="submit" [disabled]="busy()">{{ i18n.t('mfaCardContinue') }}</button>
     <button type="button" class="secondary" (click)="cancel()">
       {{ i18n.t('mfaCardCancel') }}

@@ -39,7 +39,7 @@
     <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
     <span>{{ i18n.t('adminUserRevokeSessions') }}</span>
   </button>
-  <button type="button" (click)="resetPassword()">
+  <button type="button" (click)="begin('reset')">
     <i class="fa-solid fa-link" aria-hidden="true"></i>
     <span>{{ i18n.t('adminUserGenerateResetLink') }}</span>
   </button>
@@ -49,16 +49,59 @@
     <span>{{ i18n.t('adminUserRestoreAccount') }}</span>
   </button>
   } @else {
-  <button type="button" (click)="scheduleDeletion()">
+  <button type="button" (click)="begin('schedule')">
     <i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i>
     <span>{{ i18n.t('adminUserScheduleDeletion') }}</span>
   </button>
-  <button type="button" class="button-danger" (click)="deleteImmediately()">
+  <button type="button" class="button-danger" (click)="begin('delete')">
     <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
     <span>{{ i18n.t('adminUserDeleteImmediately') }}</span>
   </button>
   }
 </div>
+@if (pending(); as action) {
+<section class="card confirm-panel">
+  <h2>{{ i18n.t('adminUserConfirmTitle') }}</h2>
+  @switch (action) { @case ('reset') {
+  <p>{{ i18n.t('adminUserConfirmReset') }}</p>
+  } @case ('schedule') {
+  <p>{{ i18n.t('adminUserConfirmSchedule') }}</p>
+  } @default {
+  <p>{{ i18n.t('adminUserConfirmDelete') }}</p>
+  } }
+  <form (ngSubmit)="submitPending()">
+    @if (action === 'delete') {
+    <label
+      >{{ i18n.t('adminUserDeleteTypePrompt', { username: value.username }) }}
+      <input name="confirmation" required [(ngModel)]="confirmation"></label
+    >
+    }
+    <label
+      >{{ i18n.t('adminConfirmPassword') }}
+      <input
+        name="adminPassword"
+        type="password"
+        autocomplete="current-password"
+        required
+        [(ngModel)]="currentPassword"
+      ></label
+    >
+    @if (prompt.open()) {
+    <app-step-up-code [(code)]="prompt.code" />
+    }
+    <div class="actions">
+      <button type="submit" [class.button-danger]="action === 'delete'">
+        <i class="fa-solid fa-check" aria-hidden="true"></i>
+        <span>{{ i18n.t('adminConfirmSubmit') }}</span>
+      </button>
+      <button type="button" (click)="cancelPending()">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        <span>{{ i18n.t('commonCancel') }}</span>
+      </button>
+    </div>
+  </form>
+</section>
+}
 <section class="card blind-import">
   <h2>{{ i18n.t('adminUserBlindImportTitle') }}</h2>
   <p>{{ i18n.t('adminUserBlindImportIntro') }}</p>

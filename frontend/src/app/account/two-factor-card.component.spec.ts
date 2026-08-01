@@ -57,6 +57,80 @@ describe('TwoFactorCardComponent', () => {
     expect(buttons[0].textContent).toContain('Discard and start over');
   });
 
+  it('reveals a code field and keeps the password when the server asks to step up', async () => {
+    const fixture = await render({
+      status: MfaStatusStatusEnum.Active,
+      available: true,
+      recoveryCodesRemaining: 7,
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const component = fixture.componentInstance as unknown as {
+      beginPasswordStep(action: 'start' | 'disable' | 'regenerate'): void;
+      submitPassword(): Promise<void>;
+      password: string;
+      prompt: { code: string };
+    };
+
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    component.beginPasswordStep('disable');
+    component.password = 'correct-horse-battery-staple';
+    const first = component.submitPassword();
+    const gated = http.expectOne('/api/v1/me/mfa/totp/disable');
+    expect(gated.request.body).toEqual({
+      currentPassword: 'correct-horse-battery-staple',
+      code: undefined,
+    });
+    gated.flush(
+      { errorCode: 'AUTH_MFA_STEP_UP_REQUIRED' },
+      { status: 401, statusText: 'Unauthorized' },
+    );
+    await first;
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('input[autocomplete="one-time-code"]'),
+    ).not.toBeNull();
+    expect(component.password).toBe('correct-horse-battery-staple');
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+
+    component.prompt.code = ' 123456 ';
+    const retry = component.submitPassword();
+    const accepted = http.expectOne('/api/v1/me/mfa/totp/disable');
+    expect(accepted.request.body).toEqual({
+      currentPassword: 'correct-horse-battery-staple',
+      code: '123456',
+    });
+    accepted.flush(null, { status: 204, statusText: 'No Content' });
+    await retry;
+    http.expectOne('/api/v1/me/mfa').flush({ status: MfaStatusStatusEnum.None, available: true });
+  });
+
+  it('never sends a code when starting an enrollment, because no factor is active yet', async () => {
+    const fixture = await render({ status: MfaStatusStatusEnum.None, available: true });
+    const http = TestBed.inject(HttpTestingController);
+    const component = fixture.componentInstance as unknown as {
+      beginPasswordStep(action: 'start' | 'disable' | 'regenerate'): void;
+      submitPassword(): Promise<void>;
+      password: string;
+      prompt: { code: string; open(): boolean };
+    };
+
+    component.beginPasswordStep('start');
+    component.password = 'correct-horse-battery-staple';
+    component.prompt.code = '123456';
+    const started = component.submitPassword();
+    const request = http.expectOne('/api/v1/me/mfa/totp');
+    expect(request.request.body).toEqual({ currentPassword: 'correct-horse-battery-staple' });
+    request.flush({
+      secret: 'ABCD EFGH IJKL MNOP',
+      provisioningUri: 'otpauth://totp/Glacier:member?secret=ABCDEFGHIJKLMNOP',
+      expiresAt: new Date(Date.now() + 600_000).toISOString(),
+      digits: 6,
+      periodSeconds: 30,
+    });
+    await started;
+  });
+
   it('keeps the recovery codes on screen until they are acknowledged', async () => {
     const fixture = await render({ status: MfaStatusStatusEnum.None, available: true });
     const http = TestBed.inject(HttpTestingController);

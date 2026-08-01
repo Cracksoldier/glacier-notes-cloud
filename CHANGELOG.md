@@ -41,11 +41,19 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
   account must supply a fresh authenticator or recovery code alongside its password to disable the
   factor, regenerate its recovery codes, change its email address, or delete itself, and an enrolled
   administrator must do the same to delete another account or to mint a password-reset link for one.
-  A request that omits the code is answered `401 AUTH_MFA_STEP_UP_REQUIRED`; the browser prompts
-  arrive in the next milestone. An account without an enrollment sees the password check it always
-  saw. Verifying opens a grace window on that one session — `mfa_step_up_grace_minutes`, five
+  A request that omits the code is answered `401 AUTH_MFA_STEP_UP_REQUIRED`. An account without an
+  enrollment sees the password check it always saw. Verifying opens a grace window on that one session — `mfa_step_up_grace_minutes`, five
   minutes by default and disabled by `0` — so a run of operations is not prompted repeatedly.
   Migration `V14` adds the `STEP_UP_USER` and `STEP_UP_IP` rate-limit scopes.
+- Browser prompts for the step-up gate, so every gated operation can be completed without `curl`.
+  Each form submits the password on its own first and only grows a one-time code field when the
+  server answers that it needs one, which keeps the grace window off the wire and means an account
+  without an enrollment never sees the field. The field takes an authenticator code or a recovery
+  code interchangeably. The two administrative operations — minting a password-reset link and
+  deleting an account — move from browser `confirm()` and `prompt()` dialogs into an inline panel
+  that collects the administrator's password, the typed username where one is required, and the
+  code. Account settings and the administrative user page now translate server problems instead of
+  echoing their English text.
 - Notifications for every second-factor event: enrollment started, factor enabled, factor disabled,
   recovery codes regenerated, a recovery code spent on a login, and an operator clearing the factor.
   They carry the time and the coarse device description already kept for the session list, never a

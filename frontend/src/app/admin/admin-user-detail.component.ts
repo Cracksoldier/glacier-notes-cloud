@@ -4,6 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '../core/auth.store';
 import { I18nService } from '../core/i18n.service';
+import { ProblemService } from '../core/problem.service';
+import { StepUpPrompt } from '../core/step-up';
 import { AdministrationService } from '../shared/generated-api/api/administration.service';
 import { AdminDeletionRequestModeEnum } from '../shared/generated-api/model/adminDeletionRequest';
 import type { AdminUser } from '../shared/generated-api/model/adminUser';
@@ -11,10 +13,13 @@ import { AdminUserUpdateRoleEnum } from '../shared/generated-api/model/adminUser
 import { ImportApplyRequestStrategyEnum } from '../shared/generated-api/model/importApplyRequest';
 import type { ResetLink } from '../shared/generated-api/model/resetLink';
 import type { TransferJob } from '../shared/generated-api/model/transferJob';
+import { StepUpCodeComponent } from '../shared/step-up-code.component';
+
+export type PendingAction = 'reset' | 'schedule' | 'delete';
 
 @Component({
   selector: 'app-admin-user-detail',
-  imports: [FormsModule],
+  imports: [FormsModule, StepUpCodeComponent],
   templateUrl: './admin-user-detail.component.html',
   styleUrl: './admin.css',
 })
@@ -22,6 +27,7 @@ export class AdminUserDetailComponent {
   private readonly api = inject(AdministrationService);
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly problems = inject(ProblemService);
   protected readonly i18n = inject(I18nService);
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
   readonly user = signal<AdminUser | null>(null);
@@ -31,6 +37,10 @@ export class AdminUserDetailComponent {
   readonly importJob = signal<TransferJob | null>(null);
   readonly importBusy = signal(false);
   readonly ImportStrategy = ImportApplyRequestStrategyEnum;
+  readonly pending = signal<PendingAction | null>(null);
+  readonly prompt = new StepUpPrompt();
+  currentPassword = '';
+  confirmation = '';
   username = '';
   email = '';
   displayName = '';
@@ -90,41 +100,80 @@ export class AdminUserDetailComponent {
     this.action('sessions');
   }
 
-  resetPassword(): void {
-    this.api.createAdministrativePasswordReset(this.id, {}).subscribe({
-      next: (value) => this.reset.set(value),
-      error: (failure) => this.fail(failure),
-    });
+  begin(action: PendingAction): void {
+    this.pending.set(action);
+    this.prompt.clear();
+    this.currentPassword = '';
+    this.confirmation = '';
+    this.error.set('');
   }
 
-  scheduleDeletion(): void {
-    if (!confirm(this.i18n.t('adminUserConfirmSchedule'))) return;
+  cancelPending(): void {
+    this.pending.set(null);
+    this.prompt.clear();
+    this.currentPassword = '';
+    this.confirmation = '';
+  }
+
+  submitPending(): void {
+    this.error.set('');
+    switch (this.pending()) {
+      case 'reset':
+        this.resetPassword();
+        break;
+      case 'schedule':
+        this.scheduleDeletion();
+        break;
+      case 'delete':
+        this.deleteImmediately();
+        break;
+    }
+  }
+
+  private resetPassword(): void {
     this.api
-      .scheduleUserDeletion(this.id, { mode: AdminDeletionRequestModeEnum.Retained })
+      .createAdministrativePasswordReset(this.id, {
+        currentPassword: this.currentPassword,
+        code: this.prompt.value(),
+      })
+      .subscribe({
+        next: (value) => {
+          this.reset.set(value);
+          this.cancelPending();
+        },
+        error: (failure) => this.fail(failure),
+      });
+  }
+
+  private scheduleDeletion(): void {
+    this.api
+      .scheduleUserDeletion(this.id, {
+        mode: AdminDeletionRequestModeEnum.Retained,
+        currentPassword: this.currentPassword,
+        code: this.prompt.value(),
+      })
       .subscribe({
         next: (value) => {
           this.user.set(value);
           this.message.set(this.i18n.t('adminAccountDeletionScheduled'));
+          this.cancelPending();
           this.checkSelf();
         },
         error: (failure) => this.fail(failure),
       });
   }
 
-  deleteImmediately(): void {
-    const user = this.user();
-    if (!user) return;
-    const confirmation = prompt(
-      this.i18n.t('adminUserDeleteTypePrompt', { username: user.username }),
-    );
-    if (confirmation === null) return;
+  private deleteImmediately(): void {
     this.api
       .scheduleUserDeletion(this.id, {
         mode: AdminDeletionRequestModeEnum.Immediate,
-        confirmation,
+        confirmation: this.confirmation,
+        currentPassword: this.currentPassword,
+        code: this.prompt.value(),
       })
       .subscribe({
         next: () => {
+          this.cancelPending();
           if (this.auth.session()?.user.id === this.id) {
             this.auth.clear();
             void this.router.navigate(['/login']);
@@ -162,7 +211,7 @@ export class AdminUserDetailComponent {
       }
     } catch (failure) {
       if (this.activeImport(operation)) {
-        this.fail(failure as { error?: { detail?: string } });
+        this.fail(failure);
       }
     } finally {
       if (this.activeImport(operation)) this.importBusy.set(false);
@@ -186,7 +235,7 @@ export class AdminUserDetailComponent {
       }
     } catch (failure) {
       if (this.activeImport(operation)) {
-        this.fail(failure as { error?: { detail?: string } });
+        this.fail(failure);
       }
     } finally {
       if (this.activeImport(operation)) this.importBusy.set(false);
@@ -203,7 +252,7 @@ export class AdminUserDetailComponent {
       if (this.activeImport(operation)) this.importJob.set(null);
     } catch (failure) {
       if (this.activeImport(operation)) {
-        this.fail(failure as { error?: { detail?: string } });
+        this.fail(failure);
       }
     } finally {
       if (this.activeImport(operation)) this.importBusy.set(false);
@@ -267,7 +316,8 @@ export class AdminUserDetailComponent {
     }
   }
 
-  private fail(failure: { error?: { detail?: string } }): void {
-    this.error.set(failure.error?.detail ?? this.i18n.t('adminUserActionFailed'));
+  private fail(failure: unknown): void {
+    if (this.prompt.handle(failure)) return;
+    this.error.set(this.problems.message(failure));
   }
 }

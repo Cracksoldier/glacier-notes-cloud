@@ -5,16 +5,18 @@ import { firstValueFrom, timer } from 'rxjs';
 
 import { I18nService } from '../core/i18n.service';
 import { ProblemService } from '../core/problem.service';
+import { StepUpPrompt } from '../core/step-up';
 import { CurrentUserService } from '../shared/generated-api/api/currentUser.service';
 import type { MfaEnrollmentStart } from '../shared/generated-api/model/mfaEnrollmentStart';
 import { type MfaStatus, MfaStatusStatusEnum } from '../shared/generated-api/model/mfaStatus';
+import { StepUpCodeComponent } from '../shared/step-up-code.component';
 
 type Step = 'idle' | 'password' | 'scan' | 'codes';
 type PasswordAction = 'start' | 'disable' | 'regenerate';
 
 @Component({
   selector: 'app-two-factor-card',
-  imports: [FormsModule],
+  imports: [FormsModule, StepUpCodeComponent],
   templateUrl: './two-factor-card.component.html',
   styleUrl: './two-factor-card.component.css',
 })
@@ -35,6 +37,7 @@ export class TwoFactorCardComponent {
   protected readonly busy = signal(false);
   protected readonly error = signal('');
   protected readonly minutesRemaining = signal(0);
+  protected readonly prompt = new StepUpPrompt();
 
   private passwordAction: PasswordAction = 'start';
 
@@ -53,6 +56,7 @@ export class TwoFactorCardComponent {
     if (action === 'regenerate' && !window.confirm(this.i18n.t('mfaCardRegenerateConfirm'))) return;
     this.passwordAction = action;
     this.password = '';
+    this.prompt.clear();
     this.error.set('');
     this.step.set('password');
   }
@@ -60,13 +64,16 @@ export class TwoFactorCardComponent {
   protected async submitPassword(): Promise<void> {
     await this.run(async () => {
       const currentPassword = this.password;
+      // Starting an enrollment is password-only: no factor is active yet to step up with.
       if (this.passwordAction === 'start') {
         await this.startEnrollment(currentPassword);
       } else if (this.passwordAction === 'disable') {
-        await firstValueFrom(this.api.disableTotp({ currentPassword }));
+        await firstValueFrom(this.api.disableTotp({ currentPassword, code: this.prompt.value() }));
         this.reset();
       } else {
-        const codes = await firstValueFrom(this.api.regenerateRecoveryCodes({ currentPassword }));
+        const codes = await firstValueFrom(
+          this.api.regenerateRecoveryCodes({ currentPassword, code: this.prompt.value() }),
+        );
         this.showCodes(codes.codes);
       }
       this.password = '';
@@ -156,6 +163,7 @@ export class TwoFactorCardComponent {
     this.qrPath.set(null);
     this.password = '';
     this.code = '';
+    this.prompt.clear();
     void this.loadStatus();
   }
 
@@ -186,7 +194,7 @@ export class TwoFactorCardComponent {
     try {
       await action();
     } catch (failure) {
-      this.error.set(this.problems.message(failure));
+      if (!this.prompt.handle(failure)) this.error.set(this.problems.message(failure));
     } finally {
       this.busy.set(false);
     }

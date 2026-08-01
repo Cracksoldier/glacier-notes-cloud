@@ -6,14 +6,17 @@ import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '../core/auth.store';
 import { I18nService } from '../core/i18n.service';
 import { PreferencesService } from '../core/preferences.service';
+import { ProblemService } from '../core/problem.service';
+import { StepUpPrompt } from '../core/step-up';
 import { CurrentUserService } from '../shared/generated-api/api/currentUser.service';
 import type { UserProfile } from '../shared/generated-api/model/userProfile';
 import type { UserSettings } from '../shared/generated-api/model/userSettings';
+import { StepUpCodeComponent } from '../shared/step-up-code.component';
 import { TwoFactorCardComponent } from './two-factor-card.component';
 
 @Component({
   selector: 'app-account-settings',
-  imports: [FormsModule, RouterLink, TwoFactorCardComponent],
+  imports: [FormsModule, RouterLink, StepUpCodeComponent, TwoFactorCardComponent],
   templateUrl: './account-settings.component.html',
   styleUrl: './account-settings.component.css',
 })
@@ -22,7 +25,11 @@ export class AccountSettingsComponent {
   private readonly preferences = inject(PreferencesService);
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly problems = inject(ProblemService);
   protected readonly i18n = inject(I18nService);
+
+  readonly emailPrompt = new StepUpPrompt();
+  readonly deletionPrompt = new StepUpPrompt();
 
   readonly profile = signal<UserProfile | null>(null);
   readonly settings = signal<UserSettings | null>(null);
@@ -112,39 +119,46 @@ export class AccountSettingsComponent {
         this.api.requestCurrentUserEmailChange({
           currentPassword: this.emailPassword,
           newEmail: this.newEmail,
+          code: this.emailPrompt.value(),
         }),
       );
       this.emailPassword = '';
+      this.emailPrompt.clear();
       this.message.set(this.i18n.t('verificationSent'));
-    });
+    }, this.emailPrompt);
   }
 
   async deleteAccount(): Promise<void> {
-    if (!window.confirm(this.i18n.t('deletionConfirm'))) return;
+    // Already confirmed once; a retry only adds the code the server asked for.
+    if (!this.deletionPrompt.open() && !window.confirm(this.i18n.t('deletionConfirm'))) return;
     await this.run(async () => {
-      await firstValueFrom(this.api.deleteCurrentUser({ currentPassword: this.deletionPassword }));
+      await firstValueFrom(
+        this.api.deleteCurrentUser({
+          currentPassword: this.deletionPassword,
+          code: this.deletionPrompt.value(),
+        }),
+      );
       this.clearSecrets();
       this.auth.clear();
       await this.router.navigate(['/login']);
-    });
+    }, this.deletionPrompt);
   }
 
-  private async run(action: () => Promise<void>): Promise<void> {
+  private async run(action: () => Promise<void>, prompt?: StepUpPrompt): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     this.message.set('');
     try {
       await action();
     } catch (failure) {
-      this.fail(failure);
+      if (!prompt?.handle(failure)) this.fail(failure);
     } finally {
       this.busy.set(false);
     }
   }
 
   private fail(failure: unknown): void {
-    const value = failure as { error?: { detail?: string } };
-    this.error.set(value.error?.detail ?? this.i18n.t('changeFailed'));
+    this.error.set(this.problems.message(failure));
   }
 
   private clearSecrets(): void {
@@ -152,5 +166,7 @@ export class AccountSettingsComponent {
     this.newPassword = '';
     this.emailPassword = '';
     this.deletionPassword = '';
+    this.emailPrompt.clear();
+    this.deletionPrompt.clear();
   }
 }
