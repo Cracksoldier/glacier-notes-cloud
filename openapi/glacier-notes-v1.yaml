@@ -2225,9 +2225,10 @@ components:
         code: { type: string, format: password, minLength: 1, maxLength: 64 }
     MfaStatus:
       type: object
-      required: [status]
+      required: [status, available]
       properties:
         status: { type: string, enum: [NONE, PENDING, ACTIVE] }
+        available: { type: boolean, description: Whether the instance permits second-factor enrollment. }
         confirmedAt: { type: string, format: date-time }
         recoveryCodesRemaining: { type: integer, minimum: 0 }
     MfaEnrollmentStartRequest:

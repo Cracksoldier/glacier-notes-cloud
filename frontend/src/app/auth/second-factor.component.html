@@ -1,0 +1,41 @@
+<h1 id="second-factor-title">{{ i18n.t('mfaLoginTitle') }}</h1>
+<p class="intro">
+  {{ usingRecoveryCode() ? i18n.t('mfaLoginIntroRecovery') : i18n.t('mfaLoginIntro') }}
+</p>
+@if (errorMessage(); as message) {
+<div class="notice" role="alert">
+  {{ message }}
+  @if (retryAfter(); as seconds) {
+  <span>{{ i18n.t('authTryAgainInSeconds', { seconds }) }}</span>
+  } @if (attemptsRemaining() > 0) {
+  <span>{{ i18n.t('mfaLoginAttemptsRemaining', { count: attemptsRemaining() }) }}</span>
+  }
+</div>
+}
+
+<form (ngSubmit)="submit()" novalidate>
+  <label for="mfa-code">
+    {{ usingRecoveryCode() ? i18n.t('mfaLoginRecoveryCodeLabel') : i18n.t('mfaLoginCodeLabel') }}
+  </label>
+  <input
+    id="mfa-code"
+    name="code"
+    [ngModel]="code()"
+    (ngModelChange)="code.set($event)"
+    [attr.inputmode]="usingRecoveryCode() ? null : 'numeric'"
+    [attr.autocomplete]="usingRecoveryCode() ? 'off' : 'one-time-code'"
+    autocapitalize="characters"
+    spellcheck="false"
+    #codeInput
+  >
+  <p class="hint">{{ i18n.t('mfaLoginExpiresIn', { seconds: secondsRemaining() }) }}</p>
+  <button type="submit" [disabled]="submitting() || !code().trim()">
+    {{ submitting() ? i18n.t('mfaLoginVerifying') : i18n.t('mfaLoginVerify') }}
+  </button>
+  @if (recoveryCodesAccepted()) {
+  <button type="button" class="link" (click)="toggleRecoveryCode()">
+    {{ usingRecoveryCode() ? i18n.t('mfaLoginUseAuthenticator') : i18n.t('mfaLoginUseRecoveryCode') }}
+  </button>
+  }
+  <button type="button" class="link" (click)="abandon()">{{ i18n.t('mfaLoginCancel') }}</button>
+</form>

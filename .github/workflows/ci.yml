@@ -81,6 +81,8 @@ jobs:
     env:
       GLACIER_BACKUP_ENABLED: 'true'
       GLACIER_BUILD_IDENTIFIER: github-${{ github.sha }}
+      GLACIER_MFA_ENABLED: 'true'
+      GLACIER_MFA_ENCRYPTION_SECRET_FILE: ${{ github.workspace }}/deployment/secrets/mfa-encryption-secret.txt
       GIT_SHA: ${{ github.sha }}
       APP_VERSION: '0.2.0'
     steps:
@@ -101,6 +103,7 @@ jobs:
           printf '%s\n' 'ci-database-password-with-32-characters' > deployment/secrets/database-password.txt
           printf '%s\n' 'ci-bootstrap-token-with-at-least-32-characters' > deployment/secrets/bootstrap-token.txt
           printf '%s\n' 'ci-session-secret-with-at-least-32-characters' > deployment/secrets/session-secret.txt
+          printf '%s\n' 'ci-mfa-encryption-secret-with-32-characters' > deployment/secrets/mfa-encryption-secret.txt
       - name: Build and start the supported deployment
         run: |
           export BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -183,6 +186,19 @@ jobs:
             --header 'Content-Type: application/json' \
             --data '{"identifier":"member","password":"ci-invited-user-passphrase-2026","rememberMe":false}' \
             http://127.0.0.1:8080/api/v1/auth/login | grep '"role":"USER"'
+          mfa_invitation_response="$(curl --fail --silent \
+            --cookie /tmp/glacier-cookies.txt \
+            --header "X-CSRF-Token: $csrf_token" \
+            --header 'Content-Type: application/json' \
+            --data '{"email":"mfa-member@example.com","proposedUsername":"mfa-member","role":"USER"}' \
+            http://127.0.0.1:8080/api/v1/admin/invitations)"
+          mfa_invitation_token="$(printf '%s' "$mfa_invitation_response" | jq --raw-output '.token')"
+          test -n "$mfa_invitation_token"
+          test "$mfa_invitation_token" != "null"
+          curl --fail --silent \
+            --header 'Content-Type: application/json' \
+            --data "{\"token\":\"$mfa_invitation_token\",\"username\":\"mfa-member\",\"password\":\"ci-mfa-user-passphrase-2026\"}" \
+            http://127.0.0.1:8080/api/v1/auth/invitations/accept
           curl --fail --silent \
             --cookie /tmp/glacier-cookies.txt \
             --header "X-CSRF-Token: $csrf_token" \
@@ -191,12 +207,14 @@ jobs:
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
             --cookie /tmp/glacier-cookies.txt \
             http://127.0.0.1:8080/api/v1/auth/session)" = "401"
-      - name: Verify the core note workflow in desktop and tablet browsers
+      - name: Verify the core note and second-factor workflows in desktop and tablet browsers
         working-directory: frontend
         env:
           GLACIER_E2E_BASE_URL: http://127.0.0.1:8080
           GLACIER_E2E_USERNAME: member
           GLACIER_E2E_PASSWORD: ci-invited-user-passphrase-2026
+          GLACIER_E2E_MFA_USERNAME: mfa-member
+          GLACIER_E2E_MFA_PASSWORD: ci-mfa-user-passphrase-2026
         run: npm run test:e2e
       - name: Verify backup creation and clean database restore
         run: |

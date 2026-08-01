@@ -165,6 +165,10 @@ copies and the `backup_data` volume.
 Accounts can protect their login with a TOTP authenticator app. The feature is off until you enable
 it, and enabling it does not force anyone to use it — each account decides for itself.
 
+Enabling it changes what users see: account settings gains a two-factor card, and enrolled accounts
+get a second stage on the sign-in page. While the flag is off the card is not rendered at all, so no
+one is offered a setup that would fail.
+
 ```bash
 openssl rand -base64 48 > deployment/secrets/mfa-encryption-secret.txt
 chmod 600 deployment/secrets/mfa-encryption-secret.txt
@@ -175,9 +179,10 @@ docker compose up -d
 The secret encrypts every stored authenticator secret and keys the hashes of recovery codes. It is
 deliberately separate from the session secret so that rotating session keys does not invalidate
 existing enrollments — and, for the same reason, **losing or changing it locks every enrolled
-account out of its second factor**. Back it up with the same care as the database password. Startup
-fails if the feature is enabled without a valid secret, rather than starting with enrollments it
-cannot read.
+account out of its second factor**. Back it up with the same care as the database password — a
+database backup restored without it produces an instance whose enrolled users cannot sign in, as
+described in `docs/BACKUP_RESTORE.md`. Startup fails if the feature is enabled without a valid
+secret, rather than starting with enrollments it cannot read.
 
 Enabling the feature makes the host clock a correctness dependency. Codes are derived from wall
 time, and the server accepts only the current 30-second window and its two neighbours, so drift

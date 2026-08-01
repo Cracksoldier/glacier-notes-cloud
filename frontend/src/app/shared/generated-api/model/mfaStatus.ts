@@ -11,6 +11,10 @@
 
 export interface MfaStatus { 
     status: MfaStatusStatusEnum;
+    /**
+     * Whether the instance permits second-factor enrollment.
+     */
+    available: boolean;
     confirmedAt?: string;
     recoveryCodesRemaining?: number;
 }

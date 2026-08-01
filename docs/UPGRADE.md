@@ -74,6 +74,12 @@ exactly as before. Enabling it introduces two operational dependencies worth pla
 - **A lost authenticator needs an operator.** The break-glass procedure is documented in
   `deployment/README.md`. Make sure whoever operates the instance can reach the bootstrap token
   before the first account enrolls.
+- **The encryption secret becomes part of your backup set.** A database restored without the
+  matching `GLACIER_MFA_ENCRYPTION_SECRET` still contains every enrollment, but none of them can be
+  decrypted, so enrolled accounts cannot finish signing in. See `docs/BACKUP_RESTORE.md`.
+
+Turning the flag on now also exposes the feature in the browser: a two-factor card in account
+settings and a second stage on the sign-in page. With the flag off, neither appears.
 
 The new operations are `GET /api/v1/me/mfa`, `POST /api/v1/me/mfa/totp`,
 `POST /api/v1/me/mfa/totp/confirm`, `DELETE /api/v1/me/mfa/totp/pending`,

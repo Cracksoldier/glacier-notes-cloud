@@ -54,6 +54,19 @@ npm run test:e2e
 The browser suite creates uniquely named test notebooks, labels, and notes. Use a disposable local
 account or database when running it outside CI.
 
+The second-factor spec needs an instance started with `GLACIER_MFA_ENABLED=true` and a second,
+dedicated account — it enrolls, signs in through both stages, and disables the factor again, so it
+must not share an account with the note workflow. It is skipped unless both variables are set:
+
+```bash
+GLACIER_E2E_MFA_USERNAME=your-second-user \
+GLACIER_E2E_MFA_PASSWORD=your-second-password \
+npm run test:e2e
+```
+
+An interrupted run can leave that account enrolled. Since the spec only knows the password, it
+cannot clean that up; clear it with the break-glass operation in `deployment/README.md`.
+
 ## Local applications
 
 With a Docker-compatible daemon running, Quarkus Dev Services supplies PostgreSQL:

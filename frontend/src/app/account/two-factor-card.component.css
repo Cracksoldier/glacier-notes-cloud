@@ -1,0 +1,116 @@
+.settings-card {
+  padding: 1.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  background: var(--color-surface);
+}
+
+.settings-card h2 {
+  margin-top: 0;
+}
+
+.settings-card p {
+  color: var(--color-text-muted);
+}
+
+.status-line {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+form,
+label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+form {
+  gap: 1rem;
+}
+
+input,
+button {
+  min-height: 2.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.55rem;
+  background: var(--color-bg);
+  color: inherit;
+  font: inherit;
+}
+
+input {
+  padding: 0.55rem 0.7rem;
+}
+
+button {
+  padding: 0.55rem 1rem;
+  border-color: #71bdcd;
+  background: #71bdcd;
+  color: #071319;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.secondary {
+  border-color: var(--color-border);
+  background: var(--color-bg);
+  color: inherit;
+}
+
+button.danger {
+  border-color: #a84f5d;
+  background: #a84f5d;
+  color: white;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.code-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.qr {
+  display: block;
+  width: min(15rem, 100%);
+  height: auto;
+  margin: 1rem 0;
+  border-radius: 0.55rem;
+}
+
+.secret {
+  display: inline-block;
+  margin-top: 0.5rem;
+  letter-spacing: 0.08em;
+  word-break: break-all;
+}
+
+.codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 1rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.check-row input {
+  min-height: auto;
+}
+
+.card-error {
+  margin-bottom: 0;
+  color: #ffaaa4;
+}

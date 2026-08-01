@@ -1,0 +1,115 @@
+@if (status(); as value) { @if (value.available) {
+<section class="settings-card">
+  <h2>{{ i18n.t('mfaCardTitle') }}</h2>
+  @switch (step()) { @case ('password') {
+  <p>{{ i18n.t('mfaCardPasswordPrompt') }}</p>
+  <form (ngSubmit)="submitPassword()">
+    <label
+      >{{ i18n.t('mfaCardPassword') }}
+      <input
+        name="mfaPassword"
+        type="password"
+        autocomplete="current-password"
+        required
+        [(ngModel)]="password"
+      ></label
+    >
+    <button type="submit" [disabled]="busy()">{{ i18n.t('mfaCardContinue') }}</button>
+    <button type="button" class="secondary" (click)="cancel()">
+      {{ i18n.t('mfaCardCancel') }}
+    </button>
+  </form>
+  } @case ('scan') {
+  <p>{{ i18n.t('mfaCardScanTitle') }}</p>
+  @if (qrPath(); as qr) {
+  <svg class="qr" [attr.viewBox]="'0 0 ' + qr.size + ' ' + qr.size" role="img">
+    <title>{{ i18n.t('mfaCardQrAlt') }}</title>
+    <rect width="100%" height="100%" fill="#ffffff"></rect>
+    <path [attr.d]="qr.d" fill="#000000"></path>
+  </svg>
+  }
+  <details>
+    <summary>{{ i18n.t('mfaCardManualEntry') }}</summary>
+    <code class="secret">{{ enrollment()?.secret }}</code>
+  </details>
+  <p>{{ i18n.t('mfaCardScanIntro') }}</p>
+  <p><small>{{ i18n.t('mfaCardSetupExpiresIn', { minutes: minutesRemaining() }) }}</small></p>
+  <form (ngSubmit)="confirmEnrollment()">
+    <label
+      >{{ i18n.t('mfaCardCodeLabel') }}
+      <input
+        name="mfaCode"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        required
+        [(ngModel)]="code"
+      ></label
+    >
+    <button type="submit" [disabled]="busy()">{{ i18n.t('mfaCardConfirm') }}</button>
+    <button type="button" class="secondary" (click)="cancel()">
+      {{ i18n.t('mfaCardCancel') }}
+    </button>
+  </form>
+  } @case ('codes') {
+  <p>{{ i18n.t('mfaCardCodesTitle') }}</p>
+  <p>{{ i18n.t('mfaCardCodesIntro') }}</p>
+  <ul class="codes">
+    @for (recoveryCode of recoveryCodes(); track recoveryCode) {
+    <li><code>{{ recoveryCode }}</code></li>
+    }
+  </ul>
+  <div class="code-actions">
+    <button type="button" class="secondary" (click)="copyCodes()">
+      {{ copied() ? i18n.t('mfaCardCopied') : i18n.t('mfaCardCopyCodes') }}
+    </button>
+    <button type="button" class="secondary" (click)="downloadCodes()">
+      {{ i18n.t('mfaCardDownloadCodes') }}
+    </button>
+  </div>
+  <label class="check-row"
+    ><input
+      name="mfaAcknowledged"
+      type="checkbox"
+      [ngModel]="acknowledged()"
+      (ngModelChange)="acknowledged.set($event)"
+    >
+    {{ i18n.t('mfaCardAcknowledge') }}</label
+  >
+  <button type="button" [disabled]="!acknowledged()" (click)="dismissCodes()">
+    {{ i18n.t('mfaCardDone') }}
+  </button>
+  } @default { @switch (value.status) { @case (statusEnum.Active) {
+  <p class="status-line">{{ i18n.t('mfaCardStatusActive') }}</p>
+  @if (value.confirmedAt; as confirmedAt) {
+  <p>{{ i18n.t('mfaCardConfirmedAt', { date: i18n.formatDate(confirmedAt) }) }}</p>
+  }
+  <p>
+    @if (value.recoveryCodesRemaining) {
+    {{ i18n.t('mfaCardRecoveryRemaining', { count: value.recoveryCodesRemaining }) }}
+    } @else {
+    {{ i18n.t('mfaCardRecoveryDepleted') }}
+    }
+  </p>
+  <div class="code-actions">
+    <button type="button" class="secondary" (click)="beginPasswordStep('regenerate')">
+      {{ i18n.t('mfaCardRegenerate') }}
+    </button>
+    <button type="button" class="danger" (click)="beginPasswordStep('disable')">
+      {{ i18n.t('mfaCardTurnOff') }}
+    </button>
+  </div>
+  } @case (statusEnum.Pending) {
+  <p class="status-line">{{ i18n.t('mfaCardStatusInactive') }}</p>
+  <p>{{ i18n.t('mfaCardPendingNotice') }}</p>
+  <button type="button" [disabled]="busy()" (click)="discardPending()">
+    {{ i18n.t('mfaCardDiscardAndRestart') }}
+  </button>
+  } @default {
+  <p class="status-line">{{ i18n.t('mfaCardStatusInactive') }}</p>
+  <p>{{ i18n.t('mfaCardIntro') }}</p>
+  <button type="button" (click)="beginPasswordStep('start')">{{ i18n.t('mfaCardSetUp') }}</button>
+  } } } } @if (error(); as message) {
+  <p class="card-error" role="alert">{{ message }}</p>
+  }
+</section>
+} }

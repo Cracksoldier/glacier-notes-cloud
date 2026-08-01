@@ -7,6 +7,7 @@ import { AuthStore } from '../core/auth.store';
 import { I18nService } from '../core/i18n.service';
 import { ProblemService } from '../core/problem.service';
 import type { ProblemDetails } from '../shared/generated-api/model/problemDetails';
+import { SecondFactorComponent } from './second-factor.component';
 
 interface LoginControlErrors {
   required?: boolean;
@@ -15,7 +16,7 @@ interface LoginControlErrors {
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, SecondFactorComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
 })
@@ -25,6 +26,7 @@ export class LoginComponent {
   protected readonly i18n = inject(I18nService);
   private readonly problems = inject(ProblemService);
 
+  protected readonly challenge = this.auth.challenge;
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly retryAfter = signal<number | null>(null);
@@ -49,7 +51,11 @@ export class LoginComponent {
     this.errorMessage.set(null);
     this.retryAfter.set(null);
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: () => void this.router.navigate(['/']),
+      next: () => {
+        this.submitting.set(false);
+        this.form.controls.password.setValue('');
+        if (this.auth.session()) void this.router.navigate(['/']);
+      },
       error: (error: unknown) => {
         this.submitting.set(false);
         this.form.controls.password.setValue('');
@@ -72,6 +78,14 @@ export class LoginComponent {
         }
       },
     });
+  }
+
+  protected secondFactorVerified(): void {
+    void this.router.navigate(['/']);
+  }
+
+  protected secondFactorAbandoned(message: string | null): void {
+    this.errorMessage.set(message);
   }
 
   protected errorFor(field: 'identifier' | 'password'): string | null {

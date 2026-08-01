@@ -9,10 +9,11 @@ import { PreferencesService } from '../core/preferences.service';
 import { CurrentUserService } from '../shared/generated-api/api/currentUser.service';
 import type { UserProfile } from '../shared/generated-api/model/userProfile';
 import type { UserSettings } from '../shared/generated-api/model/userSettings';
+import { TwoFactorCardComponent } from './two-factor-card.component';
 
 @Component({
   selector: 'app-account-settings',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, TwoFactorCardComponent],
   templateUrl: './account-settings.component.html',
   styleUrl: './account-settings.component.css',
 })

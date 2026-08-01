@@ -73,13 +73,14 @@ public class MfaEnrollmentService {
     public MfaStatus status(UUID userId) {
         var enrollment = mfaRepository.findEnrollment(userId).orElse(null);
         if (enrollment == null) {
-            return new MfaStatus().status(MfaStatus.StatusEnum.NONE);
+            return new MfaStatus().status(MfaStatus.StatusEnum.NONE).available(enabled);
         }
         if (!enrollment.active()) {
-            return new MfaStatus().status(MfaStatus.StatusEnum.PENDING);
+            return new MfaStatus().status(MfaStatus.StatusEnum.PENDING).available(enabled);
         }
         return new MfaStatus()
             .status(MfaStatus.StatusEnum.ACTIVE)
+            .available(enabled)
             .confirmedAt(enrollment.confirmedAt().atOffset(ZoneOffset.UTC))
             .recoveryCodesRemaining((int) mfaRepository.countUnusedRecoveryCodes(userId));
     }

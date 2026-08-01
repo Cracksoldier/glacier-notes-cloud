@@ -36,6 +36,21 @@ jq -r '.checksums | to_entries[] | [.value, .key] | @tsv' restore/manifest.json 
   done
 ```
 
+## Second-factor enrollments depend on a secret the backup does not contain
+
+If `GLACIER_MFA_ENABLED` is on, the dump contains every TOTP enrollment, but the shared secrets in it
+are encrypted with a key derived from `GLACIER_MFA_ENCRYPTION_SECRET` (or the file named by
+`GLACIER_MFA_ENCRYPTION_SECRET_FILE`). That value is a deployment secret and is deliberately excluded
+from the archive. Restoring the database with a different one leaves a deployment that looks healthy
+and lets unenrolled accounts sign in normally, while every enrolled account is locked out at the
+second stage — including administrators.
+
+Store the enrollment secret alongside the session secret in whatever holds your deployment secrets,
+and restore the same value with the database. If it is genuinely lost, the escape hatch is
+`POST /api/v1/setup/second-factor-reset`, the bootstrap-token break-glass operation described in
+`deployment/README.md`. It clears one account's second factor and revokes its sessions, so it has to
+be repeated for every enrolled account; the affected users then enroll again from scratch.
+
 ## Restore a clean Compose environment
 
 Stop Glacier Notes and confirm that the target is a new, empty deployment. Never mix a dump with an
@@ -72,8 +87,9 @@ existing database or image volume. Preserve the original archive until validatio
    The helper uses the app service's `image_data` mount, preserves the archive's relative paths, and
    gives the restored objects to the unprivileged application user.
 
-4. Configure the same `GLACIER_IMAGE_BACKEND`, supply new or restored deployment secrets, then start
-   and validate the application:
+4. Configure the same `GLACIER_IMAGE_BACKEND`, supply new or restored deployment secrets — including
+   the original `GLACIER_MFA_ENCRYPTION_SECRET` if the second factor is enabled — then start and
+   validate the application:
 
    ```bash
    docker compose up -d app
@@ -82,5 +98,6 @@ existing database or image volume. Preserve the original archive until validatio
    ```
 
 Sign in, inspect representative notes and images, and test an export before retiring the old
-environment. The CI deployment gate creates an enabled backup, verifies its manifest checksums, and
+environment. Where the second factor is enabled, sign in with an enrolled account as well — that is
+the only check that proves the restored enrollment secret is the right one. The CI deployment gate creates an enabled backup, verifies its manifest checksums, and
 restores its dump into a separate clean PostgreSQL container.

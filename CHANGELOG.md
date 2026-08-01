@@ -22,8 +22,17 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
   enrollment (`DELETE /api/v1/me/mfa/totp/pending`), regenerate recovery codes
   (`POST /api/v1/me/mfa/recovery-codes`), and turn the factor off
   (`POST /api/v1/me/mfa/totp/disable`). Enrolled accounts complete login in two stages, the second
-  being `POST /api/v1/auth/login/mfa`. There is no user interface yet — the browser client is
-  unchanged and cannot reach these operations.
+  being `POST /api/v1/auth/login/mfa`.
+- A browser interface for the second factor. Account settings gains a two-factor card that walks
+  through enrollment — password confirmation, a QR code rendered in the browser, a manual key for
+  authenticators that cannot scan, and the recovery codes, which cannot be dismissed until they are
+  acknowledged — reports how many recovery codes are left, and turns the factor off again. Signing
+  in with an enrolled account now shows a second stage on the same page, accepting either a code
+  from the authenticator app or a recovery code. The flow is available in English and German, and
+  the card stays hidden on instances where the feature is off.
+- `available` on `GET /api/v1/me/mfa`, reporting whether the instance permits enrollment at all.
+  Without it a disabled instance is indistinguishable from an account that simply has not enrolled,
+  and the settings card would offer a button that could only fail.
 - `POST /api/v1/setup/second-factor-reset`, a break-glass operation authenticated with the
   bootstrap token that clears an account's second factor and revokes its sessions when its
   authenticator is lost. It answers `204` whether or not the account existed, so it cannot be used

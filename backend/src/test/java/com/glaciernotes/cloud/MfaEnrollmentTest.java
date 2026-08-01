@@ -81,12 +81,14 @@ class MfaEnrollmentTest {
     void walksTheEnrollmentLifecycleAndReportsStatusAtEachStage() throws SQLException {
         status().statusCode(200)
             .body("status", equalTo("NONE"))
+            .body("available", equalTo(true))
             .body("confirmedAt", nullValue())
             .body("recoveryCodesRemaining", nullValue());
 
         var secret = startEnrollment();
         status().statusCode(200)
             .body("status", equalTo("PENDING"))
+            .body("available", equalTo(true))
             .body("confirmedAt", nullValue())
             .body("recoveryCodesRemaining", nullValue());
 
@@ -97,6 +99,7 @@ class MfaEnrollmentTest {
 
         status().statusCode(200)
             .body("status", equalTo("ACTIVE"))
+            .body("available", equalTo(true))
             .body("confirmedAt", matchesPattern("^\\d{4}-\\d{2}-\\d{2}T.*Z$"))
             .body("recoveryCodesRemaining", equalTo(10));
 

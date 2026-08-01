@@ -1,8 +1,8 @@
 # Glacier Notes Cloud — Two-Factor Authentication Specification
 
-**Status:** All specification decisions resolved — milestones T0, T1, and T2a approved and delivered, T2b–T5 pending approval
-**Specification version:** 0.6
-**Date:** 2026-07-31
+**Status:** All specification decisions resolved — milestones T0, T1, T2a, and T2b approved and delivered, T3–T5 pending approval
+**Specification version:** 0.7
+**Date:** 2026-08-01
 **Feature:** Optional time-based one-time password (TOTP) second factor with recovery codes
 **Extends:** `GLACIER_NOTES_CLOUD_SPECIFICATION.md` section 8 (Authentication)
 
@@ -15,9 +15,9 @@ optional second authentication factor to Glacier Notes Cloud. It is intended to 
 OpenAPI contract design, database schema design, security review, and test planning.
 
 All specification decisions are resolved and recorded in section 21. The load-bearing ones are
-captured in `docs/adr/0009-optional-second-authentication-factor.md` per section 20. Milestone T0 of
-`GLACIER_NOTES_CLOUD_MILESTONES_2FA.md` has been delivered; this document does not authorize the
-milestones beyond it.
+captured in `docs/adr/0009-optional-second-authentication-factor.md` per section 20. Milestones T0
+through T2b of `GLACIER_NOTES_CLOUD_MILESTONES_2FA.md` have been delivered; this document does not
+authorize the milestones beyond them.
 
 ## 2. Scope
 
@@ -978,3 +978,27 @@ self-service operation is `POST /api/v1/me/deletion`, so `disableTotp` follows i
 Shipping disable password-gated in T2a keeps the delivery principle that each stage leaves a working
 instance: without it, the only exit from an enrollment would be the break-glass path. T2 and T3
 release together, so the password-only shape never reaches a release.
+
+### 21.6 Resolved in version 0.7
+
+Resolved while planning milestone T2b, the milestone that made the feature reachable from a browser.
+
+| Decision | Outcome | Sections |
+| --- | --- | --- |
+| How a client learns the feature is disabled | A required `available` flag on `MfaStatus`, rather than inferring it from a failed enrollment attempt | 8.2, 11.1 |
+| Whether the second login stage is a route | No — a stage rendered inside the login card, with the challenge token held in memory only | 6.7, 11.4 |
+| Whether a rejected code is treated as an expired session | No; the client's global 401 handling excludes both login endpoints | 6.5, 11.4 |
+
+`GET /api/v1/me/mfa` answers `NONE` both for an account that has not enrolled and for an instance
+where the flag is off, which are byte-identical. Without a second field the settings card would
+offer a setup button whose only possible outcome is the `503`. The flag is reported by the status
+operation alone; every other operation continues to refuse outright when the feature is disabled.
+
+Making the second stage a route would put the challenge token in a resolver or in the URL, and a
+reload mid-challenge would strand the user on a page with no token. Keeping it in memory means a
+reload returns to the password stage, which is the correct outcome — the challenge is short-lived by
+design and the password stage is always reachable.
+
+The third decision corrects a defect T2b exposed rather than introduced: the browser client treated
+any `401` outside `POST /api/v1/auth/login` as a lost session and returned to the login page, so a
+single mistyped code discarded a challenge the server was still willing to accept.

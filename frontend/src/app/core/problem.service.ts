@@ -45,6 +45,12 @@ const PROBLEM_CODE_KEYS: Record<string, MessageKey> = {
   IMAGE_QUOTA_EXCEEDED: 'problemCodeImageQuotaExceeded',
   IMAGE_STILL_REFERENCED: 'problemCodeImageStillReferenced',
   IMAGE_STORAGE_UNAVAILABLE: 'problemCodeImageStorageUnavailable',
+  AUTH_MFA_INVALID_CODE: 'problemCodeAuthMfaInvalidCode',
+  AUTH_MFA_CHALLENGE_INVALID: 'problemCodeAuthMfaChallengeInvalid',
+  AUTH_MFA_ATTEMPTS_EXCEEDED: 'problemCodeAuthMfaAttemptsExceeded',
+  MFA_ALREADY_ENROLLED: 'problemCodeMfaAlreadyEnrolled',
+  MFA_NOT_ENROLLED: 'problemCodeMfaNotEnrolled',
+  MFA_UNAVAILABLE: 'problemCodeMfaUnavailable',
 };
 
 @Injectable({ providedIn: 'root' })

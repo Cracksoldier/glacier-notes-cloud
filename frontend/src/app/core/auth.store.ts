@@ -4,6 +4,7 @@ import { catchError, finalize, map, Observable, of, shareReplay, tap } from 'rxj
 import { AuthenticationService } from '../shared/generated-api/api/authentication.service';
 import type { LoginOutcome } from '../shared/generated-api/model/loginOutcome';
 import type { LoginRequest } from '../shared/generated-api/model/loginRequest';
+import type { MfaChallenge } from '../shared/generated-api/model/mfaChallenge';
 import type { SessionContext } from '../shared/generated-api/model/sessionContext';
 
 @Injectable({ providedIn: 'root' })
@@ -12,6 +13,7 @@ export class AuthStore {
 
   readonly session = signal<SessionContext | null>(null);
   readonly restored = signal(false);
+  readonly challenge = signal<MfaChallenge | null>(null);
   private restoration: Observable<boolean> | null = null;
 
   restore(): Observable<boolean> {
@@ -46,8 +48,25 @@ export class AuthStore {
           this.session.set(outcome.context);
           this.restored.set(true);
         }
+        this.challenge.set(outcome.challenge ?? null);
       }),
     );
+  }
+
+  completeSecondFactor(code: string): Observable<SessionContext> {
+    const challenge = this.challenge();
+    if (!challenge) throw new Error('No second-factor challenge is in progress.');
+    return this.authenticationApi.completeMfaLogin({ challengeToken: challenge.token, code }).pipe(
+      tap((session) => {
+        this.session.set(session);
+        this.restored.set(true);
+        this.challenge.set(null);
+      }),
+    );
+  }
+
+  abandonChallenge(): void {
+    this.challenge.set(null);
   }
 
   logout(): Observable<void> {
@@ -60,5 +79,6 @@ export class AuthStore {
   clear(): void {
     this.session.set(null);
     this.restored.set(true);
+    this.challenge.set(null);
   }
 }

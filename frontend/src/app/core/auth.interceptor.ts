@@ -5,6 +5,9 @@ import { catchError, throwError } from 'rxjs';
 
 import { AuthStore } from './auth.store';
 
+/** These answer 401 for a wrong password or code, which is not an expired session. */
+const LOGIN_PATHS = ['/api/v1/auth/login', '/api/v1/auth/login/mfa'];
+
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthStore);
   const router = inject(Router);
@@ -14,7 +17,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       if (
         error instanceof HttpErrorResponse &&
         error.status === 401 &&
-        !request.url.endsWith('/api/v1/auth/login')
+        !LOGIN_PATHS.some((path) => request.url.endsWith(path))
       ) {
         auth.clear();
         void router.navigate(['/login']);

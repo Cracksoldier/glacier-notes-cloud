@@ -127,6 +127,14 @@ const messages = {
     problemCodeImageStillReferenced:
       'This image is still referenced by a note or a retained version.',
     problemCodeImageStorageUnavailable: 'Image storage is temporarily unavailable.',
+    problemCodeAuthMfaInvalidCode:
+      'That code is not correct. Check your authenticator app and try again.',
+    problemCodeAuthMfaChallengeInvalid:
+      'The sign-in request is no longer valid. Please sign in again.',
+    problemCodeAuthMfaAttemptsExceeded: 'Too many incorrect codes. Please sign in again.',
+    problemCodeMfaAlreadyEnrolled: 'Two-factor authentication is already active on this account.',
+    problemCodeMfaNotEnrolled: 'Two-factor authentication is not active on this account.',
+    problemCodeMfaUnavailable: 'Two-factor authentication is not available on this instance.',
 
     sessionsRevokeFailed: 'The session could not be revoked.',
     sessionsRevokeOthersFailed: 'Other sessions could not be revoked.',
@@ -588,6 +596,61 @@ const messages = {
     adminSmtpSendTestEmail: 'Send test email to me',
     adminSmtpLoading: 'Loading SMTP status…',
 
+    mfaLoginTitle: 'Two-step verification',
+    mfaLoginIntro: 'Enter the 6-digit code from your authenticator app.',
+    mfaLoginIntroRecovery: 'Enter one of the recovery codes you saved during setup.',
+    mfaLoginCodeLabel: 'Authentication code',
+    mfaLoginRecoveryCodeLabel: 'Recovery code',
+    mfaLoginVerify: 'Verify',
+    mfaLoginVerifying: 'Verifying…',
+    mfaLoginUseRecoveryCode: 'Use a recovery code instead',
+    mfaLoginUseAuthenticator: 'Use your authenticator app instead',
+    mfaLoginExpiresIn: 'This request expires in {seconds} s.',
+    mfaLoginExpired: 'The sign-in request expired. Please sign in again.',
+    mfaLoginAttemptsRemaining: '{count} attempts remaining before this request is discarded.',
+    mfaLoginCancel: 'Back to sign in',
+
+    mfaCardTitle: 'Two-factor authentication',
+    mfaCardIntro:
+      'Require a time-based code from an authenticator app in addition to your password.',
+    mfaCardStatusActive: 'Active',
+    mfaCardStatusInactive: 'Not set up',
+    mfaCardConfirmedAt: 'In use since {date}.',
+    mfaCardRecoveryRemaining: '{count} recovery codes left.',
+    mfaCardRecoveryDepleted:
+      'No recovery codes are left. Generate a new set so you can still get in if you lose your app.',
+    mfaCardSetUp: 'Set up',
+    mfaCardTurnOff: 'Turn off',
+    mfaCardRegenerate: 'New recovery codes',
+    mfaCardPendingNotice:
+      'A setup was started but never finished. The one-time key cannot be shown again, so it has to be started over.',
+    mfaCardDiscardAndRestart: 'Discard and start over',
+    mfaCardPasswordPrompt: 'Confirm your password to continue.',
+    mfaCardPassword: 'Current password',
+    mfaCardContinue: 'Continue',
+    mfaCardCancel: 'Cancel',
+    mfaCardScanTitle: 'Scan with your authenticator app',
+    mfaCardScanIntro: 'Then enter the 6-digit code the app shows to finish setup.',
+    mfaCardQrAlt: 'QR code containing the setup key',
+    mfaCardManualEntry: 'Cannot scan? Enter this key manually.',
+    mfaCardSetupExpiresIn: 'This setup expires in {minutes} min.',
+    mfaCardSetupExpired: 'The setup expired before it was confirmed. Start over.',
+    mfaCardCodeLabel: 'Code from your app',
+    mfaCardConfirm: 'Confirm',
+    mfaCardCodesTitle: 'Save your recovery codes',
+    mfaCardCodesIntro:
+      'Each code works once. This is the only time they are shown — store them somewhere safe and offline.',
+    mfaCardCopyCodes: 'Copy',
+    mfaCardCopied: 'Copied',
+    mfaCardDownloadCodes: 'Download',
+    mfaCardAcknowledge: 'I have saved these recovery codes.',
+    mfaCardDone: 'Done',
+    mfaCardTurnOffConfirm:
+      'Turn off two-factor authentication? Your account will then be protected by your password alone.',
+    mfaCardRegenerateConfirm:
+      'Generate new recovery codes? Every code from the previous set stops working immediately.',
+    mfaCardLoadFailed: 'The two-factor status could not be loaded.',
+
     appShellServerUnavailable: 'Server unavailable',
     appShellCheckFailed: 'Glacier Notes could not check the instance setup status.',
     appShellTryAgain: 'Try again',
@@ -722,6 +785,17 @@ const messages = {
     problemCodeImageStillReferenced:
       'Dieses Bild wird noch von einer Notiz oder einer Version verwendet.',
     problemCodeImageStorageUnavailable: 'Der Bildspeicher ist vorübergehend nicht verfügbar.',
+    problemCodeAuthMfaInvalidCode:
+      'Dieser Code ist nicht korrekt. Prüfen Sie Ihre Authenticator-App und versuchen Sie es erneut.',
+    problemCodeAuthMfaChallengeInvalid:
+      'Die Anmeldeanfrage ist nicht mehr gültig. Bitte melden Sie sich erneut an.',
+    problemCodeAuthMfaAttemptsExceeded: 'Zu viele falsche Codes. Bitte melden Sie sich erneut an.',
+    problemCodeMfaAlreadyEnrolled:
+      'Die Zwei-Faktor-Authentifizierung ist für dieses Konto bereits aktiv.',
+    problemCodeMfaNotEnrolled:
+      'Die Zwei-Faktor-Authentifizierung ist für dieses Konto nicht aktiv.',
+    problemCodeMfaUnavailable:
+      'Die Zwei-Faktor-Authentifizierung ist auf dieser Instanz nicht verfügbar.',
 
     sessionsRevokeFailed: 'Die Sitzung konnte nicht beendet werden.',
     sessionsRevokeOthersFailed: 'Andere Sitzungen konnten nicht beendet werden.',
@@ -1190,6 +1264,64 @@ const messages = {
     adminSmtpSending: 'Wird gesendet…',
     adminSmtpSendTestEmail: 'Test-E-Mail an mich senden',
     adminSmtpLoading: 'SMTP-Status wird geladen…',
+
+    mfaLoginTitle: 'Bestätigung in zwei Schritten',
+    mfaLoginIntro: 'Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein.',
+    mfaLoginIntroRecovery:
+      'Geben Sie einen der Wiederherstellungscodes ein, die Sie bei der Einrichtung gespeichert haben.',
+    mfaLoginCodeLabel: 'Authentifizierungscode',
+    mfaLoginRecoveryCodeLabel: 'Wiederherstellungscode',
+    mfaLoginVerify: 'Bestätigen',
+    mfaLoginVerifying: 'Wird geprüft…',
+    mfaLoginUseRecoveryCode: 'Stattdessen einen Wiederherstellungscode verwenden',
+    mfaLoginUseAuthenticator: 'Stattdessen die Authenticator-App verwenden',
+    mfaLoginExpiresIn: 'Diese Anfrage läuft in {seconds} s ab.',
+    mfaLoginExpired: 'Die Anmeldeanfrage ist abgelaufen. Bitte melden Sie sich erneut an.',
+    mfaLoginAttemptsRemaining: 'Noch {count} Versuche, danach wird die Anfrage verworfen.',
+    mfaLoginCancel: 'Zurück zur Anmeldung',
+
+    mfaCardTitle: 'Zwei-Faktor-Authentifizierung',
+    mfaCardIntro:
+      'Zusätzlich zum Passwort einen zeitbasierten Code aus einer Authenticator-App verlangen.',
+    mfaCardStatusActive: 'Aktiv',
+    mfaCardStatusInactive: 'Nicht eingerichtet',
+    mfaCardConfirmedAt: 'In Verwendung seit {date}.',
+    mfaCardRecoveryRemaining: 'Noch {count} Wiederherstellungscodes übrig.',
+    mfaCardRecoveryDepleted:
+      'Es sind keine Wiederherstellungscodes mehr übrig. Erzeugen Sie neue, damit Sie auch ohne Ihre App wieder hineinkommen.',
+    mfaCardSetUp: 'Einrichten',
+    mfaCardTurnOff: 'Deaktivieren',
+    mfaCardRegenerate: 'Neue Wiederherstellungscodes',
+    mfaCardPendingNotice:
+      'Eine Einrichtung wurde begonnen, aber nie abgeschlossen. Der einmalige Schlüssel kann nicht erneut angezeigt werden, daher muss neu begonnen werden.',
+    mfaCardDiscardAndRestart: 'Verwerfen und neu beginnen',
+    mfaCardPasswordPrompt: 'Bestätigen Sie zum Fortfahren Ihr Passwort.',
+    mfaCardPassword: 'Aktuelles Passwort',
+    mfaCardContinue: 'Weiter',
+    mfaCardCancel: 'Abbrechen',
+    mfaCardScanTitle: 'Mit Ihrer Authenticator-App scannen',
+    mfaCardScanIntro:
+      'Geben Sie danach den 6-stelligen Code aus der App ein, um die Einrichtung abzuschließen.',
+    mfaCardQrAlt: 'QR-Code mit dem Einrichtungsschlüssel',
+    mfaCardManualEntry: 'Scannen nicht möglich? Geben Sie diesen Schlüssel manuell ein.',
+    mfaCardSetupExpiresIn: 'Diese Einrichtung läuft in {minutes} min ab.',
+    mfaCardSetupExpired:
+      'Die Einrichtung ist abgelaufen, bevor sie bestätigt wurde. Bitte neu beginnen.',
+    mfaCardCodeLabel: 'Code aus Ihrer App',
+    mfaCardConfirm: 'Bestätigen',
+    mfaCardCodesTitle: 'Speichern Sie Ihre Wiederherstellungscodes',
+    mfaCardCodesIntro:
+      'Jeder Code funktioniert einmal. Sie werden nur dieses eine Mal angezeigt — bewahren Sie sie sicher und offline auf.',
+    mfaCardCopyCodes: 'Kopieren',
+    mfaCardCopied: 'Kopiert',
+    mfaCardDownloadCodes: 'Herunterladen',
+    mfaCardAcknowledge: 'Ich habe diese Wiederherstellungscodes gespeichert.',
+    mfaCardDone: 'Fertig',
+    mfaCardTurnOffConfirm:
+      'Zwei-Faktor-Authentifizierung deaktivieren? Ihr Konto ist danach nur noch durch das Passwort geschützt.',
+    mfaCardRegenerateConfirm:
+      'Neue Wiederherstellungscodes erzeugen? Alle Codes des bisherigen Satzes verlieren sofort ihre Gültigkeit.',
+    mfaCardLoadFailed: 'Der Zwei-Faktor-Status konnte nicht geladen werden.',
 
     appShellServerUnavailable: 'Server nicht verfügbar',
     appShellCheckFailed: 'Glacier Notes konnte den Instanz-Einrichtungsstatus nicht prüfen.',
