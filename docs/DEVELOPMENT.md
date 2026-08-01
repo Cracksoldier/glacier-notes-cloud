@@ -95,9 +95,9 @@ only ends sessions, whereas rotating this one would invalidate stored enrollment
 
 The step-up prompt on the gated operations is easy to miss while developing: verifying a code opens
 a grace window on that session, five minutes by default, and inside it the password alone is
-accepted, so no code field ever appears. To exercise the prompt, close the window by setting
-`mfa_step_up_grace_minutes` to `0` in the `instance_settings` row — there is no environment variable
-for it, and its administrative interface arrives in a later milestone.
+accepted, so no code field ever appears. To exercise the prompt, close the window by setting the
+step-up grace to `0` in admin settings, beside the login-throttling fields — there is no environment
+variable for it, and the change takes effect on the next request.
 
 To see the notifications a second-factor change sends, point the instance at a local mail sink —
 `docker run --rm -p 1025:1025 -p 8025:8025 axllent/mailpit` — and start Quarkus with

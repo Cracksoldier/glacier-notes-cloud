@@ -59,6 +59,26 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
   They carry the time and the coarse device description already kept for the session list, never a
   secret, a code, a link, or how many recovery codes are left, and they are sent after the operation
   commits, so a mail server that is down cannot undo a security change.
+- An administrative surface for the second factor. A user's admin page now reports whether a factor
+  is active and when it was confirmed — and nothing else, not the secret, not the recovery codes,
+  not how many are left — and offers **Clear second factor** when one is active, through
+  `POST /api/v1/admin/users/{userId}/second-factor-reset`. Clearing removes the enrollment, its
+  recovery codes and any outstanding challenge, ends every session the account holds, and mails the
+  user that an administrator did it. It is refused with `409 MFA_NOT_ENROLLED` on an account that
+  has none, and an enrolled administrator must prove possession first; both the refusal and the
+  clear are audited as `MFA_ADMINISTRATIVE_CLEAR` naming actor and target. This is the ordinary
+  remedy for a lost authenticator — the bootstrap break-glass path is now only for when no
+  administrator is left to perform it.
+- The four second-factor tunables on the admin settings page, beside the login-throttling fields:
+  challenge lifetime (1–30 minutes), challenge attempt limit (3–10), pending-enrollment window
+  (5–120 minutes), and step-up grace (0–60 minutes). The bounds are enforced server-side whatever
+  the browser permits, an out-of-bounds submission names the offending field and changes nothing,
+  and the change takes effect without a restart. They were previously reachable only by editing the
+  `instance_settings` row by hand.
+- Second-factor counters completing `glacier_mfa_*`: recovery codes consumed, challenges abandoned
+  unused, operator break-glass resets, and administrative clears. Abandoned challenges are counted
+  apart from consumed ones, since only the former carries an attack signal. No counter carries a
+  per-account label. Break-glass resets are now audited on refusal as well as on success.
 - `GLACIER_MFA_ENABLED` (default `false`) and `GLACIER_MFA_ENCRYPTION_SECRET`
   / `GLACIER_MFA_ENCRYPTION_SECRET_FILE`. The secret is validated at startup only when the flag is
   enabled, so existing deployments upgrade without new configuration. It is kept separate from the

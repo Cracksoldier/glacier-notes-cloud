@@ -39,6 +39,10 @@ export interface AdminSettingsUpdate {
     loginLockMinutes?: number;
     commonPasswordCheckEnabled?: boolean;
     passwordHistoryEnabled?: boolean;
+    mfaChallengeLifetimeMinutes?: number;
+    mfaChallengeAttemptLimit?: number;
+    mfaPendingEnrollmentMinutes?: number;
+    mfaStepUpGraceMinutes?: number;
 }
 export enum AdminSettingsUpdateDefaultLanguageEnum {
     En = 'en',

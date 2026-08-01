@@ -230,6 +230,46 @@
       ></label
     >
     <label
+      >{{ i18n.t('adminSettingsMfaChallengeLifetimeMinutes') }}
+      <input
+        name="mfaChallengeLifetimeMinutes"
+        type="number"
+        min="1"
+        max="30"
+        [(ngModel)]="mfaChallengeLifetimeMinutes"
+      ></label
+    >
+    <label
+      >{{ i18n.t('adminSettingsMfaChallengeAttemptLimit') }}
+      <input
+        name="mfaChallengeAttemptLimit"
+        type="number"
+        min="3"
+        max="10"
+        [(ngModel)]="mfaChallengeAttemptLimit"
+      ></label
+    >
+    <label
+      >{{ i18n.t('adminSettingsMfaPendingEnrollmentMinutes') }}
+      <input
+        name="mfaPendingEnrollmentMinutes"
+        type="number"
+        min="5"
+        max="120"
+        [(ngModel)]="mfaPendingEnrollmentMinutes"
+      ></label
+    >
+    <label
+      >{{ i18n.t('adminSettingsMfaStepUpGraceMinutes') }}
+      <input
+        name="mfaStepUpGraceMinutes"
+        type="number"
+        min="0"
+        max="60"
+        [(ngModel)]="mfaStepUpGraceMinutes"
+      ></label
+    >
+    <label
       ><input name="selfDeletionEnabled" type="checkbox" [(ngModel)]="selfDeletionEnabled">
       {{ i18n.t('adminSettingsSelfDeletionEnabled') }}</label
     >

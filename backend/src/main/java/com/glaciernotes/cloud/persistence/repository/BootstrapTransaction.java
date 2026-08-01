@@ -1,5 +1,6 @@
 package com.glaciernotes.cloud.persistence.repository;
 
+import com.glaciernotes.cloud.application.auth.MfaAuditEvents;
 import com.glaciernotes.cloud.application.auth.SecondFactorEvent;
 import com.glaciernotes.cloud.application.lifecycle.MailMessages;
 import com.glaciernotes.cloud.application.setup.SetupCommand;
@@ -114,10 +115,11 @@ public class BootstrapTransaction {
             .orElse(null);
         var now = timeProvider.now();
         entityManager.persist(AuditEventEntity.administrative(
-            idGenerator.nextId(), "MFA_OPERATOR_RESET", null,
+            idGenerator.nextId(), MfaAuditEvents.OPERATOR_RESET, null,
             user == null ? null : user.id(), user == null ? null : "USER",
             user == null ? null : user.id(), now, correlationId,
-            Map.of("matched", Boolean.toString(user != null))
+            Map.of("matched", Boolean.toString(user != null)),
+            null, null, "SUCCESS"
         ));
         if (user == null) {
             entityManager.flush();
@@ -149,6 +151,18 @@ public class BootstrapTransaction {
             ));
         }
         return removed > 0;
+    }
+
+    /**
+     * Carries no identifier: the caller failed to authenticate, so the string it submitted is
+     * attacker-controlled and naming it would let an unauthorized party write into the audit log.
+     */
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    public void denySecondFactorReset(String correlationId) {
+        entityManager.persist(AuditEventEntity.administrative(
+            idGenerator.nextId(), MfaAuditEvents.OPERATOR_RESET, null, null, null, null,
+            timeProvider.now(), correlationId, Map.of(), null, null, "DENIED"
+        ));
     }
 
     public record State(boolean initialized, long userCount) {

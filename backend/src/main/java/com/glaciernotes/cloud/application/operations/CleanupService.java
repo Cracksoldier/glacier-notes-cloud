@@ -1,5 +1,6 @@
 package com.glaciernotes.cloud.application.operations;
 
+import com.glaciernotes.cloud.application.auth.MfaMetrics;
 import com.glaciernotes.cloud.domain.TimeProvider;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
@@ -11,10 +12,12 @@ import java.time.temporal.ChronoUnit;
 public class CleanupService {
     private final EntityManager entityManager;
     private final TimeProvider time;
+    private final MfaMetrics mfaMetrics;
 
-    public CleanupService(EntityManager entityManager, TimeProvider time) {
+    public CleanupService(EntityManager entityManager, TimeProvider time, MfaMetrics mfaMetrics) {
         this.entityManager = entityManager;
         this.time = time;
+        this.mfaMetrics = mfaMetrics;
     }
 
     @Transactional
@@ -45,11 +48,21 @@ public class CleanupService {
             """).setParameter("now", time.now()).executeUpdate();
     }
 
+    /**
+     * Consumed challenges go first so that the second statement counts only the abandoned ones. A
+     * single combined delete cannot tell the two apart, and it is the abandoned count that carries
+     * the operational signal.
+     */
     @Transactional
     public void removeMfaChallenges() {
-        entityManager.createNativeQuery("""
-            delete from mfa_challenges where expires_at <= :now or consumed_at is not null
-            """).setParameter("now", time.now()).executeUpdate();
+        entityManager.createNativeQuery("delete from mfa_challenges where consumed_at is not null")
+            .executeUpdate();
+        int expired = entityManager.createNativeQuery(
+                "delete from mfa_challenges where expires_at <= :now")
+            .setParameter("now", time.now()).executeUpdate();
+        if (expired > 0) {
+            mfaMetrics.challengesExpired(expired);
+        }
     }
 
     @Transactional

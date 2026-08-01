@@ -24,6 +24,8 @@ export interface AdminUser {
     noteCount: number;
     notebookCount: number;
     imageCount: number;
+    secondFactorActive: boolean;
+    secondFactorConfirmedAt?: string;
 }
 export enum AdminUserRoleEnum {
     User = 'USER',

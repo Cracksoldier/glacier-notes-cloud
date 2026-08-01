@@ -150,6 +150,14 @@ public class AdministrationResource implements AdministrationApi {
     }
 
     @Override
+    public AdminUser clearUserMfa(UUID userId, AdminStepUpRequest request) {
+        var result = lifecycle.clearSecondFactor(userId,
+            stepUp(request.getCurrentPassword(), request.getCode()), correlationId());
+        if (userId.equals(actor())) cookies.clear(response);
+        return result;
+    }
+
+    @Override
     public AdminUser restoreUserDeletion(UUID userId) {
         return lifecycle.restoreDeletion(userId, actor(), correlationId());
     }

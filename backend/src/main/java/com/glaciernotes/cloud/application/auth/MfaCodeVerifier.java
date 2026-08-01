@@ -22,17 +22,20 @@ public class MfaCodeVerifier {
     private final MfaTokenService mfaTokens;
     private final TotpVerifier totp;
     private final EnrollmentSecretCipher cipher;
+    private final MfaMetrics metrics;
 
     public MfaCodeVerifier(
         MfaRepository mfaRepository,
         MfaTokenService mfaTokens,
         TotpVerifier totp,
-        EnrollmentSecretCipher cipher
+        EnrollmentSecretCipher cipher,
+        MfaMetrics metrics
     ) {
         this.mfaRepository = mfaRepository;
         this.mfaTokens = mfaTokens;
         this.totp = totp;
         this.cipher = cipher;
+        this.metrics = metrics;
     }
 
     /** Returns the accepted factor name, or null when neither a TOTP nor a recovery code matched. */
@@ -53,6 +56,7 @@ public class MfaCodeVerifier {
             Arrays.fill(secret, (byte) 0);
         }
         if (mfaRepository.consumeRecoveryCode(userId, mfaTokens.hashRecoveryCode(code))) {
+            metrics.recoveryCodesConsumed();
             return "RECOVERY_CODE";
         }
         return null;

@@ -124,7 +124,13 @@ class SecondFactorResetTest {
 
         assertEquals(1, count("user_mfa_totp", "status = 'ACTIVE'"));
         assertEquals(10, count("user_mfa_recovery_codes", "true"));
-        assertEquals(0, count("audit_events", "event_type = 'MFA_OPERATOR_RESET'"));
+        // One row per refusal that reached the token check; the throttled calls never got that far.
+        // None may name the submitted identifier, which is attacker-controlled at this point.
+        assertEquals(4, count("audit_events",
+            "event_type = 'MFA_OPERATOR_RESET' and result = 'DENIED'"
+                + " and target_user_id is null and metadata_json::text = '{}'"));
+        assertEquals(0, count("audit_events",
+            "event_type = 'MFA_OPERATOR_RESET' and result = 'SUCCESS'"));
         assertEquals(1, count("bootstrap_rate_limits", "failure_count = 5 and blocked_until is not null"));
     }
 

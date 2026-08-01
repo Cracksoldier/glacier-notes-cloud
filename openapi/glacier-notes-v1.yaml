@@ -1001,6 +1001,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResetLink'
         default: { $ref: '#/components/responses/ProblemResponse' }
+  /api/v1/admin/users/{userId}/second-factor-reset:
+    post:
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      tags: [Administration]
+      summary: Clear a user's second authentication factor
+      operationId: clearUserMfa
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminStepUpRequest' }
+      responses:
+        '200':
+          description: Second factor cleared
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminUser' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/admin/users/{userId}/sessions:
     delete:
       security:
@@ -2427,7 +2449,7 @@ components:
         code: { type: string, format: password, minLength: 1, maxLength: 64 }
     AdminUser:
       type: object
-      required: [id, username, email, role, status, createdAt, storageBytes, noteCount, notebookCount, imageCount]
+      required: [id, username, email, role, status, createdAt, storageBytes, noteCount, notebookCount, imageCount, secondFactorActive]
       properties:
         id: { type: string, format: uuid }
         username: { type: string }
@@ -2443,6 +2465,8 @@ components:
         noteCount: { type: integer, format: int64, minimum: 0 }
         notebookCount: { type: integer, format: int64, minimum: 0 }
         imageCount: { type: integer, format: int64, minimum: 0 }
+        secondFactorActive: { type: boolean }
+        secondFactorConfirmedAt: { type: string, format: date-time }
     AdminUserPage:
       type: object
       required: [items, page]
@@ -2505,7 +2529,7 @@ components:
         expiresAt: { type: string, format: date-time }
     AdminSettings:
       type: object
-      required: [instanceName, defaultLanguage, allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, emailChangeExpirationMinutes, normalSessionDurationMinutes, rememberSessionDurationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours, noteVersionMaximumCount, noteVersionRetentionDays, userExportsEnabled, defaultTrashRetentionDays, usersMayDisableAutoPurge, adminDeletionRetentionDays, selfDeletionEnabled, publicBaseUrl, smtpSenderName, smtpSenderAddress, auditRetentionDays, operationalLogRetentionDays, loginDelayThreshold, loginLockThreshold, loginLockMinutes, commonPasswordCheckEnabled, passwordHistoryEnabled, restartRequiredSettings]
+      required: [instanceName, defaultLanguage, allowedEmailDomains, invitationExpirationHours, passwordResetExpirationMinutes, emailChangeExpirationMinutes, normalSessionDurationMinutes, rememberSessionDurationMinutes, allowedImageTypes, maximumImageBytes, perUserStorageQuotaBytes, imageOrphanGraceHours, noteVersionMaximumCount, noteVersionRetentionDays, userExportsEnabled, defaultTrashRetentionDays, usersMayDisableAutoPurge, adminDeletionRetentionDays, selfDeletionEnabled, publicBaseUrl, smtpSenderName, smtpSenderAddress, auditRetentionDays, operationalLogRetentionDays, loginDelayThreshold, loginLockThreshold, loginLockMinutes, commonPasswordCheckEnabled, passwordHistoryEnabled, mfaChallengeLifetimeMinutes, mfaChallengeAttemptLimit, mfaPendingEnrollmentMinutes, mfaStepUpGraceMinutes, restartRequiredSettings]
       properties:
         instanceName: { type: string, minLength: 1, maxLength: 128 }
         instanceLogoUrl: { type: string, format: uri-reference }
@@ -2541,6 +2565,10 @@ components:
         loginLockMinutes: { type: integer, minimum: 1, maximum: 1440 }
         commonPasswordCheckEnabled: { type: boolean }
         passwordHistoryEnabled: { type: boolean }
+        mfaChallengeLifetimeMinutes: { type: integer, minimum: 1, maximum: 30 }
+        mfaChallengeAttemptLimit: { type: integer, minimum: 3, maximum: 10 }
+        mfaPendingEnrollmentMinutes: { type: integer, minimum: 5, maximum: 120 }
+        mfaStepUpGraceMinutes: { type: integer, minimum: 0, maximum: 60 }
         restartRequiredSettings:
           type: array
           items:
@@ -2584,6 +2612,10 @@ components:
         loginLockMinutes: { type: integer, minimum: 1, maximum: 1440 }
         commonPasswordCheckEnabled: { type: boolean }
         passwordHistoryEnabled: { type: boolean }
+        mfaChallengeLifetimeMinutes: { type: integer, minimum: 1, maximum: 30 }
+        mfaChallengeAttemptLimit: { type: integer, minimum: 3, maximum: 10 }
+        mfaPendingEnrollmentMinutes: { type: integer, minimum: 5, maximum: 120 }
+        mfaStepUpGraceMinutes: { type: integer, minimum: 0, maximum: 60 }
     AuditEvent:
       type: object
       required: [id, eventType, occurredAt, result, correlationId, metadata]

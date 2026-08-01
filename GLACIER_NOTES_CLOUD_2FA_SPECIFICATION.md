@@ -1079,3 +1079,45 @@ arrives in T4. A browser session that has just signed in with a code therefore c
 prompt without waiting the window out, so the prompt itself is covered by Vitest with the refusal
 mocked. Playwright asserts the other half — that inside the window the operations still complete
 with no code field shown — which pins the window's effect rather than leaving it incidental.
+
+### 21.9 Resolved in version 0.8
+
+Resolved while planning milestone T4, the administrative surface, the tunables, and the observability
+gaps.
+
+| Decision | Outcome | Sections |
+| --- | --- | --- |
+| How the administrative clear is confirmed | It becomes a fourth action in the T3b panel, not a surface of its own | 5.4, 8.3 |
+| What the feature flag hides from an administrator | Nothing: true enrollment state and the clear stay available, and the tunables stay editable, whatever the flag says | 7.6, 9.1 |
+| Who the user hears from | A dedicated notice attributing the clear to an administrator, distinct from the operator one | 11 |
+| Whether `secondFactorActive` may be absent | It is required on `AdminUser`; only the confirmation date is optional | 9.1 |
+| What the administrator learns beyond the state | Nothing — explicitly not the remaining recovery-code count, which the account's own card does show | 9.1 |
+
+The clear needs exactly what the T3b panel already collects: the administrator's password, and a
+code once the server refuses without one. Building a second surface would mean a second copy of the
+conditional field and of the refusal handling, on the one path where the two must not diverge.
+
+Gating the administrative surface on the flag would make an account enrolled before the flag was
+turned off invisible *and* unclearable through the interface, leaving the bootstrap token as the only
+remedy for a state the operator created by accident. This mirrors the account's own disable path,
+which is deliberately not gated for the same reason. Keeping the tunables editable while the flag is
+off also lets an operator set the bounds before turning the feature on rather than after.
+
+`SECOND_FACTOR_CLEARED_BY_OPERATOR` attributes the action to the break-glass path, which is not what
+happened. Losing a second factor is precisely the event a user must be able to recognise as
+unexpected, so the notice has to name who actually did it.
+
+An optional `secondFactorActive` cannot distinguish "the server did not say" from "not enrolled" —
+the same reasoning that made `available` required on the account's own status in 21.6. The
+confirmation date is genuinely absent for an account with no factor, so it stays optional.
+
+The remaining recovery-code count is operationally useless to an administrator and tells them how
+close an account is to being locked out of its own recovery. The account holder needs it; nobody
+else does.
+
+Observability closes rather than opens here: most of sections 10.1 and 10.2 shipped with T1 to T3.
+What was missing was the administrative clear's own event and counter, a caller for the operator
+reset counter, a `DENIED` result on the operator path, a counter for recovery codes spent, and — the
+one that required a change in behaviour rather than a line — a count of abandoned challenges, which
+a single delete covering both expired and consumed rows could not produce. Only the abandoned ones
+carry an attack signal.

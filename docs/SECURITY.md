@@ -56,9 +56,12 @@ TOTP code or one of ten single-use recovery codes.
   deliberately *not* cleared by a correct password alone — otherwise a caller who knows the password
   could reset it indefinitely while brute-forcing the second factor. At most three challenges stay
   open per account.
-- **Lost authenticator.** The break-glass reset in `deployment/README.md` requires the bootstrap
-  token, revokes the account's sessions, and answers identically whether or not the account existed.
-  Administrators cannot clear another account's second factor through the admin API.
+- **Lost authenticator.** An administrator can clear another account's factor, proving their own
+  password and — when they are enrolled themselves — a fresh code. The clear revokes the target's
+  sessions, notifies the user, and is audited naming both accounts; it discloses nothing about the
+  target beyond whether a factor exists. The break-glass reset in `deployment/README.md`, for when no
+  administrator is left to do it, requires the bootstrap token, likewise revokes sessions, and
+  answers identically whether or not the account existed.
 
 ## Running the dependency and image scans locally
 

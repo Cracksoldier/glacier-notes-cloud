@@ -40,6 +40,10 @@ export interface AdminSettings {
     loginLockMinutes: number;
     commonPasswordCheckEnabled: boolean;
     passwordHistoryEnabled: boolean;
+    mfaChallengeLifetimeMinutes: number;
+    mfaChallengeAttemptLimit: number;
+    mfaPendingEnrollmentMinutes: number;
+    mfaStepUpGraceMinutes: number;
     restartRequiredSettings: Array<AdminSettingsRestartRequiredSettingsEnum>;
 }
 export enum AdminSettingsDefaultLanguageEnum {

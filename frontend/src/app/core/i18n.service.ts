@@ -209,6 +209,8 @@ const messages = {
     adminUserConfirmTitle: 'Confirm this action',
     adminUserConfirmReset: 'Generate a one-time password reset link for this account?',
     adminUserConfirmDelete: 'Delete this account and all of its content immediately?',
+    adminUserConfirmClearSecondFactor:
+      'Remove the second factor from this account? All of its sessions end, and the account signs in with its password alone until it enrolls again.',
     adminConfirmPassword: 'Your password',
     adminConfirmSubmit: 'Confirm',
     adminSettingsLogoAlt: 'Current instance logo',
@@ -236,6 +238,11 @@ const messages = {
     adminSettingsLoginDelayThreshold: 'Login delay threshold',
     adminSettingsLoginLockThreshold: 'Login lock threshold',
     adminSettingsLoginLockMinutes: 'Login lock duration (minutes)',
+    adminSettingsMfaChallengeLifetimeMinutes: 'Second-factor challenge lifetime (minutes)',
+    adminSettingsMfaChallengeAttemptLimit: 'Second-factor attempts per challenge',
+    adminSettingsMfaPendingEnrollmentMinutes:
+      'Unconfirmed second-factor enrollment expiry (minutes)',
+    adminSettingsMfaStepUpGraceMinutes: 'Second-factor re-prompt grace period (minutes)',
     adminSettingsSelfDeletionEnabled: 'Allow immediate self-service account deletion',
     adminSettingsCommonPasswordCheck: 'Reject common passwords',
     adminSettingsPasswordHistory: 'Prevent reuse of previous passwords',
@@ -458,6 +465,10 @@ const messages = {
     adminShellBackups: 'Backups',
 
     adminUserDeletionDue: 'Deletion due: {date}',
+    adminUserSecondFactor: 'Second factor',
+    adminUserSecondFactorActive: 'Active since {date}',
+    adminUserSecondFactorNone: 'Not set up',
+    adminUserClearSecondFactor: 'Clear second factor',
     adminUserUsername: 'Username',
     adminUserEmail: 'Email',
     adminUserDisplayName: 'Display name',
@@ -885,6 +896,8 @@ const messages = {
     adminUserConfirmReset:
       'Einen einmaligen Link zum Zurücksetzen des Passworts für dieses Konto erzeugen?',
     adminUserConfirmDelete: 'Dieses Konto und alle seine Inhalte sofort löschen?',
+    adminUserConfirmClearSecondFactor:
+      'Den zweiten Faktor dieses Kontos entfernen? Alle seine Sitzungen werden beendet, und das Konto meldet sich bis zur erneuten Einrichtung allein mit seinem Passwort an.',
     adminConfirmPassword: 'Ihr Passwort',
     adminConfirmSubmit: 'Bestätigen',
     adminSettingsLogoAlt: 'Aktuelles Instanz-Logo',
@@ -913,6 +926,11 @@ const messages = {
     adminSettingsLoginDelayThreshold: 'Schwellwert für Anmeldeverzögerung',
     adminSettingsLoginLockThreshold: 'Schwellwert für Anmeldesperre',
     adminSettingsLoginLockMinutes: 'Dauer der Anmeldesperre (Minuten)',
+    adminSettingsMfaChallengeLifetimeMinutes: 'Gültigkeit der Zweitfaktor-Anforderung (Minuten)',
+    adminSettingsMfaChallengeAttemptLimit: 'Zweitfaktor-Versuche je Anforderung',
+    adminSettingsMfaPendingEnrollmentMinutes:
+      'Verfall unbestätigter Zweitfaktor-Einrichtung (Minuten)',
+    adminSettingsMfaStepUpGraceMinutes: 'Karenzzeit für erneute Zweitfaktor-Abfrage (Minuten)',
     adminSettingsSelfDeletionEnabled: 'Sofortige Selbstlöschung erlauben',
     adminSettingsCommonPasswordCheck: 'Häufige Passwörter ablehnen',
     adminSettingsPasswordHistory: 'Wiederverwendung früherer Passwörter verhindern',
@@ -1138,6 +1156,10 @@ const messages = {
     adminShellBackups: 'Backups',
 
     adminUserDeletionDue: 'Löschung fällig: {date}',
+    adminUserSecondFactor: 'Zweiter Faktor',
+    adminUserSecondFactorActive: 'Aktiv seit {date}',
+    adminUserSecondFactorNone: 'Nicht eingerichtet',
+    adminUserClearSecondFactor: 'Zweiten Faktor entfernen',
     adminUserUsername: 'Benutzername',
     adminUserEmail: 'E-Mail',
     adminUserDisplayName: 'Anzeigename',

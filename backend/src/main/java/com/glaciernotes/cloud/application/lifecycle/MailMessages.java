@@ -220,6 +220,27 @@ public enum MailMessages {
         Falls Sie das nicht veranlasst haben, wenden Sie sich umgehend an Ihre
         Glacier-Notes-Administration.
         """
+    ),
+    SECOND_FACTOR_CLEARED_BY_ADMINISTRATOR(
+        "An administrator removed the second factor from your Glacier Notes account",
+        """
+        An administrator removed the second factor from your Glacier Notes account. Signing in now
+        needs your password alone, and all your sessions were signed out.
+
+        When: %s
+
+        If you did not ask for this, contact your Glacier Notes administrator immediately.
+        """,
+        "Ihre Administration hat den zweiten Faktor Ihres Glacier-Notes-Kontos entfernt",
+        """
+        Eine Administration hat den zweiten Faktor Ihres Glacier-Notes-Kontos entfernt. Zur
+        Anmeldung genügt nun Ihr Passwort, und alle Ihre Sitzungen wurden beendet.
+
+        Zeitpunkt: %s
+
+        Falls Sie das nicht veranlasst haben, wenden Sie sich umgehend an Ihre
+        Glacier-Notes-Administration.
+        """
     );
 
     private final String subjectEn;

@@ -185,4 +185,12 @@ public class InstanceSettingsEntity {
         if (lockThreshold != null) loginLockThreshold = lockThreshold;
         if (lockMinutes != null) loginLockMinutes = lockMinutes;
     }
+
+    public void updateSecondFactor(Integer challengeLifetimeMinutes, Integer challengeAttemptLimit,
+                                   Integer pendingEnrollmentMinutes, Integer stepUpGraceMinutes) {
+        if (challengeLifetimeMinutes != null) mfaChallengeLifetimeMinutes = challengeLifetimeMinutes;
+        if (challengeAttemptLimit != null) mfaChallengeAttemptLimit = challengeAttemptLimit;
+        if (pendingEnrollmentMinutes != null) mfaPendingEnrollmentMinutes = pendingEnrollmentMinutes;
+        if (stepUpGraceMinutes != null) mfaStepUpGraceMinutes = stepUpGraceMinutes;
+    }
 }

@@ -11,6 +11,7 @@ public final class MfaAuditEvents {
     public static final String RECOVERY_CODE_USED = "MFA_RECOVERY_CODE_USED";
     public static final String RECOVERY_CODES_REGENERATED = "MFA_RECOVERY_CODES_REGENERATED";
     public static final String OPERATOR_RESET = "MFA_OPERATOR_RESET";
+    public static final String ADMINISTRATIVE_CLEAR = "MFA_ADMINISTRATIVE_CLEAR";
     public static final String STEP_UP_SUCCEEDED = "MFA_STEP_UP_SUCCEEDED";
     public static final String STEP_UP_FAILED = "MFA_STEP_UP_FAILED";
 

@@ -28,6 +28,13 @@ const user: AdminUser = {
   noteCount: 0,
   notebookCount: 1,
   imageCount: 0,
+  secondFactorActive: false,
+};
+
+const enrolled: AdminUser = {
+  ...user,
+  secondFactorActive: true,
+  secondFactorConfirmedAt: '2026-07-30T08:00:00Z',
 };
 
 const importJob: TransferJob = {
@@ -49,6 +56,7 @@ describe('AdminUserDetailComponent', () => {
     deactivateUser: vi.fn(),
     createAdministrativePasswordReset: vi.fn(),
     scheduleUserDeletion: vi.fn(),
+    clearUserMfa: vi.fn(),
   };
 
   beforeEach(() => {
@@ -175,6 +183,53 @@ describe('AdminUserDetailComponent', () => {
       currentPassword: 'admin-password',
       code: undefined,
     });
+  });
+
+  it('shows the enrollment state and offers the clear action only when a factor is active', () => {
+    const fixture = TestBed.createComponent(AdminUserDetailComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Not set up');
+    expect(fixture.nativeElement.textContent).not.toContain('Clear second factor');
+
+    api.getUser.mockReturnValue(of(enrolled));
+    fixture.componentInstance.load();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Active since 2026-07-30T08:00:00Z');
+    expect(fixture.nativeElement.textContent).toContain('Clear second factor');
+  });
+
+  it('clears the second factor through the confirmation panel and adds the code on demand', () => {
+    api.getUser.mockReturnValue(of(enrolled));
+    api.clearUserMfa
+      .mockReturnValueOnce(
+        throwError(() => problem(401, { errorCode: 'AUTH_MFA_STEP_UP_REQUIRED' })),
+      )
+      .mockReturnValueOnce(of(user));
+    const fixture = TestBed.createComponent(AdminUserDetailComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    component.begin('clear-second-factor');
+    component.currentPassword = 'admin-password';
+    component.submitPending();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('input[autocomplete="one-time-code"]'),
+    ).not.toBeNull();
+
+    component.prompt.code = '123456';
+    component.submitPending();
+    fixture.detectChanges();
+
+    expect(api.clearUserMfa).toHaveBeenLastCalledWith(user.id, {
+      currentPassword: 'admin-password',
+      code: '123456',
+    });
+    expect(component.pending()).toBeNull();
+    expect(component.user()?.secondFactorActive).toBe(false);
   });
 
   it('shows visible focus on the blind-import file control', () => {

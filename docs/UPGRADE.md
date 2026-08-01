@@ -66,14 +66,15 @@ only checks the status code or extracts the `GLACIER_SESSION` cookie needs no ch
 This release also adds the optional TOTP second factor. It stays dormant unless you set
 `GLACIER_MFA_ENABLED=true` and supply `GLACIER_MFA_ENCRYPTION_SECRET` (or
 `GLACIER_MFA_ENCRYPTION_SECRET_FILE`); with the flag off, no account can enroll and login behaves
-exactly as before. Enabling it introduces two operational dependencies worth planning for:
+exactly as before. Enabling it introduces three operational dependencies worth planning for:
 
 - **Instance clock accuracy becomes a correctness dependency.** TOTP codes are derived from wall
   time, and the server accepts only the current 30-second step and its two neighbours. If the host
   clock drifts more than roughly a minute, correct codes start being rejected. Keep NTP running.
-- **A lost authenticator needs an operator.** The break-glass procedure is documented in
-  `deployment/README.md`. Make sure whoever operates the instance can reach the bootstrap token
-  before the first account enrolls.
+- **A lost authenticator needs an administrator, and sometimes an operator.** An administrator
+  clears another account's factor from the admin interface. When the locked-out account is the last
+  administrator, only the break-glass procedure in `deployment/README.md` remains, so make sure
+  whoever operates the instance can reach the bootstrap token before the first account enrolls.
 - **The encryption secret becomes part of your backup set.** A database restored without the
   matching `GLACIER_MFA_ENCRYPTION_SECRET` still contains every enrollment, but none of them can be
   decrypted, so enrolled accounts cannot finish signing in. See `docs/BACKUP_RESTORE.md`.
@@ -84,17 +85,20 @@ settings and a second stage on the sign-in page. With the flag off, neither appe
 The new operations are `GET /api/v1/me/mfa`, `POST /api/v1/me/mfa/totp`,
 `POST /api/v1/me/mfa/totp/confirm`, `DELETE /api/v1/me/mfa/totp/pending`,
 `POST /api/v1/me/mfa/totp/disable`, `POST /api/v1/me/mfa/recovery-codes`,
-`POST /api/v1/auth/login/mfa`, and `POST /api/v1/setup/second-factor-reset`. None of them affects a
-deployment that leaves the flag off.
+`POST /api/v1/auth/login/mfa`, `POST /api/v1/setup/second-factor-reset`, and
+`POST /api/v1/admin/users/{userId}/second-factor-reset`. None of them affects a deployment that
+leaves the flag off.
 
 One change reaches administrators even on an instance that leaves the flag off:
 `POST /api/v1/admin/users/{userId}/password-reset` now requires a JSON body. The bundled web
 interface sends it, so an upgrade using only the browser needs no action, but a script that posts
 this endpoint with no body must send at least `{}`. The same request from an administrator who has
-enrolled a second factor must also carry `currentPassword` and `code`; the browser prompt for those
-arrives in the next release, so an enrolled administrator should mint reset links and schedule
-deletions before enrolling, or use the API directly until then. `AdminDeletionRequest` accepts the
-same two optional fields.
+enrolled a second factor must also carry `currentPassword` and `code`, which the browser asks for
+when the server refuses without them. `AdminDeletionRequest` accepts the same two optional fields.
+
+The four tunables governing the feature — challenge lifetime, challenge attempt limit,
+pending-enrollment window, and step-up grace — are on the admin settings page and need no
+configuration to upgrade; their shipped defaults are what a fresh instance has always used.
 
 Migration `V14` runs on startup and only widens one check constraint to accept two additional
 rate-limit scopes. Nothing is dropped or narrowed.

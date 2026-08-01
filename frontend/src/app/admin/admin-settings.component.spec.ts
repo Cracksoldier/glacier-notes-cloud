@@ -42,6 +42,10 @@ const settings: AdminSettings = {
   loginDelayThreshold: 5,
   loginLockThreshold: 10,
   loginLockMinutes: 15,
+  mfaChallengeLifetimeMinutes: 5,
+  mfaChallengeAttemptLimit: 5,
+  mfaPendingEnrollmentMinutes: 30,
+  mfaStepUpGraceMinutes: 5,
   commonPasswordCheckEnabled: true,
   passwordHistoryEnabled: false,
   restartRequiredSettings: [
@@ -70,6 +74,34 @@ describe('AdminSettingsComponent', () => {
     });
     fixture = TestBed.createComponent(AdminSettingsComponent);
     fixture.detectChanges();
+  });
+
+  it('loads the second-factor tunables into the form and sends them back on save', async () => {
+    api.getAdminSettings.mockReturnValue(of({ ...settings, mfaStepUpGraceMinutes: 0 }));
+    fixture = TestBed.createComponent(AdminSettingsComponent);
+    fixture.detectChanges();
+    // NgModel writes its value through a resolved promise, so the input is still empty until a
+    // macrotask has run.
+    await new Promise((resolve) => setTimeout(resolve));
+    fixture.detectChanges();
+    const grace = fixture.nativeElement.querySelector(
+      'input[name="mfaStepUpGraceMinutes"]',
+    ) as HTMLInputElement;
+
+    expect(grace.value).toBe('0');
+    expect(grace.min).toBe('0');
+    expect(grace.max).toBe('60');
+
+    fixture.componentInstance.save();
+
+    expect(api.updateAdminSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mfaChallengeLifetimeMinutes: 5,
+        mfaChallengeAttemptLimit: 5,
+        mfaPendingEnrollmentMinutes: 30,
+        mfaStepUpGraceMinutes: 0,
+      }),
+    );
   });
 
   it('does not submit editable defaults after the initial load fails', () => {

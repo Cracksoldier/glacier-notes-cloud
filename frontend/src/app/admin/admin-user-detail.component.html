@@ -1,6 +1,10 @@
 @if (user(); as value) {
 <h1>{{ value.username }}</h1>
 <p>{{ value.status }} · {{ value.role }}</p>
+<p>
+  {{ i18n.t('adminUserSecondFactor') }}:
+  {{ value.secondFactorActive ? i18n.t('adminUserSecondFactorActive', { date: value.secondFactorConfirmedAt ?? '' }) : i18n.t('adminUserSecondFactorNone') }}
+</p>
 @if (value.deletionDueAt) {
 <p role="status">{{ i18n.t('adminUserDeletionDue', { date: value.deletionDueAt }) }}</p>
 }
@@ -43,7 +47,12 @@
     <i class="fa-solid fa-link" aria-hidden="true"></i>
     <span>{{ i18n.t('adminUserGenerateResetLink') }}</span>
   </button>
-  @if (value.status === 'PENDING_DELETION') {
+  @if (value.secondFactorActive) {
+  <button type="button" (click)="begin('clear-second-factor')">
+    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+    <span>{{ i18n.t('adminUserClearSecondFactor') }}</span>
+  </button>
+  } @if (value.status === 'PENDING_DELETION') {
   <button type="button" (click)="restoreDeletion()">
     <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
     <span>{{ i18n.t('adminUserRestoreAccount') }}</span>
@@ -66,6 +75,8 @@
   <p>{{ i18n.t('adminUserConfirmReset') }}</p>
   } @case ('schedule') {
   <p>{{ i18n.t('adminUserConfirmSchedule') }}</p>
+  } @case ('clear-second-factor') {
+  <p>{{ i18n.t('adminUserConfirmClearSecondFactor') }}</p>
   } @default {
   <p>{{ i18n.t('adminUserConfirmDelete') }}</p>
   } }

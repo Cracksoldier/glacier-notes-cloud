@@ -188,12 +188,34 @@ Enabling the feature makes the host clock a correctness dependency. Codes are de
 time, and the server accepts only the current 30-second window and its two neighbours, so drift
 beyond about a minute makes correct codes fail. Keep time synchronization running on the host.
 
-### Break-glass: an account has lost its authenticator
+This matters for alerting as much as for users: a rejected code is a rejected code, and
+`glacier_mfa_verifications{outcome="rejected"}` cannot tell an attacker guessing from an instance
+whose clock has slipped. Rule drift out first when that counter rises — a fleet-wide climb across
+unrelated accounts is the signature of a clock problem, not of an attack.
 
-This is a recovery procedure, not routine administration. Users who still have their recovery codes
-should use one to log in and then re-enroll; administrators cannot clear another account's second
-factor through the admin interface, by design. The path below exists for the case where both the
-authenticator and the recovery codes are gone.
+### Clearing a second factor as an administrator
+
+A user who lost their authenticator but still has a recovery code should use one to sign in and
+re-enroll. When both are gone, an administrator opens the account's page in the admin interface,
+where the second-factor row shows whether a factor is active and when it was confirmed, and uses
+**Clear second factor**. It asks for the administrator's own password, and for a code as well when
+that administrator is themselves enrolled.
+
+The clear removes the enrollment and its recovery codes, ends every session the account holds, mails
+the user that it happened, and records `MFA_ADMINISTRATIVE_CLEAR` naming both the acting
+administrator and the target. Nothing about the account's secret or its recovery codes is shown to
+the administrator at any point. This is the ordinary remedy; the break-glass path below is for when
+no administrator can sign in.
+
+The four tunables that govern the feature — challenge lifetime, challenge attempt limit, pending
+enrollment window, and step-up grace — live on the admin settings page beside the login-throttling
+settings, and take effect without a restart.
+
+### Break-glass: no administrator can sign in
+
+This is a recovery procedure, not routine administration — reach for the administrative clear above
+first. The path below exists for the case where the account that lost its authenticator is the last
+administrator, so no one is left who could clear it through the interface.
 
 It requires the bootstrap token — the same secret used to create the initial administrator — so
 whoever performs it holds instance-level authority, not merely administrator rights.

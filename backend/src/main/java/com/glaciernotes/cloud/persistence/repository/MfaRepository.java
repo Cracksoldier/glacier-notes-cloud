@@ -11,9 +11,12 @@ import jakarta.transaction.Transactional;
 
 import java.net.InetAddress;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class MfaRepository {
@@ -126,12 +129,22 @@ public class MfaRepository {
             .findFirst();
     }
 
+    /**
+     * Resolved for a whole page of users at once so that the administrative user list does not issue
+     * one enrollment lookup per row.
+     */
     @Transactional
-    public int purgeExpiredChallenges(Instant before) {
+    public Map<UUID, Instant> activeEnrollments(Collection<UUID> userIds) {
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
         return entityManager.createQuery(
-                "delete from MfaChallengeEntity c where c.expiresAt <= :before or c.consumedAt is not null"
+                "select t.userId, t.confirmedAt from UserMfaTotpEntity t "
+                    + "where t.userId in :userIds and t.status = 'ACTIVE' and t.confirmedAt is not null",
+                Object[].class
             )
-            .setParameter("before", before)
-            .executeUpdate();
+            .setParameter("userIds", userIds)
+            .getResultStream()
+            .collect(Collectors.toUnmodifiableMap(row -> (UUID) row[0], row -> (Instant) row[1]));
     }
 }

@@ -1,5 +1,6 @@
 package com.glaciernotes.cloud.application.lifecycle;
 
+import com.glaciernotes.cloud.application.auth.MfaAdministration;
 import com.glaciernotes.cloud.application.auth.MfaFailure;
 import com.glaciernotes.cloud.application.auth.StepUpCredentials;
 import com.glaciernotes.cloud.application.auth.StepUpService;
@@ -16,6 +17,7 @@ import com.glaciernotes.cloud.domain.notebook.Notebook;
 import com.glaciernotes.cloud.generated.model.*;
 import com.glaciernotes.cloud.persistence.entity.*;
 import com.glaciernotes.cloud.persistence.repository.EndpointRateLimiter;
+import com.glaciernotes.cloud.persistence.repository.MfaRepository;
 import com.glaciernotes.cloud.persistence.repository.SessionRepository;
 import com.glaciernotes.cloud.persistence.repository.UserUsageRepository;
 import com.glaciernotes.cloud.security.ClientKeyHasher;
@@ -47,6 +49,8 @@ public class LifecycleService {
     private final PasswordManager passwordManager;
     private final AccountDeletionService deletion;
     private final StepUpService stepUp;
+    private final MfaAdministration mfaAdministration;
+    private final MfaRepository mfa;
     private final SessionTokenService tokens;
     private final ClientKeyHasher keyHasher;
     private final EndpointRateLimiter rateLimiter;
@@ -61,7 +65,8 @@ public class LifecycleService {
     public LifecycleService(EntityManager entityManager, IdentityNormalizer identities,
                             PasswordPolicy passwordPolicy, PasswordVerifier passwordVerifier,
                             PasswordManager passwordManager, AccountDeletionService deletion,
-                            StepUpService stepUp, SessionTokenService tokens, ClientKeyHasher keyHasher,
+                            StepUpService stepUp, MfaAdministration mfaAdministration,
+                            MfaRepository mfa, SessionTokenService tokens, ClientKeyHasher keyHasher,
                             EndpointRateLimiter rateLimiter, SessionRepository sessions,
                             UserUsageRepository userUsage, LifecycleEmailService email,
                             GlacierConfiguration configuration,
@@ -73,6 +78,8 @@ public class LifecycleService {
         this.passwordManager = passwordManager;
         this.deletion = deletion;
         this.stepUp = stepUp;
+        this.mfaAdministration = mfaAdministration;
+        this.mfa = mfa;
         this.tokens = tokens;
         this.keyHasher = keyHasher;
         this.rateLimiter = rateLimiter;
@@ -268,7 +275,9 @@ public class LifecycleService {
             .setParameter("role", blankToNull(role)).setParameter("status", blankToNull(status))
             .setFirstResult(offset).setMaxResults(limit + 1).getResultList();
         var hasNext = users.size() > limit;
-        var items = users.stream().limit(limit).map(this::adminUser).toList();
+        var visible = users.stream().limit(limit).toList();
+        var enrollments = mfa.activeEnrollments(visible.stream().map(UserEntity::id).toList());
+        var items = visible.stream().map(user -> adminUser(user, enrollments)).toList();
         return new AdminUserPage().items(items).page(page(items.size(), hasNext, offset + items.size()));
     }
 
@@ -347,6 +356,13 @@ public class LifecycleService {
         return adminUser(deletion.scheduleAdministrative(userId, request, admin.userId(), correlationId));
     }
 
+    @Transactional(dontRollbackOn = {LifecycleFailure.class, MfaFailure.class})
+    public AdminUser clearSecondFactor(UUID userId, StepUpCredentials admin, String correlationId) {
+        var user = user(userId, LockModeType.PESSIMISTIC_WRITE);
+        mfaAdministration.clear(user, admin, correlationId);
+        return adminUser(user, Map.of());
+    }
+
     @Transactional
     public AdminUser restoreDeletion(UUID userId, UUID actor, String correlationId) {
         return adminUser(deletion.restore(userId, actor, correlationId));
@@ -402,6 +418,9 @@ public class LifecycleService {
             update.getSmtpSenderName(), update.getSmtpSenderAddress(),
             update.getAuditRetentionDays(), update.getOperationalLogRetentionDays(),
             update.getLoginDelayThreshold(), update.getLoginLockThreshold(), update.getLoginLockMinutes());
+        entity.updateSecondFactor(update.getMfaChallengeLifetimeMinutes(),
+            update.getMfaChallengeAttemptLimit(), update.getMfaPendingEnrollmentMinutes(),
+            update.getMfaStepUpGraceMinutes());
         if (Boolean.FALSE.equals(update.getUsersMayDisableAutoPurge())) {
             entityManager.createNativeQuery("update user_settings set trash_auto_purge_days = :days "
                     + "where trash_auto_purge_days is null")
@@ -537,8 +556,20 @@ public class LifecycleService {
     }
 
     private AdminUser adminUser(UserEntity user) {
+        return adminUser(user, mfa.activeEnrollments(List.of(user.id())));
+    }
+
+    /**
+     * Reports only whether a factor is active and since when. The remaining recovery-code count is
+     * deliberately withheld: the account's own settings page shows it, an administrator has no
+     * operational need for it (specification section 9.1).
+     */
+    private AdminUser adminUser(UserEntity user, Map<UUID, Instant> enrollments) {
         var usage = userUsage.summarize(new OwnerId(user.id()));
+        var confirmedAt = enrollments.get(user.id());
         return new AdminUser().id(user.id()).username(user.username()).email(user.email())
+            .secondFactorActive(confirmedAt != null)
+            .secondFactorConfirmedAt(confirmedAt == null ? null : confirmedAt.atOffset(ZoneOffset.UTC))
             .displayName(user.displayName()).role(AdminUser.RoleEnum.fromValue(user.role()))
             .status(AdminUser.StatusEnum.fromValue(user.status()))
             .createdAt(user.createdAt().atOffset(ZoneOffset.UTC))
@@ -598,6 +629,10 @@ public class LifecycleService {
             .loginLockMinutes(value.loginLockMinutes())
             .commonPasswordCheckEnabled(value.commonPasswordCheckEnabled())
             .passwordHistoryEnabled(value.passwordHistoryEnabled())
+            .mfaChallengeLifetimeMinutes(value.mfaChallengeLifetimeMinutes())
+            .mfaChallengeAttemptLimit(value.mfaChallengeAttemptLimit())
+            .mfaPendingEnrollmentMinutes(value.mfaPendingEnrollmentMinutes())
+            .mfaStepUpGraceMinutes(value.mfaStepUpGraceMinutes())
             .restartRequiredSettings(List.of(
                 AdminSettings.RestartRequiredSettingsEnum.IMAGE_STORAGE_BACKEND,
                 AdminSettings.RestartRequiredSettingsEnum.SMTP_ENABLED,

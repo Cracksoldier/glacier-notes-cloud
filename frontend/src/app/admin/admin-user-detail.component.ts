@@ -15,7 +15,7 @@ import type { ResetLink } from '../shared/generated-api/model/resetLink';
 import type { TransferJob } from '../shared/generated-api/model/transferJob';
 import { StepUpCodeComponent } from '../shared/step-up-code.component';
 
-export type PendingAction = 'reset' | 'schedule' | 'delete';
+export type PendingAction = 'reset' | 'schedule' | 'delete' | 'clear-second-factor';
 
 @Component({
   selector: 'app-admin-user-detail',
@@ -127,7 +127,28 @@ export class AdminUserDetailComponent {
       case 'delete':
         this.deleteImmediately();
         break;
+      case 'clear-second-factor':
+        this.clearSecondFactor();
+        break;
     }
+  }
+
+  private clearSecondFactor(): void {
+    this.api
+      .clearUserMfa(this.id, {
+        currentPassword: this.currentPassword,
+        code: this.prompt.value(),
+      })
+      .subscribe({
+        next: (value) => {
+          this.user.set(value);
+          this.message.set(this.i18n.t('adminActionCompleted'));
+          this.cancelPending();
+          // The clear revoked every session of the target, including this one when it is our own.
+          this.checkSelf();
+        },
+        error: (failure) => this.fail(failure),
+      });
   }
 
   private resetPassword(): void {

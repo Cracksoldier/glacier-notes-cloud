@@ -1,5 +1,6 @@
 package com.glaciernotes.cloud.application.setup;
 
+import com.glaciernotes.cloud.application.auth.MfaMetrics;
 import com.glaciernotes.cloud.configuration.SecretProvider;
 import com.glaciernotes.cloud.configuration.SecretPolicy;
 import com.glaciernotes.cloud.persistence.repository.BootstrapRateLimiter;
@@ -22,6 +23,7 @@ public class BootstrapService {
     private final ClientKeyHasher clientKeyHasher;
     private final IdentityNormalizer identityNormalizer;
     private final PasswordPolicy passwordPolicy;
+    private final MfaMetrics mfaMetrics;
 
     public BootstrapService(
         BootstrapTransaction transaction,
@@ -29,7 +31,8 @@ public class BootstrapService {
         SecretProvider secretProvider,
         ClientKeyHasher clientKeyHasher,
         IdentityNormalizer identityNormalizer,
-        PasswordPolicy passwordPolicy
+        PasswordPolicy passwordPolicy,
+        MfaMetrics mfaMetrics
     ) {
         this.transaction = transaction;
         this.rateLimiter = rateLimiter;
@@ -37,6 +40,7 @@ public class BootstrapService {
         this.clientKeyHasher = clientKeyHasher;
         this.identityNormalizer = identityNormalizer;
         this.passwordPolicy = passwordPolicy;
+        this.mfaMetrics = mfaMetrics;
     }
 
     public boolean setupRequired() {
@@ -104,6 +108,7 @@ public class BootstrapService {
         rateLimiter.checkAllowed(clientKey);
         if (!matches(configuredToken, suppliedToken)) {
             rateLimiter.recordFailure(clientKey);
+            transaction.denySecondFactorReset(correlationId);
             throw SetupFailure.denied();
         }
         rateLimiter.clear(clientKey);
@@ -111,6 +116,8 @@ public class BootstrapService {
             .normalize(identifier == null ? "" : identifier.strip(), Normalizer.Form.NFKC)
             .toLowerCase(Locale.ROOT);
         transaction.clearSecondFactor(normalized, correlationId);
+        // Counted whether or not the identifier matched: the escape hatch was invoked either way.
+        mfaMetrics.operatorReset();
     }
 
     public void validateProductionSecrets() {

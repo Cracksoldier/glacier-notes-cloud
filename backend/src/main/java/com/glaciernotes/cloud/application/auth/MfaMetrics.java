@@ -49,7 +49,19 @@ public class MfaMetrics {
         registry.counter("glacier_mfa_recovery_codes", "outcome", "issued").increment();
     }
 
+    public void recoveryCodesConsumed() {
+        registry.counter("glacier_mfa_recovery_codes", "outcome", "consumed").increment();
+    }
+
+    public void challengesExpired(long count) {
+        registry.counter("glacier_mfa_challenges", "outcome", "expired").increment(count);
+    }
+
     public void operatorReset() {
         registry.counter("glacier_mfa_operator_resets").increment();
+    }
+
+    public void administrativeClear() {
+        registry.counter("glacier_mfa_administrative_clears").increment();
     }
 }

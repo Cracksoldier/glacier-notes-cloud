@@ -50,6 +50,10 @@ export class AdminSettingsComponent {
   loginDelayThreshold = 5;
   loginLockThreshold = 10;
   loginLockMinutes = 15;
+  mfaChallengeLifetimeMinutes = 5;
+  mfaChallengeAttemptLimit = 5;
+  mfaPendingEnrollmentMinutes = 30;
+  mfaStepUpGraceMinutes = 5;
   selfDeletionEnabled = true;
   commonPasswordCheckEnabled = true;
   passwordHistoryEnabled = false;
@@ -108,6 +112,10 @@ export class AdminSettingsComponent {
         loginDelayThreshold: this.loginDelayThreshold,
         loginLockThreshold: this.loginLockThreshold,
         loginLockMinutes: this.loginLockMinutes,
+        mfaChallengeLifetimeMinutes: this.mfaChallengeLifetimeMinutes,
+        mfaChallengeAttemptLimit: this.mfaChallengeAttemptLimit,
+        mfaPendingEnrollmentMinutes: this.mfaPendingEnrollmentMinutes,
+        mfaStepUpGraceMinutes: this.mfaStepUpGraceMinutes,
         selfDeletionEnabled: this.selfDeletionEnabled,
         commonPasswordCheckEnabled: this.commonPasswordCheckEnabled,
         passwordHistoryEnabled: this.passwordHistoryEnabled,
@@ -195,6 +203,10 @@ export class AdminSettingsComponent {
     this.loginDelayThreshold = value.loginDelayThreshold;
     this.loginLockThreshold = value.loginLockThreshold;
     this.loginLockMinutes = value.loginLockMinutes;
+    this.mfaChallengeLifetimeMinutes = value.mfaChallengeLifetimeMinutes;
+    this.mfaChallengeAttemptLimit = value.mfaChallengeAttemptLimit;
+    this.mfaPendingEnrollmentMinutes = value.mfaPendingEnrollmentMinutes;
+    this.mfaStepUpGraceMinutes = value.mfaStepUpGraceMinutes;
     this.selfDeletionEnabled = value.selfDeletionEnabled;
     this.commonPasswordCheckEnabled = value.commonPasswordCheckEnabled;
     this.passwordHistoryEnabled = value.passwordHistoryEnabled;
