@@ -182,7 +182,10 @@ existing enrollments — and, for the same reason, **losing or changing it locks
 account out of its second factor**. Back it up with the same care as the database password — a
 database backup restored without it produces an instance whose enrolled users cannot sign in, as
 described in `docs/BACKUP_RESTORE.md`. Startup fails if the feature is enabled without a valid
-secret, rather than starting with enrollments it cannot read.
+secret, rather than starting with enrollments it cannot read; if it starts and finds enrollments
+sealed under some *other* secret, it warns with a count and carries on, since those accounts are the
+only ones affected. Rotating the secret therefore has a procedure rather than a command — see
+`docs/BACKUP_RESTORE.md`.
 
 Enabling the feature makes the host clock a correctness dependency. Codes are derived from wall
 time, and the server accepts only the current 30-second window and its two neighbours, so drift

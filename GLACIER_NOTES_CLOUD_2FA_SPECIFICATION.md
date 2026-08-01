@@ -1,7 +1,7 @@
 # Glacier Notes Cloud — Two-Factor Authentication Specification
 
-**Status:** All specification decisions resolved — milestones T0, T1, T2a, T2b, and T3a approved and delivered, T3b–T5 pending approval
-**Specification version:** 0.8
+**Status:** All specification decisions resolved — milestones T0 through T5 approved and delivered
+**Specification version:** 0.9
 **Date:** 2026-08-01
 **Feature:** Optional time-based one-time password (TOTP) second factor with recovery codes
 **Extends:** `GLACIER_NOTES_CLOUD_SPECIFICATION.md` section 8 (Authentication)
@@ -1121,3 +1121,30 @@ reset counter, a `DENIED` result on the operator path, a counter for recovery co
 one that required a change in behaviour rather than a line — a count of abandoned challenges, which
 a single delete covering both expired and consumed rows could not produce. Only the abandoned ones
 carry an attack signal.
+
+### 21.10 Resolved in version 0.9
+
+Resolved while planning milestone T5, the hardening, documentation, and release qualification.
+
+| Decision | Outcome | Sections |
+| --- | --- | --- |
+| Whether T5 cuts the release | No: T5 qualifies the feature only. The version stays at 0.2.0 and the changelog stays under `[Unreleased]`; cutting v0.3.0 is a separately approved step | 17 |
+| What is done about enrollment-secret rotation | It is documented as a re-enrollment procedure and made observable at startup, not automated | 13, 20 |
+| How the step-up prompt is covered in a browser | By extending the existing second-factor spec rather than adding a file | 18 |
+
+A documentation milestone that also tags a release makes the tag unreviewable: the same change set
+would carry both the evidence and the thing the evidence is meant to justify. Separating them costs
+one approval and buys a release cut that can be judged on its own.
+
+Rotating the enrollment secret is not re-encryption. One key is derived per instance and stored
+enrollments are never rewritten, so a swap strands every existing enrollment at once. Building a
+re-encryption tool would mean holding both the old and the new secret in the same process, which is
+the one arrangement this design exists to avoid; the honest procedure is to empty the table first.
+What was missing was not tooling but visibility, so an instance now counts enrollments whose `key_id`
+is not its own and warns once at startup. The warning carries the count and nothing else — no user
+ids, no usernames, no key values — so it stays inside the log-hygiene rules of 2.5.
+
+The browser suite runs single-worker and non-parallel, and the step-up case needs both an enrolled
+account and a mutation of the instance-wide grace setting. A second spec file would have to re-enroll
+from scratch and would race the first over that singleton. Extending the existing spec also keeps the
+positive assertion next to the negative one it inverts.

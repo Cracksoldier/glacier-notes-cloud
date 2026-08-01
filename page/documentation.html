@@ -36,6 +36,7 @@
         <li><a href="#cfg-bootstrap">Bootstrap &amp; admin secrets</a></li>
         <li><a href="#cfg-session">Session &amp; security</a></li>
         <li><a href="#cfg-password">Password policy</a></li>
+        <li><a href="#cfg-mfa">Two-factor authentication</a></li>
         <li><a href="#cfg-images">Image storage</a></li>
         <li><a href="#cfg-backup">Backups</a></li>
         <li><a href="#cfg-smtp">SMTP / email</a></li>
@@ -267,6 +268,33 @@ GLACIER_DATABASE_PASSWORD_FILE=/run/secrets/database_password</code></pre>
           </table>
           </div>
           <p>These parameters are fixed in code, not exposed as environment variables.</p>
+        </article>
+
+        <article class="feature-card cfg-card" id="cfg-mfa">
+          <h3><i class="fa-solid fa-mobile-screen"></i> Two-factor authentication</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GLACIER_MFA_ENABLED</code></td><td>false</td><td>Offers each account an optional TOTP second factor</td></tr>
+              <tr><td><code>GLACIER_MFA_ENCRYPTION_SECRET</code></td><td>&mdash;</td><td>Key material for encrypting enrollments, 32&ndash;512 non-whitespace characters &mdash; required when enabled</td></tr>
+              <tr><td><code>GLACIER_MFA_ENCRYPTION_SECRET_FILE</code></td><td>&mdash;</td><td>Path to a file containing the encryption secret instead</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>
+            The feature is off by default and opt-in per account: enabling it lets users add an
+            authenticator app and ten single-use recovery codes, and never obliges them to. Enrolled
+            accounts sign in in two steps and re-confirm sensitive changes with a code.
+          </p>
+          <p>
+            Stored enrollments are encrypted with a key derived from this secret, which is never
+            written to the database or to a backup archive. Back it up with your other deployment
+            secrets: restoring a database without it locks every enrolled account out, and changing
+            it has the same effect until those accounts enroll again.
+          </p>
+          <pre><code>GLACIER_MFA_ENABLED=true
+GLACIER_MFA_ENCRYPTION_SECRET_FILE=/run/secrets/mfa_encryption_secret</code></pre>
         </article>
 
         <article class="feature-card cfg-card" id="cfg-images">

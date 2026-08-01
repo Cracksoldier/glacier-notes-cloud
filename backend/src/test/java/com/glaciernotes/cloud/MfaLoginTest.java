@@ -148,6 +148,24 @@ class MfaLoginTest {
     }
 
     @Test
+    void answersAWrongPasswordIdenticallyWhetherOrNotTheAccountIsEnrolled() throws SQLException {
+        insertUser(UUID.randomUUID(), "no.second.factor", "no.second.factor@example.com");
+
+        var enrolled = passwordStep(USERNAME, "wrong-password-value", false);
+        var notEnrolled = passwordStep("no.second.factor", "wrong-password-value", false);
+
+        enrolled.then().statusCode(401);
+        assertEquals(notEnrolled.statusCode(), enrolled.statusCode());
+        assertEquals(withoutCorrelationId(notEnrolled), withoutCorrelationId(enrolled));
+        assertTrue(enrolled.getHeaders().getValues("Set-Cookie").isEmpty());
+        assertTrue(notEnrolled.getHeaders().getValues("Set-Cookie").isEmpty());
+
+        // Only the correct password may reveal the difference, and then it is the point.
+        passwordStep(USERNAME, PASSWORD, false).then().body("result", equalTo("MFA_REQUIRED"));
+        passwordStep("no.second.factor", PASSWORD, false).then().body("result", equalTo("SESSION"));
+    }
+
+    @Test
     void theSecondStepIssuesTheSessionAndSettlesTheLoginState() throws SQLException {
         passwordStep("wrong-password-value", false).then().statusCode(401);
         var token = challengeToken(passwordStep(PASSWORD, false));
@@ -326,6 +344,43 @@ class MfaLoginTest {
         assertEquals(0, count("user_sessions", "true"));
     }
 
+    /**
+     * The lifetime is stamped onto the challenge when it is issued; the attempt cap is consulted on
+     * every wrong code. Retuning either mid-flight therefore lands differently, and both halves are
+     * deliberate: shortening the lifetime must not strand a caller mid-login, while tightening the
+     * cap during an attack must take effect at once.
+     */
+    @Test
+    void appliesARetunedLifetimeOnlyToNewChallengesAndTheAttemptCapImmediately() throws SQLException {
+        var issued = passwordStep(PASSWORD, false);
+        var token = challengeToken(issued);
+        assertEquals(ATTEMPT_LIMIT, issued.jsonPath().getInt("challenge.attemptsRemaining"));
+        var expiresAt = scalar("select expires_at from mfa_challenges");
+
+        execute("update instance_settings set mfa_challenge_lifetime_minutes = 1");
+        assertEquals(expiresAt, scalar("select expires_at from mfa_challenges"));
+
+        execute("update instance_settings set mfa_challenge_attempt_limit = 3");
+        for (int attempt = 1; attempt < 3; attempt++) {
+            complete(token, "000000").then()
+                .statusCode(401)
+                .body("errorCode", equalTo("AUTH_MFA_INVALID_CODE"));
+            expireCooldowns();
+        }
+        complete(token, "000000").then()
+            .statusCode(429)
+            .body("errorCode", equalTo("AUTH_MFA_ATTEMPTS_EXCEEDED"));
+
+        expireCooldowns();
+        var reissued = passwordStep(PASSWORD, false);
+        assertEquals(3, reissued.jsonPath().getInt("challenge.attemptsRemaining"));
+        // A minute out rather than five: the new lifetime governs the new challenge.
+        assertTrue((Long) scalar(
+            "select extract(epoch from expires_at - created_at)::bigint"
+                + " from mfa_challenges where consumed_at is null"
+        ) <= 60L);
+    }
+
     @Test
     void keepsAtMostThreeOpenChallengesPerAccount() throws SQLException {
         var oldest = challengeToken(passwordStep(PASSWORD, false));
@@ -391,12 +446,16 @@ class MfaLoginTest {
     }
 
     private Response passwordStep(String password, boolean rememberMe) {
+        return passwordStep(USERNAME, password, rememberMe);
+    }
+
+    private Response passwordStep(String identifier, String password, boolean rememberMe) {
         return given()
             .contentType(ContentType.JSON)
             .header("User-Agent", "Glacier Test Browser")
             .body("""
                 {"identifier":"%s","password":"%s","rememberMe":%s}
-                """.formatted(USERNAME, password, rememberMe))
+                """.formatted(identifier, password, rememberMe))
             .when().post("/api/v1/auth/login");
     }
 
@@ -473,6 +532,11 @@ class MfaLoginTest {
     }
 
     private void insertUser() throws SQLException {
+        insertUser(USER_ID, USERNAME, "second.factor@example.com");
+        assertNull(scalarOrNull("select last_login_at from app_users"));
+    }
+
+    private void insertUser(UUID id, String username, String email) throws SQLException {
         var passwordHash = passwordVerifier.hash(PASSWORD.toCharArray());
         try (var connection = dataSource.getConnection();
              var statement = connection.prepareStatement("""
@@ -482,16 +546,15 @@ class MfaLoginTest {
                  ) values (?, ?, ?, ?, ?, ?, 'USER', 'ACTIVE', ?,
                            current_timestamp - interval '1 day', current_timestamp)
                  """)) {
-            statement.setObject(1, USER_ID);
-            statement.setString(2, USERNAME);
-            statement.setString(3, USERNAME);
-            statement.setString(4, "second.factor@example.com");
-            statement.setString(5, "second.factor@example.com");
-            statement.setString(6, "Second Factor");
+            statement.setObject(1, id);
+            statement.setString(2, username);
+            statement.setString(3, username);
+            statement.setString(4, email);
+            statement.setString(5, email);
+            statement.setString(6, username);
             statement.setString(7, passwordHash);
             statement.executeUpdate();
         }
-        assertNull(scalarOrNull("select last_login_at from app_users"));
     }
 
     private Object scalarOrNull(String sql) throws SQLException {

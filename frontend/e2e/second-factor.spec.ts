@@ -1,24 +1,30 @@
-import { type Locator, expect, test } from '@playwright/test';
+import { type Locator, type Page, expect, test } from '@playwright/test';
 
 import { nextCode } from './totp';
 
 const username = process.env['GLACIER_E2E_MFA_USERNAME'];
 const password = process.env['GLACIER_E2E_MFA_PASSWORD'];
+const adminUsername = process.env['GLACIER_E2E_ADMIN_USERNAME'];
+const adminPassword = process.env['GLACIER_E2E_ADMIN_PASSWORD'];
+
+/** The shipped default of the step-up grace window, which the last phase borrows and gives back. */
+const DEFAULT_GRACE_MINUTES = 5;
 
 test.skip(
-  !username || !password,
-  'Set GLACIER_E2E_MFA_USERNAME and GLACIER_E2E_MFA_PASSWORD on an account reserved for this spec.',
+  !username || !password || !adminUsername || !adminPassword,
+  'Set GLACIER_E2E_MFA_USERNAME/PASSWORD on an account reserved for this spec, and '
+    + 'GLACIER_E2E_ADMIN_USERNAME/PASSWORD on an administrator.',
 );
 
 test('a user enrolls a second factor, signs in with it, and turns it off again', async ({ page }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(240_000);
   page.on('dialog', (dialog) => dialog.accept());
 
   const card = page.locator('app-two-factor-card');
-  const signIn = async () => {
+  const signIn = async (as = username!, secret = password!) => {
     await page.goto('/login');
-    await page.getByLabel('Username or email').fill(username!);
-    await page.getByLabel('Password').fill(password!);
+    await page.getByLabel('Username or email').fill(as);
+    await page.getByLabel('Password').fill(secret);
     await page.getByRole('button', { name: 'Sign in' }).click();
   };
   const openSettings = async () => {
@@ -37,37 +43,15 @@ test('a user enrolls a second factor, signs in with it, and turns it off again',
   await openSettings();
   await discardUnconfirmedEnrollment(card);
 
-  // Enroll: password, then the key the QR encodes, then a code derived from it.
-  await card.getByRole('button', { name: 'Set up' }).click();
-  await card.getByLabel('Current password').fill(password!);
-  await card.getByRole('button', { name: 'Continue' }).click();
-  await expect(card.locator('svg.qr')).toBeVisible();
-
-  await card.getByText('Cannot scan?').click();
-  const secret = (await card.locator('code.secret').innerText()).trim();
-  expect(secret.length).toBeGreaterThan(0);
-
-  const enrollment = await nextCode(secret);
-  await card.getByLabel('Code from your app').fill(enrollment.code);
-  await card.getByRole('button', { name: 'Confirm' }).click();
-
-  await expect(card.getByText('Save your recovery codes')).toBeVisible();
-  const recoveryCodes = await card.locator('ul.codes code').allInnerTexts();
+  const { secret, step, recoveryCodes } = await enroll(card);
   expect(recoveryCodes).toHaveLength(10);
-
-  const done = card.getByRole('button', { name: 'Done' });
-  await expect(done).toBeDisabled();
-  await card.getByLabel('I have saved these recovery codes.').check();
-  await done.click();
-  await expect(card.getByText('Active', { exact: true })).toBeVisible();
-  await expect(card.getByText('10 recovery codes left.')).toBeVisible();
 
   // Sign in through the second stage.
   await signOut();
   await signIn();
   await expect(page.locator('#mfa-code')).toBeVisible();
   await expect(page).toHaveURL(/\/login$/);
-  const login = await nextCode(secret, enrollment.step);
+  const login = await nextCode(secret, step);
   await page.getByLabel('Authentication code').fill(login.code);
   await page.getByRole('button', { name: 'Verify' }).click();
   await expect(page.locator('app-notes-shell')).toBeVisible();
@@ -100,7 +84,84 @@ test('a user enrolls a second factor, signs in with it, and turns it off again',
   await signIn();
   await expect(page.locator('app-notes-shell')).toBeVisible();
   await expect(page.locator('#mfa-code')).toHaveCount(0);
+
+  // With the grace window shut, the same operation asks for a code on top of the password.
+  await signOut();
+  await signIn(adminUsername!, adminPassword!);
+  await expect(page.locator('app-notes-shell')).toBeVisible();
+  await setStepUpGrace(page, 0);
+  await signOut();
+
+  await signIn();
+  await openSettings();
+  const reEnrollment = await enroll(card);
+  await card.getByRole('button', { name: 'Turn off' }).click();
+  await card.getByLabel('Current password').fill(password!);
+  await card.getByRole('button', { name: 'Continue' }).click();
+  const stepUpCode = card.getByLabel('One-time code');
+  await expect(stepUpCode).toBeVisible();
+
+  await stepUpCode.fill((await nextCode(reEnrollment.secret, reEnrollment.step)).code);
+  await card.getByRole('button', { name: 'Continue' }).click();
+  await expect(card.getByText('Not set up')).toBeVisible();
 });
+
+/**
+ * The tunable lives on the instance-wide singleton, so leaving it at zero would carry into the other
+ * browser project's run of this same spec.
+ */
+test.afterEach(async ({ page }) => {
+  if (!adminUsername || !adminPassword) return;
+  // Whoever the test left signed in — or nobody, if it failed mid-flight.
+  await page.goto('/settings');
+  const signOut = page.getByRole('button', { name: 'Sign out' });
+  if (await signOut.isVisible()) await signOut.click();
+
+  await page.goto('/login');
+  await page.getByLabel('Username or email').fill(adminUsername);
+  await page.getByLabel('Password').fill(adminPassword);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.locator('app-notes-shell')).toBeVisible();
+  await setStepUpGrace(page, DEFAULT_GRACE_MINUTES);
+});
+
+async function setStepUpGrace(page: Page, minutes: number): Promise<void> {
+  await page.goto('/admin/settings');
+  const field = page.getByLabel('Second-factor re-prompt grace period (minutes)');
+  await expect(field).toBeVisible();
+  await field.fill(String(minutes));
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Instance settings saved.')).toBeVisible();
+}
+
+/** Password, then the key the QR encodes, then a code derived from it. */
+async function enroll(
+  card: Locator,
+): Promise<{ secret: string; step: number; recoveryCodes: string[] }> {
+  await card.getByRole('button', { name: 'Set up' }).click();
+  await card.getByLabel('Current password').fill(password!);
+  await card.getByRole('button', { name: 'Continue' }).click();
+  await expect(card.locator('svg.qr')).toBeVisible();
+
+  await card.getByText('Cannot scan?').click();
+  const secret = (await card.locator('code.secret').innerText()).trim();
+  expect(secret.length).toBeGreaterThan(0);
+
+  const enrollment = await nextCode(secret);
+  await card.getByLabel('Code from your app').fill(enrollment.code);
+  await card.getByRole('button', { name: 'Confirm' }).click();
+
+  await expect(card.getByText('Save your recovery codes')).toBeVisible();
+  const recoveryCodes = await card.locator('ul.codes code').allInnerTexts();
+
+  const done = card.getByRole('button', { name: 'Done' });
+  await expect(done).toBeDisabled();
+  await card.getByLabel('I have saved these recovery codes.').check();
+  await done.click();
+  await expect(card.getByText('Active', { exact: true })).toBeVisible();
+  await expect(card.getByText('10 recovery codes left.')).toBeVisible();
+  return { secret, step: enrollment.step, recoveryCodes };
+}
 
 /**
  * The account is shared by the two browser projects and by retries, so an earlier attempt may have

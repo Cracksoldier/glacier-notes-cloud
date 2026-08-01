@@ -215,6 +215,9 @@ jobs:
           GLACIER_E2E_PASSWORD: ci-invited-user-passphrase-2026
           GLACIER_E2E_MFA_USERNAME: mfa-member
           GLACIER_E2E_MFA_PASSWORD: ci-mfa-user-passphrase-2026
+          # The second-factor spec closes the instance-wide step-up grace window to reach the prompt.
+          GLACIER_E2E_ADMIN_USERNAME: admin
+          GLACIER_E2E_ADMIN_PASSWORD: ci-container-smoke-passphrase-2026
         run: npm run test:e2e
       - name: Verify backup creation and clean database restore
         run: |

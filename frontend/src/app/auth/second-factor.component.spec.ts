@@ -99,6 +99,28 @@ describe('SecondFactorComponent', () => {
     expect(TestBed.inject(AuthStore).challenge()).toBeNull();
   });
 
+  it('counts the challenge down and hands back control when it runs out', async () => {
+    vi.useFakeTimers();
+    try {
+      const expiresAt = new Date(Date.now() + 2_000).toISOString();
+      const fixture = await render({ ...challenge(), expiresAt });
+      const abandoned = vi.fn();
+      fixture.componentInstance.abandoned.subscribe(abandoned);
+
+      // The countdown reads zero until the timer's own first tick fills it in.
+      vi.advanceTimersByTime(0);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.hint').textContent).toContain('2');
+
+      vi.advanceTimersByTime(2_000);
+
+      expect(abandoned).toHaveBeenCalledWith(expect.stringContaining('expired'));
+      expect(TestBed.inject(AuthStore).challenge()).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('offers the recovery-code path only when the challenge accepts one', async () => {
     const withRecovery = await render();
     expect(withRecovery.nativeElement.textContent).toContain('recovery code');

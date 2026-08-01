@@ -35,3 +35,9 @@ baseline. When a new milestone adds a migration that changes a seeded table's sh
 baseline forward to the newest version before that change so the test keeps exercising a real
 upgrade path rather than a no-op.
 
+The second-factor migrations `V13__multi_factor_authentication` and `V14__second_factor_step_up` need
+no such bump: both are additive — new tables plus new nullable or defaulted columns — and both are
+already crossed by the existing `target("10")` baseline, so the seeded rows go through them on the
+way to head. `V13` does widen one existing constraint, `login_rate_limits_scope_check`, but only to
+admit a superset of its former values, which every seeded row already satisfies.
+

@@ -54,6 +54,9 @@ exist in this repository today; update it when a boundary, mitigation, or test c
 | Password compromise via database leak | Argon2id (`Argon2PasswordVerifier`) with a minimum enforced memory/iteration/parallelism/hash-length/salt-length floor validated at startup; the floor cannot be configured below the supported baseline | `Argon2PasswordVerifier.validateParameters` |
 | Blind administrative import exposing user content to an administrator | Blind imports return only counts, conflicts, and structural errors; titles, note bodies, checklist text, image data, and filenames are never included in the response | `docs/PORTABLE_TRANSFERS.md` |
 | Backup archive exposing credentials if it leaks | Backups exclude database credentials, SMTP passwords, S3 credentials, bootstrap tokens, and cryptographic keys by construction; the operator runbook requires encrypting archives before moving them off-host | `docs/BACKUP_RESTORE.md` |
+| Stored TOTP shared secrets recovered from a database leak | `user_mfa_totp.secret_ciphertext` holds AES-256-GCM ciphertext under a key derived from `GLACIER_MFA_ENCRYPTION_SECRET`, which is never written to the database or a backup archive; the row records only `key_id`, an eight-byte fingerprint of the key (`EnrollmentSecretCipher`) | `EnrollmentSecretCipherTest`, `MfaKeyRotationTest` (a login cannot complete against an enrollment sealed under another key) |
+| Recovery codes recovered from a database leak, or one code replayed | Only a keyed HMAC-SHA256 under the same enrollment secret is stored (`MfaTokenService.hashRecoveryCode`); redemption is a conditional update on `used_at is null`, so a code is consumed at most once and an unknown code is indistinguishable from a spent one | `MfaLoginTest#acceptsEachRecoveryCodeExactlyOnce` |
+| A stolen challenge token used to skip the password stage | `mfa_challenges.token_hash` holds a keyed hash of a 256-bit random token; the token is short-lived (`mfa_challenge_lifetime_minutes`), attempt-capped (`mfa_challenge_attempt_limit`), single-use, and at most three may be open per account (`MfaChallengeService.MAX_OPEN_CHALLENGES`) | `MfaLoginTest#refusesAnExpiredOrAlreadyConsumedChallenge`, `MfaLoginTest#keepsAtMostThreeOpenChallengesPerAccount` |
 | Known-vulnerable dependency in a production artifact | OWASP dependency-check (backend, CVSS ≥ 7.0 blocks CI) and `npm audit --omit=dev --audit-level=high` (frontend) run on every CI build; Trivy scans the built application image for vulnerabilities and embedded secrets | `.github/workflows/ci.yml` `backend`, `frontend`, and `deployment` jobs |
 
 ## Denial of service
@@ -72,6 +75,28 @@ exist in this repository today; update it when a boundary, mitigation, or test c
 | Client-side router guards mistaken for an authorization boundary | Angular route guards are documented and treated as navigation aids only; every `USER`/`ADMIN`-gated operation is enforced server-side by Quarkus security identity roles regardless of what the router allows | `docs/ARCHITECTURE.md` |
 | An administrator using admin tooling to bypass ownership on their own content | Administrators are bound by the same ownership rules as normal users for their own content; admin-only operations (e.g. blind import) go through separate, explicitly audited paths rather than an ownership bypass | ADR 0004 |
 | Privilege escalation via a forged or stale session after a role change | Session revocation on security-relevant account changes forces re-authentication, so a previously issued token cannot retain a since-revoked privilege | `SecurityAttackSimulationTest` |
+
+## Accepted residual risks
+
+These are known, deliberate, and not defended against in the current release.
+
+- **TOTP is phishable in real time.** A convincing proxy page can collect the password and the
+  six-digit code and use both within the same 30-second step. The second factor raises the cost of a
+  leaked or reused password; it is not a defence against a live adversary-in-the-middle. Phishing
+  resistance needs origin-bound credentials (WebAuthn), which are not implemented.
+- **Enforcement is per account, never instance-wide.** An administrator cannot require the second
+  factor of anyone, and cannot see enough to enforce it socially beyond the enrollment counts on the
+  admin pages. This is a first-release scoping decision, not an oversight
+  (`GLACIER_NOTES_CLOUD_2FA_SPECIFICATION.md` §9.2), and it means an instance with the feature
+  enabled can still be entirely password-only in practice.
+- **Losing `GLACIER_MFA_ENCRYPTION_SECRET` is unrecoverable by design.** There is no escrow, no
+  recovery key, and no re-encryption tool; the only remedy is the bootstrap-token break-glass reset,
+  once per enrolled account. See `docs/BACKUP_RESTORE.md`.
+- **Host clock drift is indistinguishable from an attack.** Verification accepts one 30-second step
+  either side of the server's own clock, so a host drifting past about a minute rejects correct codes
+  with the same response an attacker would get, and `glacier_mfa_verifications{outcome="rejected"}`
+  cannot tell the two apart. Operators are expected to run NTP; the application does not measure or
+  report drift.
 
 ## Out of scope for this document
 

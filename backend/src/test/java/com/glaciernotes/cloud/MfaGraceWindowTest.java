@@ -110,6 +110,26 @@ class MfaGraceWindowTest extends SecondFactorTestSupport {
         assertEquals(0, count("user_sessions", "second_factor_verified_at is not null"));
     }
 
+    /**
+     * The window rides on the session row, and a password change revokes every session — so proving
+     * possession before the change can never carry over to whoever holds the new password.
+     */
+    @Test
+    void changingThePasswordLeavesNoWindowBehind() throws SQLException {
+        assertNotNull(verifiedAt());
+
+        authenticated(login)
+            .body("""
+                {"currentPassword":"%s","newPassword":"replacement-horse-battery-staple-2026"}
+                """.formatted(PASSWORD))
+            .when().put("/api/v1/me/password")
+            .then().statusCode(204);
+
+        assertEquals(0, count("user_sessions",
+            "second_factor_verified_at is not null and revoked_at is null"));
+        regenerate(null).then().statusCode(401);
+    }
+
     @Test
     void reEnrollingClearsEveryWindowBeforeOpeningItsOwn() throws SQLException {
         authenticated(login)

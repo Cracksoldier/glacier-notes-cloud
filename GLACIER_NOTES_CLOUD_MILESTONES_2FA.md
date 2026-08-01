@@ -1,9 +1,10 @@
 # Glacier Notes Cloud — Two-Factor Authentication Milestone Plan
 
-- **Document status:** Draft — pending approval to implement. No code has been written.
-- **Document version:** 1.0
-- **Last updated:** 2026-07-31
-- **Source specification:** [`GLACIER_NOTES_CLOUD_2FA_SPECIFICATION.md`](GLACIER_NOTES_CLOUD_2FA_SPECIFICATION.md) version 0.4
+- **Document status:** Delivered — T0 through T5 are implemented and verified. See
+  [`docs/MILESTONE_STATUS.md`](docs/MILESTONE_STATUS.md) for the recorded scope.
+- **Document version:** 1.1
+- **Last updated:** 2026-08-01
+- **Source specification:** [`GLACIER_NOTES_CLOUD_2FA_SPECIFICATION.md`](GLACIER_NOTES_CLOUD_2FA_SPECIFICATION.md) version 0.9
 - **Baseline release:** Glacier Notes Cloud v0.2.0
 - **Primary stack:** Angular, Quarkus, PostgreSQL, OpenAPI
 
@@ -87,12 +88,12 @@ account can enroll but cannot recover, or where an operator has no path back fro
 
 | ID | Milestone | Primary Outcome | Depends On | Rollout Stage | Status |
 |---|---|---|---|---|---|
-| T0 | Decision Record, Contract, and Dormant Foundation | Amended scope guard, ADR, breaking login contract landed with no behavior change | None | 1 | Not started |
-| T1 | Schema and Cryptographic Core | V13 migration, dedicated key, TOTP and recovery-code primitives, tunables | T0 | 1 | Not started |
-| T2 | Enrollment, Two-Stage Login, and Recovery Codes | A user can enroll, log in with a code, and recover | T1 | 2 | Not started |
-| T3 | Step-Up, Notifications, and Operator Escape Hatch | Sensitive operations gated, owner notified, lockout recoverable | T2 | 2 | Not started |
-| T4 | Administrative Surface, Tunables, and Observability | Admin visibility, admin clear, runtime tunables, metrics | T3 | 3 | Not started |
-| T5 | Hardening, Documentation, and Feature Release | Threat model, end-to-end coverage, operator documentation, release | T4 | 3 | Not started |
+| T0 | Decision Record, Contract, and Dormant Foundation | Amended scope guard, ADR, breaking login contract landed with no behavior change | None | 1 | Complete |
+| T1 | Schema and Cryptographic Core | V13 migration, dedicated key, TOTP and recovery-code primitives, tunables | T0 | 1 | Complete |
+| T2 | Enrollment, Two-Stage Login, and Recovery Codes | A user can enroll, log in with a code, and recover | T1 | 2 | Complete |
+| T3 | Step-Up, Notifications, and Operator Escape Hatch | Sensitive operations gated, owner notified, lockout recoverable | T2 | 2 | Complete |
+| T4 | Administrative Surface, Tunables, and Observability | Admin visibility, admin clear, runtime tunables, metrics | T3 | 3 | Complete |
+| T5 | Hardening, Documentation, and Feature Release | Threat model, end-to-end coverage, operator documentation, release | T4 | 3 | Complete |
 
 ### 3.1 Rollout stage mapping
 

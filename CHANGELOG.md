@@ -83,6 +83,14 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
   / `GLACIER_MFA_ENCRYPTION_SECRET_FILE`. The secret is validated at startup only when the flag is
   enabled, so existing deployments upgrade without new configuration. It is kept separate from the
   session secret so that rotating session keys cannot invalidate stored enrollments.
+- A startup warning when enrollments were encrypted under a different enrollment secret. Swapping
+  `GLACIER_MFA_ENCRYPTION_SECRET` re-derives the key but re-encrypts nothing, so those accounts can
+  no longer complete a sign-in and must enroll again. The instance now says so once at startup
+  instead of one failed sign-in at a time. The warning carries the count only — no usernames, no
+  user ids, no key material. `docs/BACKUP_RESTORE.md` gains the supported rotation procedure, the
+  `key_id` query that shows how far a rotation has got, and the case of restoring a backup taken
+  before an account enrolled; `docs/THREAT_MODEL.md` gains the assets the feature introduced and the
+  residual risks accepted with it.
 
 ### Changed
 

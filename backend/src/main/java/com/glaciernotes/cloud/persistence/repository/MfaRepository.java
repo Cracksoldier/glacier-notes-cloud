@@ -130,6 +130,21 @@ public class MfaRepository {
     }
 
     /**
+     * Enrollments left behind by a swap of the enrollment encryption secret, which are no longer
+     * decryptable. A count rather than a list: the accounts are of no use to a log reader and would
+     * put a roster of second-factor users somewhere it does not belong.
+     */
+    @Transactional
+    public long countEnrollmentsUnderOtherKeys(String currentKeyId) {
+        return entityManager.createQuery(
+                "select count(t) from UserMfaTotpEntity t where t.keyId <> :keyId",
+                Long.class
+            )
+            .setParameter("keyId", currentKeyId)
+            .getSingleResult();
+    }
+
+    /**
      * Resolved for a whole page of users at once so that the administrative user list does not issue
      * one enrollment lookup per row.
      */

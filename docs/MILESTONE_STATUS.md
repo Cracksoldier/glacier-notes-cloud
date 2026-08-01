@@ -1,7 +1,8 @@
 # Milestone Status
 
 This file records implemented milestone scope. Acceptance criteria remain defined in
-*GLACIER_NOTES_CLOUD_MILESTONES_BIOME.md*; a milestone is marked complete here only after its
+*GLACIER_NOTES_CLOUD_MILESTONES_BIOME.md* — and, for the T track, in
+*GLACIER_NOTES_CLOUD_MILESTONES_2FA.md*; a milestone is marked complete here only after its
 implementation and repository verification gates pass.
 
 | Milestone | Status | Delivered scope |
@@ -20,6 +21,7 @@ implementation and repository verification gates pass.
 | M11 | Complete | Administrative overview, safe settings, SMTP status, immutable audit, metrics, coordinated cleanup, and gated full backups |
 | M12 | Complete | Dependency and container image vulnerability scanning, named security-attack-simulation tests, log-hygiene CI enforcement, broadened upgrade data-integrity coverage, and release-candidate documentation |
 | M13 | Complete | Tag-triggered release workflow, signed immutable `ghcr.io` image, CycloneDX SBOM with cosign attestation, versioned Compose release template, upgrade/rollback runbook, and issue/PR templates |
+| T0&ndash;T5 | Complete | Optional per-account TOTP second factor: encrypted enrollments, two-stage login, single-use recovery codes, step-up confirmation with a session-scoped grace window, administrative visibility and break-glass reset, four instance tunables, and key-rotation observability |
 
 ## M5 Verification
 
@@ -154,3 +156,32 @@ gates above plus:
 ./mvnw -pl backend org.owasp:dependency-check-maven:check
 bash backend/scripts/check-log-hygiene.sh
 ~~~
+
+## T0&ndash;T5 Verification
+
+The second-factor track adds an optional per-account TOTP credential, off unless
+`GLACIER_MFA_ENABLED` is set. Enrollment secrets are stored AES-256-GCM-encrypted under a key derived
+from a dedicated deployment secret; recovery codes and login-challenge tokens are stored only as keyed
+hashes. An enrolled account signs in in two steps — the password step issues no session — and
+re-confirms sensitive operations with a code unless a session-scoped grace window is open.
+Administrators see enrollment state and counts, can clear an account's factor, and tune the challenge
+lifetime, attempt cap, pending-enrollment lifetime, and grace window from the instance settings page.
+
+Backend tests cover both login stages, replay and step reuse, recovery-code single use, challenge
+expiry and attempt exhaustion, the step-up window and its session scoping, administrative clearing,
+notification and password-reset interaction, session revocation, the disabled-feature surface, and
+enrollments stranded by an encryption-secret swap. Frontend tests cover the challenge card, its
+countdown, and the two-factor account card. The Playwright spec enrolls, signs in through both
+stages, redeems a recovery code, and reaches the step-up prompt by closing the grace window as an
+administrator. Run the standard gates above plus:
+
+~~~bash
+bash backend/scripts/check-log-hygiene.sh
+cd frontend
+GLACIER_E2E_MFA_USERNAME=your-second-user GLACIER_E2E_MFA_PASSWORD=your-second-password \
+GLACIER_E2E_ADMIN_USERNAME=your-admin GLACIER_E2E_ADMIN_PASSWORD=your-admin-password \
+npm run test:e2e
+~~~
+
+Enrollment-secret custody, rotation, and the restore cases are in `docs/BACKUP_RESTORE.md`; the
+accepted residual risks are in `docs/THREAT_MODEL.md`.

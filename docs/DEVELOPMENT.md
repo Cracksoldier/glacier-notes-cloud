@@ -56,11 +56,15 @@ account or database when running it outside CI.
 
 The second-factor spec needs an instance started with `GLACIER_MFA_ENABLED=true` and a second,
 dedicated account — it enrolls, signs in through both stages, and disables the factor again, so it
-must not share an account with the note workflow. It is skipped unless both variables are set:
+must not share an account with the note workflow. It also needs an administrator, because reaching
+the step-up prompt means closing the instance-wide re-prompt grace window; the spec restores that
+setting to its default afterwards. It is skipped unless all four variables are set:
 
 ```bash
 GLACIER_E2E_MFA_USERNAME=your-second-user \
 GLACIER_E2E_MFA_PASSWORD=your-second-password \
+GLACIER_E2E_ADMIN_USERNAME=your-admin \
+GLACIER_E2E_ADMIN_PASSWORD=your-admin-password \
 npm run test:e2e
 ```
 

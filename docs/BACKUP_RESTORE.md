@@ -38,18 +38,53 @@ jq -r '.checksums | to_entries[] | [.value, .key] | @tsv' restore/manifest.json 
 
 ## Second-factor enrollments depend on a secret the backup does not contain
 
-If `GLACIER_MFA_ENABLED` is on, the dump contains every TOTP enrollment, but the shared secrets in it
-are encrypted with a key derived from `GLACIER_MFA_ENCRYPTION_SECRET` (or the file named by
-`GLACIER_MFA_ENCRYPTION_SECRET_FILE`). That value is a deployment secret and is deliberately excluded
-from the archive. Restoring the database with a different one leaves a deployment that looks healthy
-and lets unenrolled accounts sign in normally, while every enrolled account is locked out at the
-second stage — including administrators.
+**Once `GLACIER_MFA_ENABLED` is on, a database backup alone is no longer a complete backup.** The
+dump contains every TOTP enrollment, but the shared secrets in it are encrypted with a key derived
+from `GLACIER_MFA_ENCRYPTION_SECRET` (or the file named by `GLACIER_MFA_ENCRYPTION_SECRET_FILE`).
+That value is a deployment secret and is deliberately excluded from the archive. Restoring the
+database with a different one leaves a deployment that looks healthy and lets unenrolled accounts
+sign in normally, while every enrolled account is locked out at the second stage — including
+administrators.
 
 Store the enrollment secret alongside the session secret in whatever holds your deployment secrets,
 and restore the same value with the database. If it is genuinely lost, the escape hatch is
 `POST /api/v1/setup/second-factor-reset`, the bootstrap-token break-glass operation described in
 `deployment/README.md`. It clears one account's second factor and revokes its sessions, so it has to
 be repeated for every enrolled account; the affected users then enroll again from scratch.
+
+### Restoring a backup taken before an account enrolled
+
+The enrollment lives in the database, so a dump predating it does not contain it. After the restore
+that account is simply not enrolled and signs in with its password alone. This is the backup being
+faithful, not corruption: the account enrolls again, gets a fresh secret and fresh recovery codes,
+and the authenticator entry from before the restore is dead and should be deleted from the app.
+
+### Rotating the enrollment secret
+
+Rotation is not re-encryption. Glacier Notes derives one key per instance and never rewrites stored
+enrollments, so swapping `GLACIER_MFA_ENCRYPTION_SECRET` makes every existing enrollment
+undecryptable at once. There is no migration tool, and adding one is not planned — the supported
+sequence is to empty the table of enrollments first:
+
+1. Announce the change, then have every enrolled account turn its second factor off. Accounts that
+   cannot be reached are cleared with the break-glass reset above.
+2. Confirm none are left: `select count(*) from user_mfa_totp;` must be `0`.
+3. Swap the secret and restart.
+4. Have those accounts enroll again. Their new enrollments are encrypted under the new key.
+
+Each enrollment row records `key_id`, an eight-byte fingerprint of the key that encrypted it — not
+the key itself and not enough to reconstruct it. It is what lets you see how a partly finished
+rotation stands:
+
+```sql
+select key_id, count(*) from user_mfa_totp group by key_id;
+```
+
+More than one row means more than one secret is in play, and every group but the current one is
+locked out — the current one being whichever fingerprint a freshly confirmed enrollment writes. The
+passive check is the log: at startup an instance counts enrollments whose
+`key_id` is not its own and, if any exist, warns that those accounts must re-enroll. The warning
+carries the count only — no usernames, no key values — so it is safe to forward wherever logs go.
 
 ## Restore a clean Compose environment
 
