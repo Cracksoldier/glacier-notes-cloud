@@ -604,9 +604,9 @@ rotation story.
 
 ### Release
 
-- [ ] Every acceptance criterion in specification section 18 is satisfied and traceable to a test.
-      *(Satisfied but not traceable: each of the seven has covering tests, and the section 6
-      traceability matrix that would connect them has not been written.)*
+- [x] Every acceptance criterion in specification section 18 is satisfied and traceable to a test,
+      through the section 6 matrix in
+      [`docs/SECOND_FACTOR_TRACEABILITY.md`](docs/SECOND_FACTOR_TRACEABILITY.md).
 - [x] The threat model records any remaining accepted risk.
 - [x] No release-blocking defect remains.
 
@@ -724,6 +724,12 @@ At minimum the matrix shall explicitly cover:
 14. Tunable bounds and default application to a pre-existing settings row
 15. Migration on a populated database
 16. Portable-format exclusion and desktop fixture compatibility
+
+**Satisfied by** [`docs/SECOND_FACTOR_TRACEABILITY.md`](docs/SECOND_FACTOR_TRACEABILITY.md), which
+covers all sixteen areas and cites individual test methods rather than classes. It records three
+requirements that hold without a test that would fail on regression: the portable-format exclusion is
+structural rather than asserted, enumeration *timing* is not measured, and the desktop round trip is
+manual and outside this repository.
 
 ---
 
