@@ -11,5 +11,6 @@
 
 export interface SelfDeletionRequest { 
     currentPassword: string;
+    code?: string;
 }
 

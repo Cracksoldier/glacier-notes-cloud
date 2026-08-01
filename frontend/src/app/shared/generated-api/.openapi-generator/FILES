@@ -22,6 +22,7 @@ model/adminDeletionRequest.ts
 model/adminSettings.ts
 model/adminSettingsUpdate.ts
 model/adminStatus.ts
+model/adminStepUpRequest.ts
 model/adminUser.ts
 model/adminUserPage.ts
 model/adminUserUpdate.ts

@@ -87,6 +87,24 @@ The new operations are `GET /api/v1/me/mfa`, `POST /api/v1/me/mfa/totp`,
 `POST /api/v1/auth/login/mfa`, and `POST /api/v1/setup/second-factor-reset`. None of them affects a
 deployment that leaves the flag off.
 
+One change reaches administrators even on an instance that leaves the flag off:
+`POST /api/v1/admin/users/{userId}/password-reset` now requires a JSON body. The bundled web
+interface sends it, so an upgrade using only the browser needs no action, but a script that posts
+this endpoint with no body must send at least `{}`. The same request from an administrator who has
+enrolled a second factor must also carry `currentPassword` and `code`; the browser prompt for those
+arrives in the next release, so an enrolled administrator should mint reset links and schedule
+deletions before enrolling, or use the API directly until then. `AdminDeletionRequest` accepts the
+same two optional fields.
+
+Migration `V14` runs on startup and only widens one check constraint to accept two additional
+rate-limit scopes. Nothing is dropped or narrowed.
+
+Lifecycle mail is now written in the recipient's language rather than always in English. The
+language comes from the recipient's account setting, falling back to the instance default language
+for people who do not have an account yet, such as invited users. If you have monitoring that
+matches on mail subjects, it needs to account for German subjects on instances whose default
+language is German.
+
 ### v0.2.0
 
 Feature release. Ships full English/German runtime localization across every user-facing surface

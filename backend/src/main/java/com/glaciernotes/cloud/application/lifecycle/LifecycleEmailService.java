@@ -4,6 +4,7 @@ import com.glaciernotes.cloud.configuration.GlacierConfiguration;
 import com.glaciernotes.cloud.domain.TimeProvider;
 import com.glaciernotes.cloud.generated.model.SmtpStatus;
 import com.glaciernotes.cloud.persistence.entity.InstanceSettingsEntity;
+import com.glaciernotes.cloud.persistence.entity.UserSettingsEntity;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -13,6 +14,7 @@ import org.jboss.logging.Logger;
 
 import java.time.ZoneOffset;
 import java.util.Locale;
+import java.util.UUID;
 
 @ApplicationScoped
 public class LifecycleEmailService {
@@ -34,50 +36,37 @@ public class LifecycleEmailService {
         return configuration.smtp().enabled() && configuration.smtp().senderAddress().isPresent();
     }
 
+    /** The invitee has no account row yet, so only the instance default is available. */
     public boolean sendInvitation(String recipient, String activationUrl) {
-        return send(recipient, "Your Glacier Notes invitation", """
-            You have been invited to Glacier Notes.
-
-            Open this link to create your account:
-            %s
-
-            If you did not expect this invitation, you can ignore this message.
-            """.formatted(activationUrl));
+        return send(recipient, MailMessages.INVITATION, defaultLanguage(), activationUrl);
     }
 
-    public boolean sendPasswordReset(String recipient, String resetUrl) {
-        return send(recipient, "Reset your Glacier Notes password", """
-            A password reset was requested for your Glacier Notes account.
-
-            Open this link to choose a new password:
-            %s
-
-            If you did not request this reset, you can ignore this message.
-            """.formatted(resetUrl));
+    public boolean sendPasswordReset(UUID userId, String recipient, String resetUrl) {
+        return send(recipient, MailMessages.PASSWORD_RESET, languageOf(userId), resetUrl);
     }
 
-    public boolean sendEmailChangeVerification(String recipient, String verificationUrl) {
-        return send(recipient, "Verify your new Glacier Notes email address", """
-            A change to this email address was requested for your Glacier Notes account.
-
-            Open this link to verify the new address:
-            %s
-
-            If you did not request this change, you can ignore this message.
-            """.formatted(verificationUrl));
+    public boolean sendEmailChangeVerification(UUID userId, String recipient, String verificationUrl) {
+        return send(recipient, MailMessages.EMAIL_CHANGE_VERIFICATION, languageOf(userId), verificationUrl);
     }
 
-    public boolean sendEmailChangedNotice(String recipient) {
-        return send(recipient, "Your Glacier Notes email address changed", """
-            The email address for your Glacier Notes account was changed successfully.
-
-            If you did not make this change, contact your Glacier Notes administrator immediately.
-            """);
+    public boolean sendEmailChangedNotice(UUID userId, String recipient) {
+        return send(recipient, MailMessages.EMAIL_CHANGED_NOTICE, languageOf(userId));
     }
 
+    public boolean sendNotification(UUID userId, String recipient, MailMessages message, Object... arguments) {
+        return send(recipient, message, languageOf(userId), arguments);
+    }
+
+    /** The recipient's own preference, or the instance default when the account has no settings row. */
+    public String languageOf(UUID userId) {
+        var settings = userId == null ? null : entityManager.find(UserSettingsEntity.class, userId);
+        return settings == null || settings.language() == null ? defaultLanguage() : settings.language();
+    }
+
+    /** Addressed to whoever operates the instance, so it stays in the project language. */
     @Transactional
     public boolean sendTest(String recipient) {
-        return send(recipient, "Glacier Notes SMTP test", """
+        return deliver(recipient, "Glacier Notes SMTP test", """
             This message confirms that Glacier Notes can deliver email using the configured SMTP service.
             No action is required.
             """);
@@ -107,7 +96,16 @@ public class LifecycleEmailService {
         return model;
     }
 
-    private boolean send(String recipient, String subject, String body) {
+    private String defaultLanguage() {
+        var settings = entityManager.find(InstanceSettingsEntity.class, (short) 1);
+        return settings == null || settings.defaultLanguage() == null ? "en" : settings.defaultLanguage();
+    }
+
+    private boolean send(String recipient, MailMessages message, String language, Object... arguments) {
+        return deliver(recipient, message.subject(language), message.body(language, arguments));
+    }
+
+    private boolean deliver(String recipient, String subject, String body) {
         if (!configured()) return false;
         try {
             var settings = entityManager.find(InstanceSettingsEntity.class, (short) 1);

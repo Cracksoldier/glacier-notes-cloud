@@ -37,14 +37,16 @@ public class SessionIssuer {
         Instant now,
         InstanceSettingsEntity settings,
         InetAddress clientAddress,
-        String clientDescription
+        String clientDescription,
+        boolean secondFactorVerified
     ) {
         user.recordSuccessfulLogin(now);
         var token = tokenService.newToken();
         var durationMinutes = settings.sessionDurationMinutes(rememberMe);
         var session = new SessionEntity(
             idGenerator.nextId(), user, tokenService.hashToken(token), rememberMe, now,
-            now.plusSeconds(durationMinutes * 60L), clientAddress, clientDescription
+            now.plusSeconds(durationMinutes * 60L), clientAddress, clientDescription,
+            secondFactorVerified
         );
         entityManager.persist(session);
         entityManager.flush();

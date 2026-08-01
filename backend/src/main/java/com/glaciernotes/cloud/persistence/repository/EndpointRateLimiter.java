@@ -19,7 +19,35 @@ public class EndpointRateLimiter {
         this.timeProvider = timeProvider;
     }
 
-    @Transactional(Transactional.TxType.MANDATORY)
+    /**
+     * Rejects a request that is still inside a block window, without counting it as an attempt.
+     * Callers that only want to count failures pair this with {@link #record} on the failure path.
+     */
+    public void assertAllowed(Instant now, ScopedKey... keys) {
+        for (var key : keys) {
+            var seconds = ((Number) entityManager.createNativeQuery("""
+                    select coalesce(max(extract(epoch from blocked_until - :now)), 0)
+                      from endpoint_rate_limits
+                     where scope = :scope and key_hash = :keyHash and blocked_until > :now
+                    """)
+                .setParameter("scope", key.scope())
+                .setParameter("keyHash", key.keyHash())
+                .setParameter("now", now)
+                .getSingleResult()).longValue();
+            if (seconds > 0) {
+                throw LifecycleFailure.rateLimited(Math.max(1, seconds));
+            }
+        }
+    }
+
+    /**
+     * The count and the block must outlive the rejection: callers that count failures keep their
+     * transaction, and rolling this back would reset the attacker's budget on every ceiling hit.
+     */
+    @Transactional(
+        value = Transactional.TxType.MANDATORY,
+        dontRollbackOn = LifecycleFailure.class
+    )
     public void record(String scope, String keyHash, int maximum, Duration window) {
         var now = timeProvider.now();
         var cutoff = now.minus(window);
@@ -61,5 +89,8 @@ public class EndpointRateLimiter {
                 .executeUpdate();
             throw LifecycleFailure.rateLimited(Math.max(1, Duration.between(now, blockedUntil).toSeconds()));
         }
+    }
+
+    public record ScopedKey(String scope, String keyHash) {
     }
 }

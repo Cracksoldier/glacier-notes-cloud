@@ -12,5 +12,6 @@
 export interface EmailChangeRequest { 
     currentPassword: string;
     newEmail: string;
+    code?: string;
 }
 

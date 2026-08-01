@@ -1,5 +1,8 @@
 package com.glaciernotes.cloud.application.lifecycle;
 
+import com.glaciernotes.cloud.application.auth.MfaFailure;
+import com.glaciernotes.cloud.application.auth.StepUpCredentials;
+import com.glaciernotes.cloud.application.auth.StepUpService;
 import com.glaciernotes.cloud.application.port.PasswordVerifier;
 import com.glaciernotes.cloud.application.operations.RequestAuditContext;
 import com.glaciernotes.cloud.application.setup.IdentityNormalizer;
@@ -43,6 +46,7 @@ public class LifecycleService {
     private final PasswordVerifier passwordVerifier;
     private final PasswordManager passwordManager;
     private final AccountDeletionService deletion;
+    private final StepUpService stepUp;
     private final SessionTokenService tokens;
     private final ClientKeyHasher keyHasher;
     private final EndpointRateLimiter rateLimiter;
@@ -57,7 +61,7 @@ public class LifecycleService {
     public LifecycleService(EntityManager entityManager, IdentityNormalizer identities,
                             PasswordPolicy passwordPolicy, PasswordVerifier passwordVerifier,
                             PasswordManager passwordManager, AccountDeletionService deletion,
-                            SessionTokenService tokens, ClientKeyHasher keyHasher,
+                            StepUpService stepUp, SessionTokenService tokens, ClientKeyHasher keyHasher,
                             EndpointRateLimiter rateLimiter, SessionRepository sessions,
                             UserUsageRepository userUsage, LifecycleEmailService email,
                             GlacierConfiguration configuration,
@@ -68,6 +72,7 @@ public class LifecycleService {
         this.passwordVerifier = passwordVerifier;
         this.passwordManager = passwordManager;
         this.deletion = deletion;
+        this.stepUp = stepUp;
         this.tokens = tokens;
         this.keyHasher = keyHasher;
         this.rateLimiter = rateLimiter;
@@ -202,7 +207,7 @@ public class LifecycleService {
         var user = users.getFirst();
         revokeResetTokens(user.id());
         var issued = issueReset(user.id());
-        if (!email.sendPasswordReset(user.email(), issued.url())) {
+        if (!email.sendPasswordReset(user.id(), user.email(), issued.url())) {
             issued.entity().revoke(time.now());
             return;
         }
@@ -235,8 +240,10 @@ public class LifecycleService {
         }
     }
 
-    @Transactional
-    public ResetLink administrativeReset(UUID userId, UUID actor, String correlationId) {
+    @Transactional(dontRollbackOn = {LifecycleFailure.class, MfaFailure.class})
+    public ResetLink administrativeReset(UUID userId, StepUpCredentials admin, String correlationId) {
+        stepUp.requireAdministrative(admin, correlationId);
+        var actor = admin.userId();
         var user = user(userId, LockModeType.PESSIMISTIC_WRITE);
         if (!("ACTIVE".equals(user.status()) || "LOCKED".equals(user.status()))) {
             throw LifecycleFailure.invalidState("Password resets require an active or locked account.");
@@ -333,10 +340,11 @@ public class LifecycleService {
         audit("USER_SESSIONS_REVOKED", actor, userId, "USER", userId, correlationId, Map.of());
     }
 
-    @Transactional
-    public AdminUser scheduleDeletion(UUID userId, AdminDeletionRequest request, UUID actor,
+    @Transactional(dontRollbackOn = {LifecycleFailure.class, MfaFailure.class})
+    public AdminUser scheduleDeletion(UUID userId, AdminDeletionRequest request, StepUpCredentials admin,
                                       String correlationId) {
-        return adminUser(deletion.scheduleAdministrative(userId, request, actor, correlationId));
+        stepUp.requireAdministrative(admin, correlationId);
+        return adminUser(deletion.scheduleAdministrative(userId, request, admin.userId(), correlationId));
     }
 
     @Transactional

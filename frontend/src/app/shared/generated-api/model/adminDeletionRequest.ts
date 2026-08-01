@@ -12,6 +12,8 @@
 export interface AdminDeletionRequest { 
     mode: AdminDeletionRequestModeEnum;
     confirmation?: string;
+    currentPassword?: string;
+    code?: string;
 }
 export enum AdminDeletionRequestModeEnum {
     Retained = 'RETAINED',

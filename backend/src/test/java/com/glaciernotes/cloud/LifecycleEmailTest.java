@@ -89,7 +89,7 @@ class LifecycleEmailTest {
 
     @Test
     void emailChangeIsVerifiedHashedSingleUseAndNotifiesTheOldAddress() throws SQLException {
-        accounts.requestEmailChange(ADMIN_ID,
+        accounts.requestEmailChange(ADMIN_ID, null,
             new EmailChangeRequest(PASSWORD, "Admin.New@Example.com"), "127.0.0.1", "email-change-test");
 
         var verification = mailbox.getMailsSentTo("Admin.New@Example.com").getFirst();

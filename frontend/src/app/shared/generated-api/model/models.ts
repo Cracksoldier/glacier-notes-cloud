@@ -2,6 +2,7 @@ export * from './adminDeletionRequest';
 export * from './adminSettings';
 export * from './adminSettingsUpdate';
 export * from './adminStatus';
+export * from './adminStepUpRequest';
 export * from './adminUser';
 export * from './adminUserPage';
 export * from './adminUserUpdate';

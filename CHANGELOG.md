@@ -37,6 +37,20 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
   bootstrap token that clears an account's second factor and revokes its sessions when its
   authenticator is lost. It answers `204` whether or not the account existed, so it cannot be used
   to enumerate accounts, and it is throttled by the same limiter as initial setup.
+- Step-up verification on the operations that could hand an attacker an account. An enrolled
+  account must supply a fresh authenticator or recovery code alongside its password to disable the
+  factor, regenerate its recovery codes, change its email address, or delete itself, and an enrolled
+  administrator must do the same to delete another account or to mint a password-reset link for one.
+  A request that omits the code is answered `401 AUTH_MFA_STEP_UP_REQUIRED`; the browser prompts
+  arrive in the next milestone. An account without an enrollment sees the password check it always
+  saw. Verifying opens a grace window on that one session — `mfa_step_up_grace_minutes`, five
+  minutes by default and disabled by `0` — so a run of operations is not prompted repeatedly.
+  Migration `V14` adds the `STEP_UP_USER` and `STEP_UP_IP` rate-limit scopes.
+- Notifications for every second-factor event: enrollment started, factor enabled, factor disabled,
+  recovery codes regenerated, a recovery code spent on a login, and an operator clearing the factor.
+  They carry the time and the coarse device description already kept for the session list, never a
+  secret, a code, a link, or how many recovery codes are left, and they are sent after the operation
+  commits, so a mail server that is down cannot undo a security change.
 - `GLACIER_MFA_ENABLED` (default `false`) and `GLACIER_MFA_ENCRYPTION_SECRET`
   / `GLACIER_MFA_ENCRYPTION_SECRET_FILE`. The secret is validated at startup only when the flag is
   enabled, so existing deployments upgrade without new configuration. It is kept separate from the
@@ -44,6 +58,17 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
 
 ### Changed
 
+- **Breaking:** `POST /api/v1/admin/users/{userId}/password-reset` now requires a JSON body. It
+  carries the administrator's own `currentPassword` and, when they have enrolled a second factor,
+  their `code`; both fields are optional within it, so `{}` remains a valid request for an
+  administrator without an enrollment. `AdminDeletionRequest` gains the same two optional fields.
+  An enrolled administrator who sends neither is answered `401 AUTH_STEP_UP_PASSWORD_REQUIRED`
+  rather than being told the password was wrong.
+- All lifecycle mail — invitations, password resets, email-change verification, and the new
+  second-factor notices — is now written in the recipient's language, taken from their account
+  setting and falling back to the instance default for recipients who have no account yet.
+- Enabling the second factor, disabling it, and regenerating recovery codes now end every other
+  session of that account, since none of them ever proved possession of the factor.
 - **Breaking:** `POST /api/v1/auth/login` now returns a `LoginOutcome` envelope instead of a
   `SessionContext`. A successful login responds with `{"result": "SESSION", "context": {…}}`, where
   `context` is the object the endpoint previously returned at the top level — a field previously read

@@ -87,7 +87,9 @@ public class CurrentUserResource implements CurrentUserApi {
     @Consumes(MediaType.APPLICATION_JSON)
     @ResponseStatus(202)
     public void requestCurrentUserEmailChange(EmailChangeRequest emailChangeRequest) {
-        accounts.requestEmailChange(userId(), emailChangeRequest, clientAddress(), correlationId());
+        var session = session();
+        accounts.requestEmailChange(session.userId(), session.id(), emailChangeRequest, clientAddress(),
+            correlationId());
     }
 
     @Override
@@ -117,7 +119,9 @@ public class CurrentUserResource implements CurrentUserApi {
     @Consumes(MediaType.APPLICATION_JSON)
     @ResponseStatus(202)
     public void deleteCurrentUser(SelfDeletionRequest selfDeletionRequest) {
-        accounts.deleteSelf(userId(), selfDeletionRequest, correlationId());
+        var session = session();
+        accounts.deleteSelf(session.userId(), session.id(), selfDeletionRequest, clientAddress(),
+            correlationId());
         cookies.clear(response);
     }
 
@@ -133,7 +137,9 @@ public class CurrentUserResource implements CurrentUserApi {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public MfaEnrollmentStart startTotpEnrollment(MfaEnrollmentStartRequest request) {
-        return mfa.start(userId(), request.getCurrentPassword().toCharArray(), correlationId());
+        var session = session();
+        return mfa.start(session.userId(), session.id(),
+            request.getCurrentPassword().toCharArray(), correlationId());
     }
 
     @Override
@@ -142,7 +148,8 @@ public class CurrentUserResource implements CurrentUserApi {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public MfaRecoveryCodes confirmTotpEnrollment(MfaEnrollmentConfirmRequest request) {
-        return mfa.confirm(userId(), request.getCode(), correlationId());
+        var session = session();
+        return mfa.confirm(session.userId(), session.id(), request.getCode(), correlationId());
     }
 
     @Override
@@ -155,7 +162,9 @@ public class CurrentUserResource implements CurrentUserApi {
     @Path("/mfa/totp/disable")
     @Consumes(MediaType.APPLICATION_JSON)
     public void disableTotp(MfaDisableRequest request) {
-        mfa.disable(userId(), request.getCurrentPassword().toCharArray(), correlationId());
+        var session = session();
+        mfa.disable(session.userId(), session.id(), request.getCurrentPassword().toCharArray(),
+            request.getCode(), clientAddress(), correlationId());
     }
 
     @Override
@@ -164,13 +173,19 @@ public class CurrentUserResource implements CurrentUserApi {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public MfaRecoveryCodes regenerateRecoveryCodes(MfaRecoveryCodesRequest request) {
-        return mfa.regenerate(userId(), request.getCurrentPassword().toCharArray(), correlationId());
+        var session = session();
+        return mfa.regenerate(session.userId(), session.id(), request.getCurrentPassword().toCharArray(),
+            request.getCode(), clientAddress(), correlationId());
+    }
+
+    private SessionView session() {
+        SessionView session = identity.getAttribute(AuthenticationIdentity.SESSION);
+        if (session == null) throw AuthenticationFailure.sessionNotFound();
+        return session;
     }
 
     private UUID userId() {
-        SessionView session = identity.getAttribute(AuthenticationIdentity.SESSION);
-        if (session == null) throw AuthenticationFailure.sessionNotFound();
-        return session.userId();
+        return session().userId();
     }
 
     private String clientAddress() {

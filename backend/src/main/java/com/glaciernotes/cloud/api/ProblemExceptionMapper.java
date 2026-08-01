@@ -266,6 +266,14 @@ public class ProblemExceptionMapper implements ExceptionMapper<Throwable> {
                 409, "Second Factor Required", "MFA_NOT_ENROLLED",
                 failure.getMessage(), List.of(), 0
             );
+            case STEP_UP_REQUIRED -> new Description(
+                401, "Verification Code Required", "AUTH_MFA_STEP_UP_REQUIRED",
+                failure.getMessage(), List.of(), 0
+            );
+            case STEP_UP_PASSWORD_REQUIRED -> new Description(
+                401, "Current Password Required", "AUTH_STEP_UP_PASSWORD_REQUIRED",
+                failure.getMessage(), List.of(), 0
+            );
             case UNAVAILABLE -> new Description(
                 503, "Second Factor Unavailable", "MFA_UNAVAILABLE",
                 failure.getMessage(), List.of(), 0

@@ -11,5 +11,6 @@
 
 export interface MfaRecoveryCodesRequest { 
     currentPassword: string;
+    code?: string;
 }
 

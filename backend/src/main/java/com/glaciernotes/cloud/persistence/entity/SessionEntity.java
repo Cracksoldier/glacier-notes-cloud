@@ -36,6 +36,8 @@ public class SessionEntity {
     private InetAddress ipAddress;
     @Column(name = "client_description")
     private String clientDescription;
+    @Column(name = "second_factor_verified_at")
+    private Instant secondFactorVerifiedAt;
 
     protected SessionEntity() {
     }
@@ -48,7 +50,8 @@ public class SessionEntity {
         Instant createdAt,
         Instant expiresAt,
         InetAddress ipAddress,
-        String clientDescription
+        String clientDescription,
+        boolean secondFactorVerified
     ) {
         this.id = id;
         this.user = user;
@@ -59,6 +62,7 @@ public class SessionEntity {
         this.expiresAt = expiresAt;
         this.ipAddress = ipAddress;
         this.clientDescription = clientDescription;
+        this.secondFactorVerifiedAt = secondFactorVerified ? createdAt : null;
     }
 
     public UUID id() {
@@ -101,5 +105,21 @@ public class SessionEntity {
         if (revokedAt == null) {
             revokedAt = now;
         }
+    }
+
+    public Instant secondFactorVerifiedAt() {
+        return secondFactorVerifiedAt;
+    }
+
+    public void recordStepUp(Instant now) {
+        secondFactorVerifiedAt = now;
+    }
+
+    /**
+     * Closes the grace window without ending the session, so that changing the factor itself always
+     * costs a fresh verification.
+     */
+    public void clearStepUp() {
+        secondFactorVerifiedAt = null;
     }
 }

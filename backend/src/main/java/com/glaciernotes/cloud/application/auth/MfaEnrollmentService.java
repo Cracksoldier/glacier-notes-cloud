@@ -1,6 +1,7 @@
 package com.glaciernotes.cloud.application.auth;
 
 import com.glaciernotes.cloud.application.lifecycle.LifecycleFailure;
+import com.glaciernotes.cloud.application.lifecycle.MailMessages;
 import com.glaciernotes.cloud.application.lifecycle.PasswordManager;
 import com.glaciernotes.cloud.application.operations.AuditService;
 import com.glaciernotes.cloud.configuration.GlacierConfiguration;
@@ -10,14 +11,17 @@ import com.glaciernotes.cloud.generated.model.MfaRecoveryCodes;
 import com.glaciernotes.cloud.generated.model.MfaStatus;
 import com.glaciernotes.cloud.persistence.entity.InstanceSettingsEntity;
 import com.glaciernotes.cloud.persistence.entity.UserEntity;
+import com.glaciernotes.cloud.persistence.entity.SessionEntity;
 import com.glaciernotes.cloud.persistence.entity.UserMfaTotpEntity;
 import com.glaciernotes.cloud.persistence.repository.MfaRepository;
+import com.glaciernotes.cloud.persistence.repository.SessionRepository;
 import com.glaciernotes.cloud.security.Base32Codec;
 import com.glaciernotes.cloud.security.EnrollmentSecretCipher;
 import com.glaciernotes.cloud.security.MfaTokenService;
 import com.glaciernotes.cloud.security.TotpProvisioningUri;
 import com.glaciernotes.cloud.security.TotpVerifier;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
@@ -40,6 +44,9 @@ public class MfaEnrollmentService {
     private final EnrollmentSecretCipher cipher;
     private final TotpVerifier totp;
     private final PasswordManager passwords;
+    private final StepUpService stepUp;
+    private final SessionRepository sessions;
+    private final Event<SecondFactorEvent> notifications;
     private final TimeProvider timeProvider;
     private final AuditService audit;
     private final MfaMetrics metrics;
@@ -52,6 +59,9 @@ public class MfaEnrollmentService {
         EnrollmentSecretCipher cipher,
         TotpVerifier totp,
         PasswordManager passwords,
+        StepUpService stepUp,
+        SessionRepository sessions,
+        Event<SecondFactorEvent> notifications,
         TimeProvider timeProvider,
         AuditService audit,
         MfaMetrics metrics,
@@ -63,6 +73,9 @@ public class MfaEnrollmentService {
         this.cipher = cipher;
         this.totp = totp;
         this.passwords = passwords;
+        this.stepUp = stepUp;
+        this.sessions = sessions;
+        this.notifications = notifications;
         this.timeProvider = timeProvider;
         this.audit = audit;
         this.metrics = metrics;
@@ -86,7 +99,7 @@ public class MfaEnrollmentService {
     }
 
     @Transactional(dontRollbackOn = LifecycleFailure.class)
-    public MfaEnrollmentStart start(UUID userId, char[] currentPassword, String correlationId) {
+    public MfaEnrollmentStart start(UUID userId, UUID sessionId, char[] currentPassword, String correlationId) {
         requireEnabled();
         var user = authenticate(userId, currentPassword, correlationId);
         var existing = mfaRepository.findEnrollment(userId).orElse(null);
@@ -110,6 +123,7 @@ public class MfaEnrollmentService {
                 MfaAuditEvents.ENROLLMENT_STARTED, userId, userId, "USER", userId, "SUCCESS",
                 correlationId, Map.of()
             );
+            notify(user, sessionId, MailMessages.SECOND_FACTOR_ENROLLMENT_STARTED, now);
             return new MfaEnrollmentStart()
                 .secret(groupForManualEntry(Base32Codec.encode(secret).replace("=", "")))
                 .provisioningUri(TotpProvisioningUri.build(
@@ -124,7 +138,7 @@ public class MfaEnrollmentService {
     }
 
     @Transactional
-    public MfaRecoveryCodes confirm(UUID userId, String code, String correlationId) {
+    public MfaRecoveryCodes confirm(UUID userId, UUID sessionId, String code, String correlationId) {
         requireEnabled();
         var now = timeProvider.now();
         var enrollment = mfaRepository.findEnrollment(userId).orElse(null);
@@ -157,11 +171,17 @@ public class MfaEnrollmentService {
         enrollment.confirm(now);
         // Burns the confirming step so the very code just typed cannot also complete a login.
         enrollment.recordAcceptedStep(acceptedStep, now);
+        // Every other session predates the factor and has never proved possession of it.
+        sessions.clearStepUp(userId);
+        sessions.revokeOthers(userId, sessionId);
+        openGraceWindow(sessionId, now);
         metrics.enrollmentActivated();
         audit.record(
             MfaAuditEvents.ENROLLMENT_CONFIRMED, userId, userId, "USER", userId, "SUCCESS",
             correlationId, Map.of()
         );
+        notify(entityManager.find(UserEntity.class, userId), sessionId,
+            MailMessages.SECOND_FACTOR_ENABLED, now);
         return issueRecoveryCodes(userId, now);
     }
 
@@ -182,34 +202,81 @@ public class MfaEnrollmentService {
      * Deliberately not gated on the feature flag: turning the flag off must not trap an account that
      * already carries an enrollment.
      */
-    @Transactional(dontRollbackOn = LifecycleFailure.class)
-    public void disable(UUID userId, char[] currentPassword, String correlationId) {
-        authenticate(userId, currentPassword, correlationId);
+    @Transactional(dontRollbackOn = {LifecycleFailure.class, MfaFailure.class})
+    public void disable(
+        UUID userId,
+        UUID sessionId,
+        char[] currentPassword,
+        String code,
+        String clientAddress,
+        String correlationId
+    ) {
+        stepUp.require(userId, sessionId, currentPassword, code, clientAddress, correlationId);
         var enrollment = mfaRepository.findEnrollment(userId).orElse(null);
         if (enrollment == null || !enrollment.active()) {
             throw MfaFailure.notEnrolled();
         }
         mfaRepository.deleteEnrollment(userId);
+        sessions.clearStepUp(userId);
+        sessions.revokeOthers(userId, sessionId);
         metrics.enrollmentDisabled();
         audit.record(
             MfaAuditEvents.DISABLED, userId, userId, "USER", userId, "SUCCESS",
             correlationId, Map.of()
         );
+        notify(entityManager.find(UserEntity.class, userId), sessionId,
+            MailMessages.SECOND_FACTOR_DISABLED, timeProvider.now());
     }
 
-    @Transactional(dontRollbackOn = LifecycleFailure.class)
-    public MfaRecoveryCodes regenerate(UUID userId, char[] currentPassword, String correlationId) {
+    @Transactional(dontRollbackOn = {LifecycleFailure.class, MfaFailure.class})
+    public MfaRecoveryCodes regenerate(
+        UUID userId,
+        UUID sessionId,
+        char[] currentPassword,
+        String code,
+        String clientAddress,
+        String correlationId
+    ) {
         requireEnabled();
-        authenticate(userId, currentPassword, correlationId);
+        stepUp.require(userId, sessionId, currentPassword, code, clientAddress, correlationId);
         var enrollment = mfaRepository.findEnrollment(userId).orElse(null);
         if (enrollment == null || !enrollment.active()) {
             throw MfaFailure.notEnrolled();
         }
+        sessions.revokeOthers(userId, sessionId);
         audit.record(
             MfaAuditEvents.RECOVERY_CODES_REGENERATED, userId, userId, "USER", userId, "SUCCESS",
             correlationId, Map.of()
         );
-        return issueRecoveryCodes(userId, timeProvider.now());
+        var now = timeProvider.now();
+        notify(entityManager.find(UserEntity.class, userId),
+            sessionId, MailMessages.RECOVERY_CODES_REGENERATED, now);
+        return issueRecoveryCodes(userId, now);
+    }
+
+    /**
+     * Confirming an enrollment is itself a code verification, so it starts the window rather than
+     * prompting the user again a second later.
+     */
+    private void notify(UserEntity user, UUID sessionId, MailMessages message, Instant now) {
+        if (user == null) {
+            return;
+        }
+        notifications.fire(new SecondFactorEvent(
+            user.id(), user.email(), message, now, clientDescriptionOf(sessionId)
+        ));
+    }
+
+    private String clientDescriptionOf(UUID sessionId) {
+        var session = sessionId == null ? null : entityManager.find(SessionEntity.class, sessionId);
+        return session == null ? null : session.clientDescription();
+    }
+
+    private void openGraceWindow(UUID sessionId, Instant now) {
+        var session = sessionId == null ? null : entityManager.find(SessionEntity.class, sessionId);
+        if (session != null) {
+            session.recordStepUp(now);
+        }
     }
 
     private MfaRecoveryCodes issueRecoveryCodes(UUID userId, Instant now) {

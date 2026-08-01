@@ -239,6 +239,7 @@ class LifecycleResourceTest {
         userLogin.then().statusCode(200);
 
         var reset = adminRequest(admin)
+            .body("{\"currentPassword\":\"" + PASSWORD + "\"}")
             .post("/api/v1/admin/users/" + USER_ID + "/password-reset");
         reset.then().statusCode(201).body("token", matchesPattern("^[A-Za-z0-9_-]{43}$"));
         var token = reset.jsonPath().getString("token");
@@ -371,7 +372,7 @@ class LifecycleResourceTest {
         var member = login("member", PASSWORD);
         var admin = login("admin", PASSWORD);
 
-        adminRequest(admin).body("{\"mode\":\"RETAINED\"}")
+        adminRequest(admin).body("{\"mode\":\"RETAINED\",\"currentPassword\":\"" + PASSWORD + "\"}")
             .post("/api/v1/admin/users/" + USER_ID + "/deletion").then().statusCode(202)
             .body("status", equalTo("PENDING_DELETION"));
         given().cookie("GLACIER_SESSION", member.getCookie("GLACIER_SESSION"))
@@ -381,9 +382,9 @@ class LifecycleResourceTest {
             .then().statusCode(200).body("status", equalTo("ACTIVE"));
         login("member", PASSWORD).then().statusCode(200);
 
-        adminRequest(admin).body("{\"mode\":\"IMMEDIATE\",\"confirmation\":\"wrong\"}")
+        adminRequest(admin).body("{\"mode\":\"IMMEDIATE\",\"confirmation\":\"wrong\",\"currentPassword\":\"" + PASSWORD + "\"}")
             .post("/api/v1/admin/users/" + USER_ID + "/deletion").then().statusCode(409);
-        adminRequest(admin).body("{\"mode\":\"IMMEDIATE\",\"confirmation\":\"member\"}")
+        adminRequest(admin).body("{\"mode\":\"IMMEDIATE\",\"confirmation\":\"member\",\"currentPassword\":\"" + PASSWORD + "\"}")
             .post("/api/v1/admin/users/" + USER_ID + "/deletion").then().statusCode(202)
             .body("status", equalTo("DELETED"));
         login("member", PASSWORD).then().statusCode(401);

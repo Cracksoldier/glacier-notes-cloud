@@ -25,6 +25,8 @@ import { AdminSettingsUpdate } from '../model/adminSettingsUpdate';
 // @ts-ignore
 import { AdminStatus } from '../model/adminStatus';
 // @ts-ignore
+import { AdminStepUpRequest } from '../model/adminStepUpRequest';
+// @ts-ignore
 import { AdminUser } from '../model/adminUser';
 // @ts-ignore
 import { AdminUserPage } from '../model/adminUserPage';
@@ -360,16 +362,20 @@ export class AdministrationService extends BaseService {
      * Generate a copyable password-reset link
      * @endpoint post /api/v1/admin/users/{userId}/password-reset
      * @param userId 
+     * @param adminStepUpRequest 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public createAdministrativePasswordReset(userId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ResetLink>;
-    public createAdministrativePasswordReset(userId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ResetLink>>;
-    public createAdministrativePasswordReset(userId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ResetLink>>;
-    public createAdministrativePasswordReset(userId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public createAdministrativePasswordReset(userId: string, adminStepUpRequest: AdminStepUpRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ResetLink>;
+    public createAdministrativePasswordReset(userId: string, adminStepUpRequest: AdminStepUpRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ResetLink>>;
+    public createAdministrativePasswordReset(userId: string, adminStepUpRequest: AdminStepUpRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ResetLink>>;
+    public createAdministrativePasswordReset(userId: string, adminStepUpRequest: AdminStepUpRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         if (userId === null || userId === undefined) {
             throw new Error('Required parameter userId was null or undefined when calling createAdministrativePasswordReset.');
+        }
+        if (adminStepUpRequest === null || adminStepUpRequest === undefined) {
+            throw new Error('Required parameter adminStepUpRequest was null or undefined when calling createAdministrativePasswordReset.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -392,6 +398,15 @@ export class AdministrationService extends BaseService {
         const localVarTransferCache: boolean = options?.transferCache ?? true;
 
 
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
         let responseType_: 'text' | 'json' | 'blob' = 'json';
         if (localVarHttpHeaderAcceptSelected) {
             if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
@@ -408,6 +423,7 @@ export class AdministrationService extends BaseService {
         return this.httpClient.request<ResetLink>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                body: adminStepUpRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

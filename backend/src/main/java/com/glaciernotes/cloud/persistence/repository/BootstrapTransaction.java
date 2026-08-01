@@ -1,5 +1,7 @@
 package com.glaciernotes.cloud.persistence.repository;
 
+import com.glaciernotes.cloud.application.auth.SecondFactorEvent;
+import com.glaciernotes.cloud.application.lifecycle.MailMessages;
 import com.glaciernotes.cloud.application.setup.SetupCommand;
 import com.glaciernotes.cloud.application.setup.SetupFailure;
 import com.glaciernotes.cloud.application.port.PasswordVerifier;
@@ -14,6 +16,7 @@ import com.glaciernotes.cloud.persistence.entity.NotebookEntity;
 import com.glaciernotes.cloud.persistence.entity.UserEntity;
 import com.glaciernotes.cloud.persistence.entity.UserSettingsEntity;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
@@ -27,17 +30,20 @@ public class BootstrapTransaction {
     private final IdGenerator idGenerator;
     private final TimeProvider timeProvider;
     private final PasswordVerifier passwordVerifier;
+    private final Event<SecondFactorEvent> notifications;
 
     public BootstrapTransaction(
         EntityManager entityManager,
         IdGenerator idGenerator,
         TimeProvider timeProvider,
-        PasswordVerifier passwordVerifier
+        PasswordVerifier passwordVerifier,
+        Event<SecondFactorEvent> notifications
     ) {
         this.entityManager = entityManager;
         this.idGenerator = idGenerator;
         this.timeProvider = timeProvider;
         this.passwordVerifier = passwordVerifier;
+        this.notifications = notifications;
     }
 
     public State state() {
@@ -137,6 +143,11 @@ public class BootstrapTransaction {
             .setParameter("userId", user.id())
             .executeUpdate();
         entityManager.flush();
+        if (removed > 0) {
+            notifications.fire(new SecondFactorEvent(
+                user.id(), user.email(), MailMessages.SECOND_FACTOR_CLEARED_BY_OPERATOR, now, null
+            ));
+        }
         return removed > 0;
     }
 

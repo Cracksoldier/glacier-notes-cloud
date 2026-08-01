@@ -988,6 +988,11 @@ paths:
       summary: Generate a copyable password-reset link
       operationId: createAdministrativePasswordReset
       parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminStepUpRequest' }
       responses:
         '201':
           description: One-time password-reset token
@@ -2253,13 +2258,19 @@ components:
     MfaDisableRequest:
       type: object
       required: [currentPassword]
+      description: >
+        The code is a TOTP or recovery code and is required whenever the actor has an active second
+        factor and the session is outside its step-up grace window. A caller cannot determine that
+        locally: it submits the password alone and is told when a code is needed.
       properties:
         currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+        code: { type: string, format: password, minLength: 1, maxLength: 64 }
     MfaRecoveryCodesRequest:
       type: object
       required: [currentPassword]
       properties:
         currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+        code: { type: string, format: password, minLength: 1, maxLength: 64 }
     MfaRecoveryCodes:
       type: object
       required: [codes, generatedAt]
@@ -2374,6 +2385,7 @@ components:
       properties:
         currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
         newEmail: { type: string, format: email, maxLength: 320 }
+        code: { type: string, format: password, minLength: 1, maxLength: 64 }
     UserSettings:
       type: object
       required: [theme, language, moveCheckedToBottom, trashAutoPurgeDays, trashAutoPurgeMayBeDisabled]
@@ -2395,12 +2407,24 @@ components:
       required: [currentPassword]
       properties:
         currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+        code: { type: string, format: password, minLength: 1, maxLength: 64 }
     AdminDeletionRequest:
       type: object
       required: [mode]
       properties:
         mode: { type: string, enum: [RETAINED, IMMEDIATE] }
         confirmation: { type: string, maxLength: 64 }
+        currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+        code: { type: string, format: password, minLength: 1, maxLength: 64 }
+    AdminStepUpRequest:
+      type: object
+      description: >
+        Re-authentication of the acting administrator. Both fields are optional in the schema and
+        enforced by the server, so that a client which has not yet been updated fails with an
+        application error code rather than a schema rejection.
+      properties:
+        currentPassword: { type: string, format: password, minLength: 1, maxLength: 128 }
+        code: { type: string, format: password, minLength: 1, maxLength: 64 }
     AdminUser:
       type: object
       required: [id, username, email, role, status, createdAt, storageBytes, noteCount, notebookCount, imageCount]

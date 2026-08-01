@@ -93,6 +93,15 @@ hold 32–512 non-whitespace characters. Enabling the flag without a valid secre
 by design. The secret is deliberately separate from the session secret: rotating the session secret
 only ends sessions, whereas rotating this one would invalidate stored enrollments and recovery codes.
 
+To see the notifications a second-factor change sends, point the instance at a local mail sink —
+`docker run --rm -p 1025:1025 -p 8025:8025 axllent/mailpit` — and start Quarkus with
+`GLACIER_SMTP_ENABLED=true`, `GLACIER_SMTP_HOST=localhost`, `GLACIER_SMTP_PORT=1025`,
+`GLACIER_SMTP_START_TLS=DISABLED`, and a `GLACIER_SMTP_SENDER_ADDRESS`. Messages then appear at
+`http://localhost:8025`. They are sent after the operation commits, so a mail server that is
+unreachable logs a warning and changes nothing about the operation itself; leaving
+`GLACIER_SMTP_ENABLED` off skips them silently. Set the account's language in account settings to
+see the German wording — the language is per recipient, falling back to the instance default.
+
 ## Formatting and editors
 
 Biome is the only frontend formatter. The repository recommends the Biome VS Code extension

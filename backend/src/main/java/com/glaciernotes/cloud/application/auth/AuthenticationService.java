@@ -127,7 +127,8 @@ public class AuthenticationService {
 
             rateLimiter.clearIdentifier(identifierKey);
             return sessionIssuer.issue(
-                user, rememberMe, now, settings, parseAddress(clientAddress), clientDescription
+                user, rememberMe, now, settings, parseAddress(clientAddress), clientDescription,
+                false
             );
         } finally {
             Arrays.fill(password, '\0');

@@ -100,6 +100,20 @@ public class SessionRepository {
         }
     }
 
+    /**
+     * Closes the step-up grace window on every session of the account. Callers that then re-open it
+     * for the acting session must clear first, or the bulk statement overwrites the new value.
+     */
+    @Transactional
+    public void clearStepUp(UUID userId) {
+        entityManager.createQuery(
+                "update SessionEntity s set s.secondFactorVerifiedAt = null "
+                    + "where s.user.id = :userId and s.secondFactorVerifiedAt is not null"
+            )
+            .setParameter("userId", userId)
+            .executeUpdate();
+    }
+
     @Transactional
     public void revokeAll(UUID userId) {
         entityManager.createQuery(

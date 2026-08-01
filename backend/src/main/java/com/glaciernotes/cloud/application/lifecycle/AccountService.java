@@ -1,5 +1,7 @@
 package com.glaciernotes.cloud.application.lifecycle;
 
+import com.glaciernotes.cloud.application.auth.MfaFailure;
+import com.glaciernotes.cloud.application.auth.StepUpService;
 import com.glaciernotes.cloud.application.setup.IdentityNormalizer;
 import com.glaciernotes.cloud.application.setup.SetupFailure;
 import com.glaciernotes.cloud.configuration.GlacierConfiguration;
@@ -33,6 +35,7 @@ public class AccountService {
     private final EntityManager entityManager;
     private final IdentityNormalizer identities;
     private final PasswordManager passwords;
+    private final StepUpService stepUp;
     private final SessionRepository sessions;
     private final SessionTokenService tokens;
     private final EndpointRateLimiter rateLimiter;
@@ -44,12 +47,14 @@ public class AccountService {
     private final IdGenerator ids;
 
     public AccountService(EntityManager entityManager, IdentityNormalizer identities, PasswordManager passwords,
-                          SessionRepository sessions, SessionTokenService tokens, EndpointRateLimiter rateLimiter,
-                          ClientKeyHasher keyHasher, LifecycleEmailService email, AccountDeletionService deletion,
-                          GlacierConfiguration configuration, TimeProvider time, IdGenerator ids) {
+                          StepUpService stepUp, SessionRepository sessions, SessionTokenService tokens,
+                          EndpointRateLimiter rateLimiter, ClientKeyHasher keyHasher, LifecycleEmailService email,
+                          AccountDeletionService deletion, GlacierConfiguration configuration, TimeProvider time,
+                          IdGenerator ids) {
         this.entityManager = entityManager;
         this.identities = identities;
         this.passwords = passwords;
+        this.stepUp = stepUp;
         this.sessions = sessions;
         this.tokens = tokens;
         this.rateLimiter = rateLimiter;
@@ -95,8 +100,9 @@ public class AccountService {
         }
     }
 
-    @Transactional(dontRollbackOn = LifecycleFailure.class)
-    public void requestEmailChange(UUID userId, EmailChangeRequest request, String address, String correlationId) {
+    @Transactional(dontRollbackOn = {LifecycleFailure.class, MfaFailure.class})
+    public void requestEmailChange(UUID userId, UUID sessionId, EmailChangeRequest request, String address,
+                                   String correlationId) {
         if (!email.configured()) {
             throw LifecycleFailure.unavailable(
                 "Email changes require SMTP to be configured by the administrator.");
@@ -106,12 +112,8 @@ public class AccountService {
         rateLimiter.record("EMAIL_CHANGE_IP", keyHasher.hash("email-change-ip:" + address), 20,
             Duration.ofHours(1));
         var user = require(userId, LockModeType.PESSIMISTIC_WRITE);
-        var current = request.getCurrentPassword().toCharArray();
-        try {
-            if (!passwords.matchesCurrent(user, current)) throw LifecycleFailure.invalidCredentials();
-        } finally {
-            Arrays.fill(current, '\0');
-        }
+        stepUp.require(userId, sessionId, request.getCurrentPassword().toCharArray(), request.getCode(),
+            address, correlationId);
         var identity = identities.normalize(user.username(), request.getNewEmail(), user.displayName());
         if (identity.emailNormalized().equals(user.email().strip().toLowerCase(Locale.ROOT))) {
             throw LifecycleFailure.conflict("The new email address must be different from the current address.");
@@ -126,7 +128,8 @@ public class AccountService {
             now.plus(Duration.ofMinutes(settings().emailChangeExpirationMinutes())));
         entityManager.persist(token);
         entityManager.flush();
-        if (!email.sendEmailChangeVerification(identity.email(), link("/verify-email-change?token=", raw))) {
+        if (!email.sendEmailChangeVerification(userId, identity.email(),
+            link("/verify-email-change?token=", raw))) {
             token.revoke(time.now());
             throw LifecycleFailure.unavailable("The verification email could not be sent. Try again later.");
         }
@@ -156,7 +159,7 @@ public class AccountService {
         revokeEmailChangeTokens(user.id());
         sessions.revokeAll(user.id());
         audit("EMAIL_CHANGED", user.id(), user.id(), correlationId, Map.of());
-        email.sendEmailChangedNotice(oldEmail);
+        email.sendEmailChangedNotice(user.id(), oldEmail);
     }
 
     @Transactional
@@ -182,15 +185,12 @@ public class AccountService {
         return settingsModel(userSettings, instance);
     }
 
-    @Transactional
-    public void deleteSelf(UUID userId, SelfDeletionRequest request, String correlationId) {
-        var user = require(userId, LockModeType.PESSIMISTIC_WRITE);
-        var current = request.getCurrentPassword().toCharArray();
-        try {
-            if (!passwords.matchesCurrent(user, current)) throw LifecycleFailure.invalidCredentials();
-        } finally {
-            Arrays.fill(current, '\0');
-        }
+    @Transactional(dontRollbackOn = {LifecycleFailure.class, MfaFailure.class})
+    public void deleteSelf(UUID userId, UUID sessionId, SelfDeletionRequest request, String address,
+                           String correlationId) {
+        require(userId, LockModeType.PESSIMISTIC_WRITE);
+        stepUp.require(userId, sessionId, request.getCurrentPassword().toCharArray(), request.getCode(),
+            address, correlationId);
         deletion.scheduleSelf(userId, correlationId);
     }
 

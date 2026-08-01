@@ -91,7 +91,7 @@ export class AdminUserDetailComponent {
   }
 
   resetPassword(): void {
-    this.api.createAdministrativePasswordReset(this.id).subscribe({
+    this.api.createAdministrativePasswordReset(this.id, {}).subscribe({
       next: (value) => this.reset.set(value),
       error: (failure) => this.fail(failure),
     });

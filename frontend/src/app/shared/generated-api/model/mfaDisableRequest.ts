@@ -9,7 +9,11 @@
  */
 
 
+/**
+ * The code is a TOTP or recovery code and is required whenever the actor has an active second factor and the session is outside its step-up grace window. A caller cannot determine that locally: it submits the password alone and is told when a code is needed. 
+ */
 export interface MfaDisableRequest { 
     currentPassword: string;
+    code?: string;
 }
 

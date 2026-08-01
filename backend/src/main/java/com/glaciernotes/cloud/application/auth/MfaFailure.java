@@ -58,6 +58,28 @@ public class MfaFailure extends RuntimeException {
         );
     }
 
+    /**
+     * The actor holds an active second factor and the operation is outside the session's step-up
+     * grace window. A client cannot decide this locally, so it submits the password alone and is
+     * told here that a code is also needed.
+     */
+    public static MfaFailure stepUpRequired() {
+        return new MfaFailure(
+            Reason.STEP_UP_REQUIRED,
+            "This operation requires a current verification code.",
+            0
+        );
+    }
+
+    /** Raised by operations whose request body carried no password to re-authenticate with. */
+    public static MfaFailure stepUpPasswordRequired() {
+        return new MfaFailure(
+            Reason.STEP_UP_PASSWORD_REQUIRED,
+            "This operation requires your current password.",
+            0
+        );
+    }
+
     /** The instance was started without {@code GLACIER_MFA_ENABLED}, so no enrollment can be made. */
     public static MfaFailure unavailable() {
         return new MfaFailure(
@@ -81,6 +103,8 @@ public class MfaFailure extends RuntimeException {
         ATTEMPTS_EXHAUSTED,
         ALREADY_ENROLLED,
         NOT_ENROLLED,
+        STEP_UP_REQUIRED,
+        STEP_UP_PASSWORD_REQUIRED,
         UNAVAILABLE
     }
 }

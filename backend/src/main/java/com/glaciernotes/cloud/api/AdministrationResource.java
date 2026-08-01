@@ -13,8 +13,12 @@ import com.glaciernotes.cloud.configuration.GlacierConfiguration;
 import com.glaciernotes.cloud.application.transfer.TransferModels.ApplyCommand;
 import com.glaciernotes.cloud.application.transfer.TransferService;
 import com.glaciernotes.cloud.generated.model.*;
+import com.glaciernotes.cloud.application.auth.SessionView;
+import com.glaciernotes.cloud.application.auth.StepUpCredentials;
+import com.glaciernotes.cloud.security.AuthenticationIdentity;
 import com.glaciernotes.cloud.security.CookieManager;
 import io.quarkus.security.identity.SecurityIdentity;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import jakarta.ws.rs.core.Context;
 import org.jboss.logging.MDC;
@@ -50,6 +54,9 @@ public class AdministrationResource implements AdministrationApi {
 
     @Context
     HttpServerResponse response;
+
+    @Context
+    HttpServerRequest httpRequest;
 
     public AdministrationResource(LifecycleService lifecycle, SecurityIdentity identity, CookieManager cookies,
                                   BinaryAssetStorage imageStorage, TransferService transfers,
@@ -119,8 +126,13 @@ public class AdministrationResource implements AdministrationApi {
     public void unlockUser(UUID userId) { lifecycle.unlock(userId, actor(), correlationId()); }
 
     @Override
-    public ResetLink createAdministrativePasswordReset(UUID userId) {
-        return lifecycle.administrativeReset(userId, actor(), correlationId());
+    public ResetLink createAdministrativePasswordReset(UUID userId, AdminStepUpRequest request) {
+        return lifecycle.administrativeReset(
+            userId,
+            stepUp(request == null ? null : request.getCurrentPassword(),
+                request == null ? null : request.getCode()),
+            correlationId()
+        );
     }
 
     @Override
@@ -131,7 +143,8 @@ public class AdministrationResource implements AdministrationApi {
 
     @Override
     public AdminUser scheduleUserDeletion(UUID userId, AdminDeletionRequest request) {
-        var result = lifecycle.scheduleDeletion(userId, request, actor(), correlationId());
+        var result = lifecycle.scheduleDeletion(userId, request,
+            stepUp(request.getCurrentPassword(), request.getCode()), correlationId());
         if (userId.equals(actor())) cookies.clear(response);
         return result;
     }
@@ -257,5 +270,22 @@ public class AdministrationResource implements AdministrationApi {
     }
 
     private UUID actor() { return UUID.fromString(identity.getPrincipal().getName()); }
+
+    private StepUpCredentials stepUp(String currentPassword, String code) {
+        SessionView session = identity.getAttribute(AuthenticationIdentity.SESSION);
+        return new StepUpCredentials(
+            actor(),
+            session == null ? null : session.id(),
+            currentPassword == null ? null : currentPassword.toCharArray(),
+            code,
+            clientAddress()
+        );
+    }
+
+    private String clientAddress() {
+        var address = httpRequest.remoteAddress();
+        return address == null ? "0.0.0.0" : address.hostAddress();
+    }
+
     private String correlationId() { return Objects.toString(MDC.get("correlationId"), "unavailable"); }
 }

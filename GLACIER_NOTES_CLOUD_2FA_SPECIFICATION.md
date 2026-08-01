@@ -1,7 +1,7 @@
 # Glacier Notes Cloud — Two-Factor Authentication Specification
 
-**Status:** All specification decisions resolved — milestones T0, T1, T2a, and T2b approved and delivered, T3–T5 pending approval
-**Specification version:** 0.7
+**Status:** All specification decisions resolved — milestones T0, T1, T2a, T2b, and T3a approved and delivered, T3b–T5 pending approval
+**Specification version:** 0.8
 **Date:** 2026-08-01
 **Feature:** Optional time-based one-time password (TOTP) second factor with recovery codes
 **Extends:** `GLACIER_NOTES_CLOUD_SPECIFICATION.md` section 8 (Authentication)
@@ -170,8 +170,8 @@ purpose at exactly the point it is most needed.
 Disabling the second factor shall require both the current password and a valid TOTP or recovery
 code. Disablement shall delete the TOTP secret and all recovery codes for that account.
 
-The following operations shall require the current password (consistent with existing behavior) and,
-where a second factor is active, shall additionally require a current TOTP or recovery code:
+The following operations shall require the current password and, where a second factor is active,
+shall additionally require a current TOTP or recovery code:
 
 - Disabling the second factor
 - Regenerating recovery codes
@@ -179,8 +179,15 @@ where a second factor is active, shall additionally require a current TOTP or re
   action available to a hijacked session
 - Changing the email address — control of the registered mailbox enables password reset, so leaving
   this password-only would reopen the takeover path that section 5.6 closes
-- Administrative operations performed by an enrolled administrator against another account,
-  including clearing another user's second factor
+- The destructive administrative operations performed by an enrolled administrator against another
+  account: immediate or scheduled deletion, minting a password-reset link, and clearing another
+  user's second factor
+
+The first four already required the password; the administrative ones did not, so for them the
+password requirement is new and an administrator who supplies neither credential is answered
+`AUTH_STEP_UP_PASSWORD_REQUIRED` rather than being told the password was wrong. The remaining
+administrative operations — activate, deactivate, unlock, session revocation, and profile updates —
+keep role checks alone: they are reversible and do not hand over an account.
 
 Starting a new enrollment, and abandoning a `PENDING` one, shall require the current password only,
 since no second factor is active at that point.
@@ -1002,3 +1009,35 @@ design and the password stage is always reachable.
 The third decision corrects a defect T2b exposed rather than introduced: the browser client treated
 any `401` outside `POST /api/v1/auth/login` as a lost session and returned to the login page, so a
 single mistyped code discarded a challenge the server was still willing to accept.
+
+### 21.7 Resolved in version 0.8
+
+Resolved while planning milestone T3a, the milestone that made the factor protect an account after
+login rather than only at it.
+
+| Decision | Outcome | Sections |
+| --- | --- | --- |
+| Which administrative operations are gated | The destructive subset only: deletion, the password-reset link, and clearing another user's factor | 5.4 |
+| Which lifecycle mail is localized | All of it, not only the six new notices | 7, 10 |
+| How a client learns a code is needed | The server refuses with `AUTH_MFA_STEP_UP_REQUIRED`; no grace state goes on the wire | 5.4, 8 |
+| Whether the new request fields are optional | Optional in the schema, enforced by the server | 8, 14 |
+
+Activate, deactivate, unlock, session revocation, and profile updates are reversible and hand nobody
+an account, so gating them would cost an administrator a code on routine work for no gain. The three
+that are gated each end with an attacker holding another account outright.
+
+Localizing only the second-factor notices would have produced an account that receives its security
+alerts in German and its password reset in English, which reads as a spoofed message. The language
+is the recipient's account setting, falling back to the instance default for recipients who have no
+account row yet.
+
+Putting the grace window on the wire — a `stepUpRequired` flag on the session, say — would let a
+client decide when to ask for a code, and a stolen session would simply not ask. Refusing the
+operation instead keeps the decision on the server, at the cost of one round trip when a code turns
+out to be needed.
+
+Keeping every new field optional in the schema is what lets T3a ship on its own: the committed
+browser client keeps compiling and its buttons keep working, they just receive a clean rejection
+until T3b adds the prompts. The one exception is the administrative password-reset link, whose
+request body is now required rather than absent, because a body-less `POST` carrying a JSON content
+type is not answered by the server at all.
