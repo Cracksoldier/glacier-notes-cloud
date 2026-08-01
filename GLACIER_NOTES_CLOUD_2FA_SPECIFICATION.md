@@ -564,7 +564,14 @@ convention, where the problem type URI is derived from the error code.
 | Account locked by failed second-factor attempts | 429 | Existing lock response, with `Retry-After` |
 | Enrollment already active | 409 | `MFA_ALREADY_ENROLLED` |
 | Operation requires an active enrollment | 409 | `MFA_NOT_ENROLLED` |
-| Sensitive operation needs a step-up code (section 5.4) | 403 | `MFA_STEP_UP_REQUIRED` |
+| Sensitive operation needs a step-up code (section 5.4) | 401 | `AUTH_MFA_STEP_UP_REQUIRED` |
+| Sensitive operation needs the current password (section 5.4) | 401 | `AUTH_STEP_UP_PASSWORD_REQUIRED` |
+| A second-factor operation was reached while the feature is disabled | 503 | `MFA_UNAVAILABLE` |
+
+Both step-up refusals are `401` rather than `403`: the caller is not authorized *yet* and the
+response tells them precisely which credential completes the request, which is a re-authentication
+prompt rather than a denial. Section 21.7 records the accompanying decision that the code name is the
+only signal a client gets — no grace-window state goes on the wire.
 
 `MFA_REQUIRED_BY_POLICY` belongs to the deferred enforcement work of section 9.2 and shall not be
 defined until that ships.

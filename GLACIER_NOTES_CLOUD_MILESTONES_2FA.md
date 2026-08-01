@@ -158,34 +158,34 @@ reverted without entangling any security behavior.
 
 ### Contract
 
-- [ ] The OpenAPI document defines `LoginOutcome` with `result` required.
-- [ ] `./mvnw -pl backend clean generate-sources` followed by
+- [x] The OpenAPI document defines `LoginOutcome` with `result` required.
+- [x] `./mvnw -pl backend clean generate-sources` followed by
       `git diff --exit-code -- frontend/src/app/shared/generated-api` reports no drift.
-- [ ] No file under `backend/target/generated-sources/openapi` or
+- [x] No file under `backend/target/generated-sources/openapi` or
       `frontend/src/app/shared/generated-api` was hand-edited.
-- [ ] The generated Angular client exposes a single typed success return for the login operation.
+- [x] The generated Angular client exposes a single typed success return for the login operation.
 
 ### Behavior
 
-- [ ] A successful login returns `result: SESSION` and a `context` member identical in content to
+- [x] A successful login returns `result: SESSION` and a `context` member identical in content to
       the previous `SessionContext` body.
-- [ ] Cookie issuance, CSRF issuance, session persistence, `last_login_at`, and rate-limit clearing
+- [x] Cookie issuance, CSRF issuance, session persistence, `last_login_at`, and rate-limit clearing
       are unchanged.
-- [ ] Failed logins are unchanged in status, error code, body, and timing.
-- [ ] No `challenge` member is ever populated in this milestone.
+- [x] Failed logins are unchanged in status, error code, body, and timing.
+- [x] No `challenge` member is ever populated in this milestone.
 
 ### Documentation
 
-- [ ] The breaking change is described in `CHANGELOG.md` and `docs/UPGRADE.md` in terms an external
+- [x] The breaking change is described in `CHANGELOG.md` and `docs/UPGRADE.md` in terms an external
       API consumer can act on, not only in terms of internal refactoring.
-- [ ] ADR 0009 is committed and follows the existing ADR series conventions.
-- [ ] The v1 scope-guard amendment is committed in the same change as the ADR.
+- [x] ADR 0009 is committed and follows the existing ADR series conventions.
+- [x] The v1 scope-guard amendment is committed in the same change as the ADR.
 
 ### Quality
 
-- [ ] Existing authentication integration tests pass with only the response-envelope assertion
+- [x] Existing authentication integration tests pass with only the response-envelope assertion
       updated.
-- [ ] Frontend unit tests, Biome, the strict production build, and the repository-contract check
+- [x] Frontend unit tests, Biome, the strict production build, and the repository-contract check
       pass.
 
 ## Exit Gate
@@ -241,39 +241,39 @@ required at startup, and the primitives are proven against published test vector
 
 ### Migration
 
-- [ ] The migration applies cleanly to a database populated by the V12 schema.
-- [ ] The migration is additive; no existing column or constraint is dropped or narrowed.
-- [ ] Hibernate schema validation passes against the migrated schema.
-- [ ] An `instance_settings` row that predates the migration receives the specified defaults.
-- [ ] The `login_rate_limits` primary key and existing `IDENTIFIER` and `IP` behavior are unchanged.
+- [x] The migration applies cleanly to a database populated by the V12 schema.
+- [x] The migration is additive; no existing column or constraint is dropped or narrowed.
+- [x] Hibernate schema validation passes against the migrated schema.
+- [x] An `instance_settings` row that predates the migration receives the specified defaults.
+- [x] The `login_rate_limits` primary key and existing `IDENTIFIER` and `IP` behavior are unchanged.
 
 ### Cryptography
 
-- [ ] The RFC 6238 published test vectors verify correctly.
-- [ ] A code is accepted at the exact step and at ±1 step, and rejected at ±2 steps.
-- [ ] An enrollment secret encrypted and decrypted round-trips exactly, and a ciphertext written
+- [x] The RFC 6238 published test vectors verify correctly.
+- [x] A code is accepted at the exact step and at ±1 step, and rejected at ±2 steps.
+- [x] An enrollment secret encrypted and decrypted round-trips exactly, and a ciphertext written
       under one `key_id` is identifiable as such.
-- [ ] Decryption under the wrong key fails closed rather than yielding usable output.
-- [ ] Recovery-code lookup is a single indexed lookup and uses constant-time comparison.
-- [ ] Challenge tokens carry at least 256 bits of entropy and only their hashes are persisted.
+- [x] Decryption under the wrong key fails closed rather than yielding usable output.
+- [x] Recovery-code lookup is a single indexed lookup and uses constant-time comparison.
+- [x] Challenge tokens carry at least 256 bits of entropy and only their hashes are persisted.
 
 ### Configuration
 
-- [ ] The application refuses to start when the feature is enabled and the key is absent, short, or a
+- [x] The application refuses to start when the feature is enabled and the key is absent, short, or a
       placeholder.
-- [ ] The key is accepted both inline and from a file with restrictive permissions.
-- [ ] The key never appears in logs, startup banners, health output, metrics, or error messages.
-- [ ] Rotating the session secret has no effect on stored enrollments.
+- [x] The key is accepted both inline and from a file with restrictive permissions.
+- [x] The key never appears in logs, startup banners, health output, metrics, or error messages.
+- [x] Rotating the session secret has no effect on stored enrollments.
 
 ### Tunables
 
-- [ ] Each of the four tunables is rejected outside its documented bounds.
-- [ ] A grace window of zero is accepted and means the grace behavior is disabled.
+- [x] Each of the four tunables is rejected outside its documented bounds.
+- [x] A grace window of zero is accepted and means the grace behavior is disabled.
 
 ### Isolation
 
-- [ ] No HTTP endpoint reads or writes any of the three new tables in this milestone.
-- [ ] Login behavior is unchanged from T0.
+- [x] No HTTP endpoint reads or writes any of the three new tables in this milestone.
+- [x] Login behavior is unchanged from T0.
 
 ## Exit Gate
 
@@ -336,58 +336,58 @@ escape hatch is therefore in scope here rather than later.
 
 ### Enrollment
 
-- [ ] Starting enrollment requires the current password and is audited on success and failure.
-- [ ] A `PENDING` enrollment does not affect login in any way.
-- [ ] Confirmation requires a valid code for the pending secret and activates the enrollment.
-- [ ] Enrollment can be cancelled, and an expired pending enrollment is discarded.
-- [ ] The provisioning URI is generated server-side; the QR is rendered client-side from that URI and
+- [x] Starting enrollment requires the current password and is audited on success and failure.
+- [x] A `PENDING` enrollment does not affect login in any way.
+- [x] Confirmation requires a valid code for the pending secret and activates the enrollment.
+- [x] Enrollment can be cancelled, and an expired pending enrollment is discarded.
+- [x] The provisioning URI is generated server-side; the QR is rendered client-side from that URI and
       the library receives nothing else.
-- [ ] The manual-entry secret is always shown alongside the QR code.
+- [x] The manual-entry secret is always shown alongside the QR code.
 
 ### Login
 
-- [ ] A non-enrolled user's login is unchanged from T0.
-- [ ] An enrolled user's password step issues no session, no cookie, and no session row.
-- [ ] A valid code at the exact step and at ±1 step completes login; ±2 steps does not.
-- [ ] Replaying an already-accepted step is rejected.
-- [ ] `rememberMe` is carried from the challenge and cannot be escalated at the second step.
-- [ ] A wrong password produces an identical response and comparable timing whether or not the
+- [x] A non-enrolled user's login is unchanged from T0.
+- [x] An enrolled user's password step issues no session, no cookie, and no session row.
+- [x] A valid code at the exact step and at ±1 step completes login; ±2 steps does not.
+- [x] Replaying an already-accepted step is rejected.
+- [x] `rememberMe` is carried from the challenge and cannot be escalated at the second step.
+- [x] A wrong password produces an identical response and comparable timing whether or not the
       account is enrolled.
-- [ ] An account deactivated, locked, deleted, or password-changed between the two steps cannot
+- [x] An account deactivated, locked, deleted, or password-changed between the two steps cannot
       complete the second step, and the response is indistinguishable from an invalid challenge.
-- [ ] Challenges are single-use, expire, and are destroyed on attempt exhaustion.
-- [ ] The per-account challenge cap evicts the oldest challenge rather than growing without bound.
-- [ ] Concurrent consumption of the same challenge resolves to exactly one success.
+- [x] Challenges are single-use, expire, and are destroyed on attempt exhaustion.
+- [x] The per-account challenge cap evicts the oldest challenge rather than growing without bound.
+- [x] Concurrent consumption of the same challenge resolves to exactly one success.
 
 ### Recovery codes
 
-- [ ] Codes are issued once at activation and are never retrievable afterward.
-- [ ] A code is accepted once and rejected on reuse.
-- [ ] Concurrent consumption of the same code resolves to exactly one success.
-- [ ] Regeneration invalidates all prior codes.
-- [ ] The dismissal acknowledgement is required before the codes leave the screen.
-- [ ] The plain-text download uses a stable, non-identifying filename.
+- [x] Codes are issued once at activation and are never retrievable afterward.
+- [x] A code is accepted once and rejected on reuse.
+- [x] Concurrent consumption of the same code resolves to exactly one success.
+- [x] Regeneration invalidates all prior codes.
+- [x] The dismissal acknowledgement is required before the codes leave the screen.
+- [x] The plain-text download uses a stable, non-identifying filename.
 
 ### Abuse resistance
 
-- [ ] Repeated failed second-factor attempts lock the account on the configured threshold, and a
+- [x] Repeated failed second-factor attempts lock the account on the configured threshold, and a
       successful verification resets the counter.
-- [ ] The identifier rate-limit entry and the account failure counter are not cleared by the password
+- [x] The identifier rate-limit entry and the account failure counter are not cleared by the password
       step alone.
-- [ ] Rate-limited responses carry `Retry-After`.
+- [x] Rate-limited responses carry `Retry-After`.
 
 ### Operator escape hatch
 
-- [ ] It clears an enrollment, revokes the account's sessions, and is audited.
-- [ ] It rejects an invalid bootstrap token generically and is rate-limited.
-- [ ] It returns no secret material and no account content.
-- [ ] Its invocation is counted in metrics.
+- [x] It clears an enrollment, revokes the account's sessions, and is audited.
+- [x] It rejects an invalid bootstrap token generically and is rate-limited.
+- [x] It returns no secret material and no account content.
+- [x] Its invocation is counted in metrics.
 
 ### Disclosure
 
-- [ ] No response, log line, or audit record discloses a secret, a code, a challenge token, or the
+- [x] No response, log line, or audit record discloses a secret, a code, a challenge token, or the
       enrollment state of an account to an unauthenticated caller.
-- [ ] Challenge state is held only in memory on the client and never reaches `localStorage`,
+- [x] Challenge state is held only in memory on the client and never reaches `localStorage`,
       `sessionStorage`, or the URL.
 
 ## Exit Gate
@@ -434,33 +434,33 @@ stage 2 and is released together with T2.
 
 ### Step-up
 
-- [ ] Step-up is enforced on self-deletion, email change, disable, regenerate, and administrative
+- [x] Step-up is enforced on self-deletion, email change, disable, regenerate, and administrative
       operations for enrolled actors.
-- [ ] Step-up is not required for actors without an enrollment.
-- [ ] Disable and regenerate require both factors and revoke other sessions.
-- [ ] Password-gated operations are rate-limited on repeated failure.
-- [ ] Step-up failures are audited.
+- [x] Step-up is not required for actors without an enrollment.
+- [x] Disable and regenerate require both factors and revoke other sessions.
+- [x] Password-gated operations are rate-limited on repeated failure.
+- [x] Step-up failures are audited.
 
 ### Grace window
 
-- [ ] A completed second-factor login starts the window.
-- [ ] Login starts the window but never satisfies a step-up prompt on its own.
-- [ ] A session created without a second-factor step carries no window.
-- [ ] The window is scoped to one session and does not transfer to another.
-- [ ] The window expires and is reset by password change, re-enrollment, and revocation.
-- [ ] A configured window of zero causes every sensitive operation to prompt.
-- [ ] Changing the tunable does not retroactively alter windows already issued.
+- [x] A completed second-factor login starts the window.
+- [x] Login starts the window but never satisfies a step-up prompt on its own.
+- [x] A session created without a second-factor step carries no window.
+- [x] The window is scoped to one session and does not transfer to another.
+- [x] The window expires and is reset by password change, re-enrollment, and revocation.
+- [x] A configured window of zero causes every sensitive operation to prompt.
+- [x] Changing the tunable does not retroactively alter windows already issued.
 
 ### Notifications
 
-- [ ] Every lifecycle event of specification section 5.7 produces a notification attempt.
-- [ ] A dispatch failure neither rolls back nor blocks the underlying security operation.
-- [ ] No notification contains a secret, a code, a challenge token, or a provisioning URI.
-- [ ] Notifications exist in both dictionaries.
+- [x] Every lifecycle event of specification section 5.7 produces a notification attempt.
+- [x] A dispatch failure neither rolls back nor blocks the underlying security operation.
+- [x] No notification contains a secret, a code, a challenge token, or a provisioning URI.
+- [x] Notifications exist in both dictionaries.
 
 ### Stage completion
 
-- [ ] Rollout stage 2 is releasable: an account can enroll, authenticate, recover, be notified, and
+- [x] Rollout stage 2 is releasable: an account can enroll, authenticate, recover, be notified, and
       be restored by an operator.
 
 ## Exit Gate
@@ -503,28 +503,28 @@ needed to detect an attack without reading the audit table.
 
 ### Administrative visibility
 
-- [ ] An administrator sees active state and confirmation date on the user detail page.
-- [ ] An administrator cannot see the secret, the recovery codes, or the remaining code count.
-- [ ] Administrative clear revokes sessions, is audited, and discloses no secret material.
-- [ ] A `USER` account cannot invoke any administrative second-factor operation.
-- [ ] The last-administrator protections are unaffected by this surface.
+- [x] An administrator sees active state and confirmation date on the user detail page.
+- [x] An administrator cannot see the secret, the recovery codes, or the remaining code count.
+- [x] Administrative clear revokes sessions, is audited, and discloses no secret material.
+- [x] A `USER` account cannot invoke any administrative second-factor operation.
+- [x] The last-administrator protections are unaffected by this surface.
 
 ### Tunables
 
-- [ ] All four tunables are editable by an administrator and validated against their bounds.
-- [ ] A server-side rejection occurs even when the client permits an out-of-bounds value.
-- [ ] Setting changes generate audit events, consistent with existing instance settings.
-- [ ] An invalid submission leaves no partial configuration.
+- [x] All four tunables are editable by an administrator and validated against their bounds.
+- [x] A server-side rejection occurs even when the client permits an out-of-bounds value.
+- [x] Setting changes generate audit events, consistent with existing instance settings.
+- [x] An invalid submission leaves no partial configuration.
 
 ### Audit and metrics
 
-- [ ] Every event type in specification section 10.1 is emitted with the correct result values.
-- [ ] No secret material appears in `metadata_json`.
-- [ ] Counters exist for challenges issued, consumed, expired, and exhausted; verifications by
+- [x] Every event type in specification section 10.1 is emitted with the correct result values.
+- [x] No secret material appears in `metadata_json`.
+- [x] Counters exist for challenges issued, consumed, expired, and exhausted; verifications by
       outcome with TOTP and recovery paths distinguished; recovery codes consumed; enrollments
       activated and disabled; and escape-hatch invocations.
-- [ ] No metric label contains a username, email, account identifier, or token.
-- [ ] A sustained rise in exhausted challenges is observable without querying the audit table.
+- [x] No metric label contains a username, email, account identifier, or token.
+- [x] A sustained rise in exhausted challenges is observable without querying the audit table.
 
 ## Exit Gate
 
@@ -574,37 +574,41 @@ rotation story.
 
 ### Testing
 
-- [ ] The full backend suite of specification section 16.1 passes against real PostgreSQL with
+- [x] The full backend suite of specification section 16.1 passes against real PostgreSQL with
       deterministic time and ID providers.
-- [ ] Frontend unit coverage exists for the two-stage login store transitions, challenge expiry
+- [x] Frontend unit coverage exists for the two-stage login store transitions, challenge expiry
       handling, enrollment wizard state, and the acknowledgement gate.
-- [ ] The end-to-end suite covers an enrolled account without embedding a real user's secret in the
+- [x] The end-to-end suite covers an enrolled account without embedding a real user's secret in the
       repository.
-- [ ] The full verification loop passes with no generated-code drift.
-- [ ] `npm audit --omit=dev --audit-level=high` passes with the QR library included.
+- [x] The full verification loop passes with no generated-code drift.
+- [x] `npm audit --omit=dev --audit-level=high` passes with the QR library included.
 
 ### Compatibility
 
-- [ ] No second-factor field appears in any exported `.glacier.json`.
-- [ ] All desktop schema-v1 compatibility fixtures still import successfully.
-- [ ] A fresh cloud export is still readable by a compatible desktop client.
+- [x] No second-factor field appears in any exported `.glacier.json`.
+- [x] All desktop schema-v1 compatibility fixtures still import successfully.
+- [ ] A fresh cloud export is still readable by a compatible desktop client. *(Not verified here: the
+      portable codec and all three `desktop-schema-v1` fixtures pass, but a round trip through the
+      desktop application is a manual check outside this repository.)*
 
 ### Operations
 
-- [ ] Backup documentation states that losing the enrollment key locks out every enrolled account
+- [x] Backup documentation states that losing the enrollment key locks out every enrolled account
       simultaneously, including all administrators, and that the escape hatch is the only remaining
       route.
-- [ ] Restoring a pre-enrollment database alongside a current key is documented as leaving that
+- [x] Restoring a pre-enrollment database alongside a current key is documented as leaving that
       account with no second factor, and as expected rather than corrupt.
-- [ ] The upgrade path for an existing instance is documented and tested on a populated database.
-- [ ] The new secret is generated the same way as the existing ones, with the same restrictive
+- [x] The upgrade path for an existing instance is documented and tested on a populated database.
+- [x] The new secret is generated the same way as the existing ones, with the same restrictive
       permissions, in both the local and production instructions.
 
 ### Release
 
 - [ ] Every acceptance criterion in specification section 18 is satisfied and traceable to a test.
-- [ ] The threat model records any remaining accepted risk.
-- [ ] No release-blocking defect remains.
+      *(Satisfied but not traceable: each of the seven has covering tests, and the section 6
+      traceability matrix that would connect them has not been written.)*
+- [x] The threat model records any remaining accepted risk.
+- [x] No release-blocking defect remains.
 
 ## Exit Gate
 
@@ -619,43 +623,43 @@ A change in this plan is not done until every applicable condition holds.
 
 ### Contract
 
-- [ ] The OpenAPI operation exists before the implementation.
-- [ ] Generated backend and frontend code is refreshed and committed in the same change.
-- [ ] Generated DTOs do not appear in domain or persistence signatures.
-- [ ] No further breaking API change is introduced beyond the one accepted in T0.
+- [x] The OpenAPI operation exists before the implementation.
+- [x] Generated backend and frontend code is refreshed and committed in the same change.
+- [x] Generated DTOs do not appear in domain or persistence signatures.
+- [x] No further breaking API change is introduced beyond the one accepted in T0.
 
 ### Backend
 
-- [ ] Logic lives in the application layer, not in the resource class.
-- [ ] Transaction boundaries are on application operations or repository writes.
-- [ ] Time and ID generation come from the injected providers.
-- [ ] Every owned lookup is owner-scoped.
-- [ ] A new migration is added rather than an applied one edited.
-- [ ] PostgreSQL integration tests pass.
+- [x] Logic lives in the application layer, not in the resource class.
+- [x] Transaction boundaries are on application operations or repository writes.
+- [x] Time and ID generation come from the injected providers.
+- [x] Every owned lookup is owner-scoped.
+- [x] A new migration is added rather than an applied one edited.
+- [x] PostgreSQL integration tests pass.
 
 ### Frontend
 
-- [ ] The generated client is used; no handwritten duplicate DTO is introduced.
-- [ ] Loading, empty, success, error, expired, rate-limited, and unauthorized states are handled.
-- [ ] English and German strings are present.
-- [ ] Dark and light themes remain readable.
-- [ ] Keyboard use and accessible labels are covered.
-- [ ] Router guards are treated as navigation aids only.
+- [x] The generated client is used; no handwritten duplicate DTO is introduced.
+- [x] Loading, empty, success, error, expired, rate-limited, and unauthorized states are handled.
+- [x] English and German strings are present.
+- [x] Dark and light themes remain readable.
+- [x] Keyboard use and accessible labels are covered.
+- [x] Router guards are treated as navigation aids only.
 
 ### Security
 
-- [ ] The change cannot be used to distinguish an enrolled account from a non-enrolled one.
-- [ ] The change fails closed.
-- [ ] Rate limits apply wherever a credential or token attempt is possible.
-- [ ] No secret reaches a log, an audit record, a metric label, an export, or a backup manifest.
-- [ ] Constant-time comparison is used for every secret comparison.
+- [x] The change cannot be used to distinguish an enrolled account from a non-enrolled one.
+- [x] The change fails closed.
+- [x] Rate limits apply wherever a credential or token attempt is possible.
+- [x] No secret reaches a log, an audit record, a metric label, an export, or a backup manifest.
+- [x] Constant-time comparison is used for every secret comparison.
 
 ### Operations
 
-- [ ] Audit events carry only approved metadata.
-- [ ] Metrics carry no per-account labels.
-- [ ] Notification dispatch cannot roll back or block a security operation.
-- [ ] Configuration and documentation are updated in the same change.
+- [x] Audit events carry only approved metadata.
+- [x] Metrics carry no per-account labels.
+- [x] Notification dispatch cannot roll back or block a security operation.
+- [x] Configuration and documentation are updated in the same change.
 
 ---
 
