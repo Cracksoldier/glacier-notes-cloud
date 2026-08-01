@@ -2375,13 +2375,13 @@
     "semantic_hash": ""
   },
   "GLACIER_NOTES_CLOUD_2FA_SPECIFICATION.md": {
-    "mtime": 1785606761.5602968,
-    "ast_hash": "7706e03cd7346a4c1bdd66edac625c7b",
+    "mtime": 1785607594.2847664,
+    "ast_hash": "116cf585391877299d978abbf36ae2a7",
     "semantic_hash": ""
   },
   "GLACIER_NOTES_CLOUD_MILESTONES_2FA.md": {
-    "mtime": 1785606740.1209755,
-    "ast_hash": "29042716cab91a3b445d1e8f1716ea13",
+    "mtime": 1785608842.3119044,
+    "ast_hash": "2da367f1e584927a5c95ce870681c0a5",
     "semantic_hash": ""
   },
   "docs/adr/0009-optional-second-authentication-factor.md": {
@@ -2737,6 +2737,11 @@
   "backend/src/test/java/com/glaciernotes/cloud/MfaKeyRotationTest.java": {
     "mtime": 1785605770.350391,
     "ast_hash": "fc770ed183863f8604bbd58e1006ce47",
+    "semantic_hash": ""
+  },
+  "docs/SECOND_FACTOR_TRACEABILITY.md": {
+    "mtime": 1785608818.8276432,
+    "ast_hash": "3ff6d93baf86537d60d1f98fe4804f7f",
     "semantic_hash": ""
   }
 }
