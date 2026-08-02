@@ -224,11 +224,22 @@ It requires the bootstrap token — the same secret used to create the initial a
 whoever performs it holds instance-level authority, not merely administrator rights.
 
 ```bash
-curl -sS -X POST http://127.0.0.1:8080/api/v1/setup/second-factor-reset \
-  -H "X-Bootstrap-Token: $(cat deployment/secrets/bootstrap-token.txt)" \
+umask 077
+{ printf 'X-Bootstrap-Token: '; cat deployment/secrets/bootstrap-token.txt; } > break-glass.headers
+curl -sS --fail-with-body --write-out '%{http_code}\n' \
+  -X POST http://127.0.0.1:8080/api/v1/setup/second-factor-reset \
+  -H @break-glass.headers \
   -H 'Content-Type: application/json' \
   -d '{"identifier": "user@example.com"}'
+rm -f break-glass.headers
 ```
+
+The token goes through a `0600` file rather than a command-line argument because arguments are
+readable from the process table by any local user for as long as the request runs. Reading headers
+from a file needs curl 7.55.0 or newer; on anything older, export the token into the environment and
+use `-H "X-Bootstrap-Token: $TOKEN"` instead. `--fail-with-body` makes a rejection a non-zero exit
+without discarding the problem document, and `--write-out` prints the status the paragraph below
+expects.
 
 The identifier is the account's username or email address. On success the endpoint returns `204` and
 no body: it clears the enrollment and its recovery codes, and revokes every session that account
