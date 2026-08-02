@@ -126,7 +126,37 @@ cd frontend &amp;&amp; npm start
       </article>
 
       <article class="setup-block">
-        <h3><i class="fa-solid fa-box-archive"></i> 2. Install the published release (recommended for real use)</h3>
+        <h3><i class="fa-solid fa-shield-halved"></i> 2. Enable the second factor locally (optional)</h3>
+        <p>
+          The TOTP second factor is off unless you turn it on, and the two-factor card is not
+          rendered while it is off &mdash; so no one is offered a setup that would fail. To exercise
+          it in local development, add two variables to the backend terminal <em>before</em> starting
+          Quarkus. The encryption secret is deliberately separate from the session secret, and
+          startup fails if the feature is on without one of at least 32 non-whitespace characters.
+        </p>
+        <pre><code># Terminal 1 &mdash; alongside the variables above
+export GLACIER_MFA_ENABLED=true
+export GLACIER_MFA_ENCRYPTION_SECRET=local-mfa-encryption-secret-development-only
+./mvnw -pl backend quarkus:dev</code></pre>
+        <p>
+          Then open account settings, enroll with any authenticator app by scanning the QR code, and
+          store the recovery codes it shows you. Signing in afterwards asks for a one-time code as a
+          second stage, and sensitive operations &mdash; disabling the factor, regenerating recovery
+          codes, changing an email address, deleting an account &mdash; ask again unless you are
+          inside the step-up grace window.
+        </p>
+        <p>
+          Changing this secret later does not re-encrypt anything: every existing enrollment becomes
+          undecryptable, and the application says so at startup with a count of the affected
+          accounts. For local work, either keep the value stable or clear the enrollments and start
+          over. Administrators can also tune the challenge lifetime, attempt limit, pending-enrollment
+          window, and step-up grace from the admin settings page without a restart &mdash; setting the
+          grace to <code>0</code> is the quickest way to see a step-up prompt on demand.
+        </p>
+      </article>
+
+      <article class="setup-block">
+        <h3><i class="fa-solid fa-box-archive"></i> 3. Install the published release (recommended for real use)</h3>
         <p>
           Each tagged release publishes a signed, immutable image to
           <code>ghcr.io/cracksoldier/glacier-notes-cloud</code> and attaches a versioned Compose file,
@@ -162,7 +192,7 @@ docker compose -f compose-v0.3.1.yaml up -d
       </article>
 
       <article class="setup-block">
-        <h3><i class="fa-solid fa-server"></i> 3. Build the container from source</h3>
+        <h3><i class="fa-solid fa-server"></i> 4. Build the container from source</h3>
         <p>
           Only needed when running an unreleased revision or a local modification. Generate secrets,
           then build and start the full Compose deployment (Quarkus app image plus PostgreSQL).
@@ -185,7 +215,7 @@ docker compose down --volumes</code></pre>
       </article>
 
       <article class="setup-block">
-        <h3><i class="fa-solid fa-vial"></i> 4. Running all tests</h3>
+        <h3><i class="fa-solid fa-vial"></i> 5. Running all tests</h3>
         <p>
           The full verification loop mirrors CI: backend build and tests, then the frontend
           contract/lint/build/unit chain, plus the security gates added for the release candidate.
@@ -209,7 +239,19 @@ npm audit --omit=dev --audit-level=high
 # End-to-end (needs a running Compose deployment)
 GLACIER_E2E_BASE_URL=http://127.0.0.1:8080 \
 GLACIER_E2E_USERNAME=&lt;username&gt; GLACIER_E2E_PASSWORD=&lt;password&gt; \
+npm run test:e2e
+
+# The second-factor spec needs GLACIER_MFA_ENABLED=true on the deployment, an
+# account reserved for it, and an administrator. Without these it skips silently.
+GLACIER_E2E_MFA_USERNAME=&lt;username&gt; GLACIER_E2E_MFA_PASSWORD=&lt;password&gt; \
+GLACIER_E2E_ADMIN_USERNAME=&lt;username&gt; GLACIER_E2E_ADMIN_PASSWORD=&lt;password&gt; \
 npm run test:e2e</code></pre>
+        <p>
+          Reserve a dedicated account for the second-factor spec: it enrolls, signs in and out
+          repeatedly, spends a recovery code, and turns the factor off again. It also sets the
+          instance-wide step-up grace to zero mid-run and restores the default afterwards, so it is
+          not safe to run against an instance anyone else is using.
+        </p>
       </article>
     </section>
   </main>
