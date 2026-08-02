@@ -1855,8 +1855,8 @@
     "semantic_hash": "635d2fcd9a8c961a0b47beff8aae14c0"
   },
   "README.md": {
-    "mtime": 1785524636.452988,
-    "ast_hash": "d6b5b75edec2a61b7cde82a6bf3fae5d",
+    "mtime": 1785670267.4445124,
+    "ast_hash": "11c7617627b08aa0b8253841b9824dde",
     "semantic_hash": ""
   },
   "backend/src/test/resources/META-INF/resources/index.html": {
@@ -1885,8 +1885,8 @@
     "semantic_hash": ""
   },
   "deployment/README.md": {
-    "mtime": 1785668950.5510786,
-    "ast_hash": "eaf8026413418089b8005754e88b6094",
+    "mtime": 1785670299.4059722,
+    "ast_hash": "72dcdc59047c80cebde4304d381a6e02",
     "semantic_hash": ""
   },
   "docs/ARCHITECTURE.md": {
@@ -2230,8 +2230,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1785668905.2803698,
-    "ast_hash": "a780dd3f56202de758e8b0727edaccec",
+    "mtime": 1785669878.6058989,
+    "ast_hash": "6c8a689b92484888fb7e1d0ca6e5b726",
     "semantic_hash": ""
   },
   "backend/scripts/check-log-hygiene.sh": {
@@ -2255,8 +2255,8 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1785606776.0395138,
-    "ast_hash": "7c217b856477fda5752b06e30b2e2505",
+    "mtime": 1785670252.4902973,
+    "ast_hash": "f1a6f09db0c78a04294366fa9c868125",
     "semantic_hash": ""
   },
   "docs/DESKTOP_COMPATIBILITY.md": {
@@ -2280,8 +2280,8 @@
     "semantic_hash": ""
   },
   "docs/THREAT_MODEL.md": {
-    "mtime": 1785606797.7148385,
-    "ast_hash": "3256200a4a8d0e51fc5cd1cca21cbe4f",
+    "mtime": 1785670313.450174,
+    "ast_hash": "dce2a6cbb7b46b2206d5aab5c8194e1e",
     "semantic_hash": ""
   },
   ".github/workflows/deploy-pages.yml": {
@@ -2290,8 +2290,8 @@
     "semantic_hash": ""
   },
   "page/documentation.html": {
-    "mtime": 1785606651.163642,
-    "ast_hash": "dc0f699e310eabcba8df3186699ba1ff",
+    "mtime": 1785670333.402461,
+    "ast_hash": "2550b1f297234a01d65115e4bea1bfb6",
     "semantic_hash": ""
   },
   "page/index.html": {
@@ -2375,18 +2375,18 @@
     "semantic_hash": ""
   },
   "GLACIER_NOTES_CLOUD_2FA_SPECIFICATION.md": {
-    "mtime": 1785607594.2847664,
-    "ast_hash": "116cf585391877299d978abbf36ae2a7",
+    "mtime": 1785670167.9780803,
+    "ast_hash": "4582b2b2fc1e6598bf00153949e43357",
     "semantic_hash": ""
   },
   "GLACIER_NOTES_CLOUD_MILESTONES_2FA.md": {
-    "mtime": 1785608842.3119044,
-    "ast_hash": "2da367f1e584927a5c95ce870681c0a5",
+    "mtime": 1785670510.3017979,
+    "ast_hash": "c2549b4a1f5da8e470e10cee57a213ee",
     "semantic_hash": ""
   },
   "docs/adr/0009-optional-second-authentication-factor.md": {
-    "mtime": 1785518882.2113354,
-    "ast_hash": "a6c0827f35b5652310c7933554060826",
+    "mtime": 1785670286.2837834,
+    "ast_hash": "ae5d7c87b257ed93eb2f827df39c157d",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/glaciernotes/cloud/configuration/MfaStartupValidator.java": {
@@ -2740,8 +2740,8 @@
     "semantic_hash": ""
   },
   "docs/SECOND_FACTOR_TRACEABILITY.md": {
-    "mtime": 1785608818.8276432,
-    "ast_hash": "3ff6d93baf86537d60d1f98fe4804f7f",
+    "mtime": 1785670532.3450532,
+    "ast_hash": "b3959a8889ac2770e856e5e7ba4ade66",
     "semantic_hash": ""
   },
   "frontend/src/app/core/step-up.spec.ts": {
@@ -2750,13 +2750,13 @@
     "semantic_hash": ""
   },
   "docs/reviews/t0-t5/R11-T0-T5-summary.md": {
-    "mtime": 1785669688.2941306,
-    "ast_hash": "8f70c80f8055ca10d1496a953a486dce",
+    "mtime": 1785670418.872689,
+    "ast_hash": "dd3876a068bcacdffa4c63ff7e599f52",
     "semantic_hash": ""
   },
   "docs/reviews/t0-t5/test-results.md": {
-    "mtime": 1785669349.5771425,
-    "ast_hash": "cf471c76abdd6a18a90fc5142ce047f2",
+    "mtime": 1785670436.5959435,
+    "ast_hash": "42d35afb26ef02dde8973d43637d67da",
     "semantic_hash": ""
   }
 }
