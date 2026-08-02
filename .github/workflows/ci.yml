@@ -84,7 +84,7 @@ jobs:
       GLACIER_MFA_ENABLED: 'true'
       GLACIER_MFA_ENCRYPTION_SECRET_FILE: ${{ github.workspace }}/deployment/secrets/mfa-encryption-secret.txt
       GIT_SHA: ${{ github.sha }}
-      APP_VERSION: '0.3.0'
+      APP_VERSION: '0.3.1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

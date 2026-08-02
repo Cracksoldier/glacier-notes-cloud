@@ -36,6 +36,33 @@ There is no in-place schema downgrade — restoring the backup is the supported 
 
 ## Version history
 
+### v0.3.1
+
+No schema change and no API change. Two deployment defects are fixed, and both require operator
+action to benefit from.
+
+**If you deployed from `compose-v0.3.0.yaml`, you cannot enable the second factor with it.** That
+file was rendered from a template that predated the feature, so it carries neither
+`GLACIER_MFA_ENABLED` nor the mount for the encryption secret; setting them in `.env` has no effect
+because the container never receives them. Download `compose-v0.3.1.yaml` and deploy against it.
+Instances that never enabled the second factor are unaffected in behaviour, but should still move to
+the new file so the option is available later.
+
+**The secret file permissions documented before this release prevent the container from starting.**
+Earlier documentation said `chmod 600 deployment/secrets/*.txt` without mentioning ownership. Compose
+bind-mounts those files with their host ownership, and the application runs unprivileged as uid
+10001, so a mode-600 file owned by your host account is unreadable inside the container. If you hit
+this, the symptom was a bare `sed: … Permission denied` and a container that never became healthy;
+from this release the application says what is wrong and how to fix it. Give the files to that uid:
+
+```bash
+chmod 600 deployment/secrets/*.txt
+sudo chown 10001:10001 deployment/secrets/*.txt
+```
+
+Deployments that are already running are, by definition, not affected — their secrets are readable
+already. Apply the `chown` when you next rotate a secret or create a new one.
+
 ### v0.3.0
 
 Contains a breaking API change to `POST /api/v1/auth/login`. The bundled web interface is updated

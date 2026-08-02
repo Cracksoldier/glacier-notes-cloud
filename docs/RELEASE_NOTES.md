@@ -1,3 +1,44 @@
+# v0.3.1 — Deployable second factor
+
+Patch release on top of v0.3.0. No schema change, no API change, no new configuration. It fixes two
+deployment defects that made v0.3.0's headline feature unreachable for an operator who followed the
+documentation. The full change summary is in `CHANGELOG.md`; the operator-facing steps are in
+`docs/UPGRADE.md`.
+
+## What's fixed
+
+- **The Compose file attached to a release can now enable the second factor.** `compose-v0.3.0.yaml`
+  was rendered from a template that had not been updated since v0.1.0, so it carried neither
+  `GLACIER_MFA_ENABLED` nor the mount for the encryption secret. Setting them in `.env` had no
+  effect, because the container never received them — an operator deploying the released artifact
+  had no way to turn on the feature the release was named for. Deploy against `compose-v0.3.1.yaml`.
+- **Following the documented secret setup no longer produces a container that never starts.** Every
+  operator document prescribed `chmod 600 deployment/secrets/*.txt`, but Compose bind-mounts those
+  files with their host ownership and the application runs unprivileged as uid 10001, so the
+  container could not read them. The symptom was a bare `sed: … Permission denied` on a restart
+  loop. The documentation now pairs the `chmod` with `chown 10001:10001`, keeping the restrictive
+  mode while granting the one uid that needs it, and the application explains the problem at startup
+  instead of failing opaquely.
+
+## Why this was not caught
+
+Both defects lived in what continuous integration never actually ran. CI writes its secrets at the
+runner's permissive default, so the documented permissions were never exercised; and its deployment
+job boots the repository Compose file rather than the rendered release template, so drift between
+the two was invisible. Both workflows now apply the documented `chmod` and `chown`, and a
+repository-contract test fails if the template's environment variables or mounts diverge from
+`compose.yaml` again.
+
+## Verification
+
+`./mvnw verify`, `npm run check`, `npm run test:repository`, `npm run test:ci`,
+`npm run build:production`, `npm audit --omit=dev --audit-level=high` (0 vulnerabilities), and the
+Playwright suite against a Compose deployment. The entrypoint change was verified against the built
+image both ways: a mode-600 host-owned secret exits with the explanatory message, and the same file
+owned by uid 10001 boots normally.
+
+---
+
 # v0.3.0 — Optional second authentication factor
 
 Feature release on top of v0.2.0, and the first one carrying a breaking API change. Per-milestone

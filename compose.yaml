@@ -27,7 +27,7 @@ services:
       dockerfile: deployment/docker/Dockerfile
       args:
         GIT_SHA: ${GIT_SHA:-unknown}
-        APP_VERSION: ${APP_VERSION:-0.3.0}
+        APP_VERSION: ${APP_VERSION:-0.3.1}
         BUILD_DATE: ${BUILD_DATE:-unknown}
     image: glacier-notes-cloud:local
     restart: unless-stopped
