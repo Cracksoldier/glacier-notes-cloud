@@ -95,9 +95,7 @@ export class AdminSettingsComponent {
         emailChangeExpirationMinutes: this.emailChangeMinutes,
         normalSessionDurationMinutes: this.normalSessionMinutes,
         rememberSessionDurationMinutes: this.rememberSessionMinutes,
-        allowedImageTypes: new Set([
-          ...this.imageTypes,
-        ] as AdminSettingsUpdateAllowedImageTypesEnum[]),
+        allowedImageTypes: [...this.imageTypes] as AdminSettingsUpdateAllowedImageTypesEnum[],
         maximumImageBytes: Math.round(this.maximumImageMb * 1048576),
         perUserStorageQuotaBytes: Math.round(this.quotaMb * 1048576),
         imageOrphanGraceHours: this.orphanGraceHours,

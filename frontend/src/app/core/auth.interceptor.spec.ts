@@ -18,14 +18,14 @@ describe('authInterceptor', () => {
     });
   });
 
-  function reject(url: string): ReturnType<typeof vi.spyOn> {
+  function reject(url: string, body: object = {}): ReturnType<typeof vi.spyOn> {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
     TestBed.inject(HttpClient)
       .get(url)
       .subscribe({ error: () => undefined });
     TestBed.inject(HttpTestingController)
       .expectOne(url)
-      .flush({}, { status: 401, statusText: 'Unauthorized' });
+      .flush(body, { status: 401, statusText: 'Unauthorized' });
     return navigate;
   }
 
@@ -38,6 +38,20 @@ describe('authInterceptor', () => {
     expect(navigate).toHaveBeenCalledWith(['/login']);
     expect(store.session()).toBeNull();
   });
+
+  it.each(['AUTH_MFA_STEP_UP_REQUIRED', 'AUTH_STEP_UP_PASSWORD_REQUIRED', 'AUTH_MFA_INVALID_CODE'])(
+    'keeps the session when a gated operation answers %s',
+    (errorCode) => {
+      const store = TestBed.inject(AuthStore);
+      store.restored.set(true);
+      store.session.set({ userId: 'user-1', username: 'member', role: 'USER' } as never);
+
+      const navigate = reject('/api/v1/me/mfa/totp/disable', { errorCode });
+
+      expect(navigate).not.toHaveBeenCalled();
+      expect(store.session()).not.toBeNull();
+    },
+  );
 
   it('leaves a second-factor challenge intact when the code is merely wrong', () => {
     const store = TestBed.inject(AuthStore);

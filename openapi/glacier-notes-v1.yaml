@@ -2595,7 +2595,7 @@ components:
         rememberSessionDurationMinutes: { type: integer, minimum: 1440, maximum: 525600 }
         allowedImageTypes:
           type: array
-          uniqueItems: true
+          maxItems: 3
           items: { type: string, enum: [image/png, image/jpeg, image/webp] }
         maximumImageBytes: { type: integer, format: int64, minimum: 1048576, maximum: 52428800 }
         perUserStorageQuotaBytes: { type: integer, format: int64, minimum: 10485760, maximum: 1099511627776 }

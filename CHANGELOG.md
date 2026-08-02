@@ -115,6 +115,29 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
   "challenge": {…}}` and no cookies until it completes `POST /api/v1/auth/login/mfa`; an account
   without one is unaffected. See `docs/adr/0009-optional-second-authentication-factor.md`.
 
+### Fixed
+
+- Account settings and the email-change confirmation page answered `404` when opened directly.
+  Both routes were missing from the server's single-page fallback, so they worked when the browser
+  navigated to them in-app but not from a bookmark, a reload, or the link in a change-of-address
+  email — which is the only way the confirmation page is ever reached. The fallback is now covered
+  by a test that enumerates every client route.
+- Saving instance settings from the admin page failed with `400`. The request schema declared the
+  allowed image types as a unique-item array, which the TypeScript client renders as a `Set`, and a
+  `Set` serializes to `{}` rather than to a list. No instance setting could be changed from the
+  browser; the API itself was always correct.
+- Every step-up prompt signed the user out instead of asking for a code. The step-up gate answers
+  `401`, and the browser treated any `401` outside the login endpoints as an expired session, so
+  disabling the second factor, regenerating recovery codes, changing an email address, deleting an
+  account, and both gated administrative operations bounced to the login page the moment the server
+  asked for proof. A `401` carrying `AUTH_MFA_STEP_UP_REQUIRED`, `AUTH_STEP_UP_PASSWORD_REQUIRED`,
+  or `AUTH_MFA_INVALID_CODE` now leaves the session alone.
+- A stale session cookie made the whole application unreachable. Any page request that carried an
+  expired or malformed cookie — including `/login` itself — was answered with `401` problem+json,
+  which the browser renders as raw text, leaving no way back in short of clearing cookies by hand.
+  The session cookie is now only consulted for `/api/` requests, which is the only place it means
+  anything.
+
 ### Security
 
 - Quarkus platform upgraded from 3.37.3 to 3.37.4, which raises the transitive Netty version to

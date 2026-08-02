@@ -23,14 +23,24 @@ public class SessionAuthenticationMechanism implements HttpAuthenticationMechani
      */
     private static final String LOGIN_PATH = "/api/v1/auth/login";
 
+    /**
+     * Nothing outside the API is authenticated — the Angular entry point and the static bundle are
+     * public. For the same reason as above, a stale cookie must not turn into a 401 on the very page
+     * the user needs in order to sign in again, which would leave the browser showing raw
+     * problem+json with no way forward but clearing cookies by hand.
+     */
+    private static final String API_PREFIX = "/api/";
+
     @Override
     public Uni<SecurityIdentity> authenticate(
         RoutingContext context,
         IdentityProviderManager identityProviderManager
     ) {
         var cookie = context.request().getCookie(CookieManager.SESSION_COOKIE);
+        var path = context.normalizedPath();
         if (cookie == null || cookie.getValue() == null || cookie.getValue().isBlank()
-            || (context.request().method() == HttpMethod.POST && LOGIN_PATH.equals(context.normalizedPath()))) {
+            || !path.startsWith(API_PREFIX)
+            || (context.request().method() == HttpMethod.POST && LOGIN_PATH.equals(path))) {
             return Uni.createFrom().nullItem();
         }
         return identityProviderManager.authenticate(new SessionAuthenticationRequest(cookie.getValue()));

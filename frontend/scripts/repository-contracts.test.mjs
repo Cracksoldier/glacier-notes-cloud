@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +26,20 @@ test('generated package metadata matches the supported Angular toolchain', () =>
 
 test('generation omits the unsafe publishing helper', () => {
   assert.equal(existsSync(resolve(generatedRoot, 'git_push.sh')), false);
+});
+
+test('no generated model carries a Set, which JSON.stringify turns into an empty object', () => {
+  const models = readdirSync(resolve(generatedRoot, 'model'));
+  const offenders = models.filter((file) =>
+    /:\s*Set</.test(readFileSync(resolve(generatedRoot, 'model', file), 'utf8')),
+  );
+
+  assert.deepEqual(
+    offenders,
+    [],
+    `uniqueItems: true in the OpenAPI schema produces a Set here, and a request carrying one is ` +
+      `rejected by the array schema it came from. Drop uniqueItems in: ${offenders.join(', ')}`,
+  );
 });
 
 test('repository-facing frontend metadata uses Glacier Notes commands and names', () => {

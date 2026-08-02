@@ -9,13 +9,18 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 
-/** Serves the Angular entry point for routes handled by the client-side router. */
+/**
+ * Serves the Angular entry point for routes handled by the client-side router. The alternation below
+ * must list every top-level path in {@code frontend/src/app/app.routes.ts}; one that is missing works
+ * under in-app navigation and answers 404 to a bookmark, a reload, or a link from an email.
+ */
 @Path("/")
 public class SpaResource {
     private static final String INDEX_RESOURCE = "META-INF/resources/index.html";
 
     @GET
-    @Path("{path: login|accept-invitation|forgot-password|reset-password|sessions|notes(?:/.*)?|admin(?:/.*)?}")
+    @Path("{path: login|accept-invitation|forgot-password|reset-password|verify-email-change"
+        + "|settings|sessions|notes(?:/.*)?|admin(?:/.*)?}")
     @Produces(MediaType.TEXT_HTML)
     public Response index() throws IOException {
         var classLoader = Thread.currentThread().getContextClassLoader();

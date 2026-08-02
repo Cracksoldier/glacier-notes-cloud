@@ -402,7 +402,7 @@ public class LifecycleService {
         entity.updateLifecycle(domains, update.getInvitationExpirationHours(), update.getPasswordResetExpirationMinutes());
         entity.updateImages(
             update.getAllowedImageTypes() == null || update.getAllowedImageTypes().isEmpty()
-                ? null : update.getAllowedImageTypes().stream().map(Object::toString).toList(),
+                ? null : update.getAllowedImageTypes().stream().map(Object::toString).distinct().toList(),
             update.getMaximumImageBytes(), update.getPerUserStorageQuotaBytes(), update.getImageOrphanGraceHours()
         );
         entity.updateHistory(update.getNoteVersionMaximumCount(), update.getNoteVersionRetentionDays());

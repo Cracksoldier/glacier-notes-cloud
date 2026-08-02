@@ -104,6 +104,23 @@ describe('AdminSettingsComponent', () => {
     );
   });
 
+  it('sends the allowed image types as something JSON can carry', async () => {
+    api.getAdminSettings.mockReturnValue(of(settings));
+    fixture = TestBed.createComponent(AdminSettingsComponent);
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    fixture.componentInstance.save();
+
+    // A `Set` type-checks here but serializes to `{}`, which the array schema rejects with a 400.
+    const [body] = api.updateAdminSettings.mock.calls[0];
+    expect(JSON.parse(JSON.stringify(body)).allowedImageTypes).toEqual([
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+    ]);
+  });
+
   it('does not submit editable defaults after the initial load fails', () => {
     const save = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
 

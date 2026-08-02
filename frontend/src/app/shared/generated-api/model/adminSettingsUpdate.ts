@@ -18,7 +18,7 @@ export interface AdminSettingsUpdate {
     emailChangeExpirationMinutes?: number;
     normalSessionDurationMinutes?: number;
     rememberSessionDurationMinutes?: number;
-    allowedImageTypes?: Set<AdminSettingsUpdateAllowedImageTypesEnum>;
+    allowedImageTypes?: Array<AdminSettingsUpdateAllowedImageTypesEnum>;
     maximumImageBytes?: number;
     perUserStorageQuotaBytes?: number;
     imageOrphanGraceHours?: number;

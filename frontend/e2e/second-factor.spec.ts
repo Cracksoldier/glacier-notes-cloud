@@ -93,6 +93,8 @@ test('a user enrolls a second factor, signs in with it, and turns it off again',
   await signOut();
 
   await signIn();
+  // Without this the next navigation aborts the login request still in flight.
+  await expect(page.locator('app-notes-shell')).toBeVisible();
   await openSettings();
   const reEnrollment = await enroll(card);
   await card.getByRole('button', { name: 'Turn off' }).click();
