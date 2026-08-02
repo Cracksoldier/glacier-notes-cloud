@@ -6,7 +6,7 @@ v0.1.0 are milestone-scoped, since the project had not yet made a numbered relea
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Full acceptance
 criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.md`.
 
-## [Unreleased]
+## v0.3.0 — Optional second authentication factor
 
 ### Added
 

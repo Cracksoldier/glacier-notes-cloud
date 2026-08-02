@@ -12,7 +12,7 @@ test('generated package metadata matches the supported Angular toolchain', () =>
   const packageJson = JSON.parse(readFileSync(resolve(generatedRoot, 'package.json'), 'utf8'));
 
   assert.equal(packageJson.name, '@glacier-notes/cloud-api');
-  assert.equal(packageJson.version, '0.2.0');
+  assert.equal(packageJson.version, '0.3.0');
   assert.equal(
     packageJson.repository?.url,
     'https://github.com/Cracksoldier/glacier-notes-cloud.git',

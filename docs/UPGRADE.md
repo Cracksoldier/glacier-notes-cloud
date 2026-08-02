@@ -36,7 +36,7 @@ There is no in-place schema downgrade — restoring the backup is the supported 
 
 ## Version history
 
-### Unreleased
+### v0.3.0
 
 Contains a breaking API change to `POST /api/v1/auth/login`. The bundled web interface is updated
 with it, so an upgrade using only the browser needs no action beyond the procedure above. There are
