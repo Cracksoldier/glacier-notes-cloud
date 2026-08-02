@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { catchError, finalize, map, Observable, of, shareReplay, tap } from 'rxjs';
+import { catchError, finalize, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
 
 import { AuthenticationService } from '../shared/generated-api/api/authentication.service';
 import type { LoginOutcome } from '../shared/generated-api/model/loginOutcome';
@@ -55,7 +55,9 @@ export class AuthStore {
 
   completeSecondFactor(code: string): Observable<SessionContext> {
     const challenge = this.challenge();
-    if (!challenge) throw new Error('No second-factor challenge is in progress.');
+    if (!challenge) {
+      return throwError(() => new Error('No second-factor challenge is in progress.'));
+    }
     return this.authenticationApi.completeMfaLogin({ challengeToken: challenge.token, code }).pipe(
       tap((session) => {
         this.session.set(session);

@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.util.Locale;
 import java.util.OptionalLong;
 
 @ApplicationScoped
@@ -49,7 +50,7 @@ public class TotpVerifier {
             | ((digest[offset + 2] & 0xff) << 8)
             | (digest[offset + 3] & 0xff);
         int modulus = (int) Math.pow(10, digits);
-        return String.format("%0" + digits + "d", binary % modulus);
+        return String.format(Locale.ROOT, "%0" + digits + "d", binary % modulus);
     }
 
     private boolean constantTimeEquals(String expected, String actual) {

@@ -115,4 +115,9 @@
   <p class="card-error" role="alert">{{ message }}</p>
   }
 </section>
-} }
+} } @else if (error(); as message) {
+<section class="settings-card">
+  <h2>{{ i18n.t('mfaCardTitle') }}</h2>
+  <p class="card-error" role="alert">{{ message }}</p>
+</section>
+}

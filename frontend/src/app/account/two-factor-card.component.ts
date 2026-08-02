@@ -105,8 +105,12 @@ export class TwoFactorCardComponent {
   }
 
   protected async copyCodes(): Promise<void> {
-    await navigator.clipboard.writeText(this.recoveryCodes().join('\n'));
-    this.copied.set(true);
+    try {
+      await navigator.clipboard.writeText(this.recoveryCodes().join('\n'));
+      this.copied.set(true);
+    } catch {
+      this.error.set(this.i18n.t('mfaCardCopyFailed'));
+    }
   }
 
   protected downloadCodes(): void {

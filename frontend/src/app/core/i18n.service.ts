@@ -666,6 +666,7 @@ const messages = {
     mfaCardRegenerateConfirm:
       'Generate new recovery codes? Every code from the previous set stops working immediately.',
     mfaCardLoadFailed: 'The two-factor status could not be loaded.',
+    mfaCardCopyFailed: 'The recovery codes could not be copied. Use Download instead.',
 
     stepUpPrompt: 'Confirm this change with a one-time code.',
     stepUpCodeLabel: 'One-time code',
@@ -1360,6 +1361,8 @@ const messages = {
     mfaCardRegenerateConfirm:
       'Neue Wiederherstellungscodes erzeugen? Alle Codes des bisherigen Satzes verlieren sofort ihre Gültigkeit.',
     mfaCardLoadFailed: 'Der Zwei-Faktor-Status konnte nicht geladen werden.',
+    mfaCardCopyFailed:
+      'Die Wiederherstellungscodes konnten nicht kopiert werden. Nutzen Sie stattdessen Herunterladen.',
 
     stepUpPrompt: 'Bestätigen Sie diese Änderung mit einem Einmalcode.',
     stepUpCodeLabel: 'Einmalcode',

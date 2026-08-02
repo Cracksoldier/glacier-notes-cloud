@@ -130,6 +130,22 @@ public class MfaRepository {
     }
 
     /**
+     * Counts the attempt in the database rather than in memory. The challenge is read before the
+     * caller locks the user row, so two parallel failures would otherwise both write the same
+     * incremented value back and the attempt cap would let one extra guess through.
+     */
+    @Transactional
+    public int recordChallengeFailure(UUID challengeId) {
+        return (int) entityManager.createNativeQuery(
+                "update mfa_challenges set attempt_count = attempt_count + 1 "
+                    + "where id = :id returning attempt_count",
+                Integer.class
+            )
+            .setParameter("id", challengeId)
+            .getSingleResult();
+    }
+
+    /**
      * Enrollments left behind by a swap of the enrollment encryption secret, which are no longer
      * decryptable. A count rather than a list: the accounts are of no use to a log reader and would
      * put a roster of second-factor users somewhere it does not belong.

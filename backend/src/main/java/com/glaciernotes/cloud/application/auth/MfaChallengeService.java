@@ -182,7 +182,10 @@ public class MfaChallengeService {
         Instant now,
         String correlationId
     ) {
-        var attempts = challenge.recordFailure();
+        var attempts = mfaRepository.recordChallengeFailure(challenge.id());
+        // The increment bypassed the persistence context; without this the consume() below would
+        // flush the stale count back over it.
+        entityManager.refresh(challenge);
         long retryAfter = rateLimiter.recordSecondFactorFailure(ipKey, now, settings);
         user.registerFailedLogin(settings.loginLockThreshold(), now, settings.loginLockMinutes());
         if (user.lockedUntil() != null) {

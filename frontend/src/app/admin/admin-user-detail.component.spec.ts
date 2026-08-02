@@ -103,6 +103,21 @@ describe('AdminUserDetailComponent', () => {
     expect(api.getUser).toHaveBeenCalledTimes(2);
   });
 
+  /** The code field belongs to the confirmation panel; without one open there is nothing to retry. */
+  it('reports a step-up refusal from an ungated action instead of opening the code field', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    api.deactivateUser.mockReturnValueOnce(
+      throwError(() => problem(401, { errorCode: 'AUTH_MFA_STEP_UP_REQUIRED' })),
+    );
+    const fixture = TestBed.createComponent(AdminUserDetailComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.deactivate();
+
+    expect(fixture.componentInstance.prompt.open()).toBe(false);
+    expect(fixture.componentInstance.error()).toBe('This change needs a one-time code.');
+  });
+
   it('shows an initial user-load failure without requiring a loaded user', () => {
     api.getUser.mockReturnValueOnce(
       throwError(() => problem(500, { detail: 'Account could not be loaded.' })),

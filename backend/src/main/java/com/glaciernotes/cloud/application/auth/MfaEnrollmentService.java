@@ -137,7 +137,8 @@ public class MfaEnrollmentService {
         }
     }
 
-    @Transactional
+    // Without this the expired-enrollment cleanup below dies with the refusal that reports it.
+    @Transactional(dontRollbackOn = MfaFailure.class)
     public MfaRecoveryCodes confirm(UUID userId, UUID sessionId, String code, String correlationId) {
         requireEnabled();
         var now = timeProvider.now();

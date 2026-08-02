@@ -30,6 +30,20 @@ describe('TwoFactorCardComponent', () => {
     expect(fixture.nativeElement.querySelector('section')).toBeNull();
   });
 
+  it('says the status could not be loaded rather than rendering an empty card', async () => {
+    const fixture = TestBed.createComponent(TwoFactorCardComponent);
+    fixture.detectChanges();
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/v1/me/mfa')
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'could not be loaded',
+    );
+  });
+
   it('offers setup when the feature is available but unused', async () => {
     const fixture = await render({ status: MfaStatusStatusEnum.None, available: true });
 
@@ -176,5 +190,28 @@ describe('TwoFactorCardComponent', () => {
       (button as HTMLButtonElement).textContent?.includes('Done'),
     ) as HTMLButtonElement;
     expect(done.disabled).toBe(true);
+  });
+
+  /** A denied clipboard permission must not look like a successful copy of unrecoverable codes. */
+  it('points at the download when the clipboard refuses the codes', async () => {
+    const fixture = await render({ status: MfaStatusStatusEnum.None, available: true });
+    const component = fixture.componentInstance as unknown as {
+      copyCodes(): Promise<void>;
+      recoveryCodes: { set(codes: string[]): void };
+      copied(): boolean;
+    };
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: () => Promise.reject(new Error('denied')) },
+    });
+
+    component.recoveryCodes.set(['AAAA-BBBB-CCCC']);
+    await component.copyCodes();
+    fixture.detectChanges();
+
+    expect(component.copied()).toBe(false);
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'could not be copied',
+    );
   });
 });

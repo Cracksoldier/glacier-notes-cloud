@@ -69,10 +69,6 @@ public class MfaChallengeEntity {
         return consumedAt == null && expiresAt.isAfter(now);
     }
 
-    public int recordFailure() {
-        return ++attemptCount;
-    }
-
     public void consume(Instant now) {
         consumedAt = now;
     }

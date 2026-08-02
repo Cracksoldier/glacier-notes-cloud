@@ -424,6 +424,20 @@ class MfaLoginTest {
         assertEquals(1, count("user_sessions", "true"));
     }
 
+    /**
+     * The challenge is read before the user row is locked, so an in-memory increment lets two
+     * parallel failures write the same count back and buys the caller an extra attempt.
+     */
+    @Test
+    void countsEveryParallelFailedAttemptAgainstTheCap() throws Exception {
+        var token = challengeToken(passwordStep(PASSWORD, false));
+
+        var statuses = inParallel(() -> complete(token, "000000").statusCode());
+
+        assertTrue(statuses.stream().noneMatch(status -> status == 200), statuses.toString());
+        assertEquals(1, count("mfa_challenges", "attempt_count = 2"));
+    }
+
     private List<Integer> inParallel(Callable<Integer> work) throws Exception {
         var barrier = new CyclicBarrier(2);
         try (var executor = Executors.newFixedThreadPool(2)) {

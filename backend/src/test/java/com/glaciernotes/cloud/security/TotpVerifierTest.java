@@ -7,6 +7,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -86,6 +87,26 @@ class TotpVerifierTest {
         var verifier = verifierAt(59);
 
         assertEquals(6, verifier.generate(RFC_SECRET, 1, 6).length());
+    }
+
+    /**
+     * A locale carrying a non-Latin numbering system must not reach the generated code: the digits
+     * are compared against what a user types, so a localised code fails every verification.
+     */
+    @Test
+    void generatesAsciiDigitsUnderALocaleWithItsOwnNumberingSystem() {
+        var original = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("hi-IN-u-nu-deva"));
+        try {
+            var verifier = verifierAt(59);
+
+            var code = verifier.generate(RFC_SECRET, 59 / PERIOD, 8);
+
+            assertEquals("94287082", code);
+            assertTrue(verifier.verify(RFC_SECRET, code, 8, PERIOD, null).isPresent());
+        } finally {
+            Locale.setDefault(original);
+        }
     }
 
     private TotpVerifier verifierAt(long epochSecond) {

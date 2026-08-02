@@ -160,6 +160,21 @@ class MfaEnrollmentTest {
         confirm(currentCode(secret)).statusCode(200);
     }
 
+    /**
+     * The refusal and the cleanup share a transaction, so the row only disappears if the rollback is
+     * suppressed for the failure that carries the refusal.
+     */
+    @Test
+    void confirmingAnExpiredPendingEnrollmentDiscardsIt() throws SQLException {
+        var secret = startEnrollment();
+        agePendingEnrollment();
+
+        confirm(currentCode(secret)).statusCode(409)
+            .body("errorCode", equalTo("MFA_NOT_ENROLLED"));
+
+        assertEquals(0, count("user_mfa_totp", "true"));
+    }
+
     @Test
     void restartingDiscardsThePreviousPendingSecret() throws SQLException {
         var abandoned = startEnrollment();
@@ -230,13 +245,19 @@ class MfaEnrollmentTest {
             .body("provisioningUri", matchesPattern("^otpauth://totp/.*secret=[A-Z2-7]+.*$"));
         var secret = Base32Codec.decode(start.jsonPath().getString("secret"));
 
+        // The start response groups the secret for display; a leak would carry the ungrouped
+        // Base32, so comparing against the grouped form alone can never fail.
+        var grouped = start.jsonPath().getString("secret");
+        var ungrouped = grouped.replace(" ", "");
         var confirmation = confirm(currentCode(secret)).extract().response();
         var codes = confirmation.jsonPath().getList("codes", String.class);
-        assertFalse(confirmation.asString().contains(start.jsonPath().getString("secret")));
+        assertFalse(confirmation.asString().contains(grouped));
+        assertFalse(confirmation.asString().contains(ungrouped));
 
         var statusBody = statusResponse().asString();
         assertFalse(statusBody.contains("codes"));
         assertFalse(statusBody.contains("secret"));
+        assertFalse(statusBody.contains(ungrouped));
         assertFalse(statusBody.contains("provisioningUri"));
         for (var code : codes) {
             assertFalse(statusBody.contains(code));
@@ -342,6 +363,15 @@ class MfaEnrollmentTest {
             Thread.sleep(2_500);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private void agePendingEnrollment() throws SQLException {
+        try (var connection = dataSource.getConnection();
+             var statement = connection.prepareStatement(
+                 "update user_mfa_totp set created_at = created_at - interval '30 days'"
+             )) {
+            statement.executeUpdate();
         }
     }
 

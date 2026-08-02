@@ -18,6 +18,9 @@ export class StepUpPrompt {
   handle(failure: unknown): boolean {
     const errorCode = this.errorCode(failure);
     if (errorCode === STEP_UP_REQUIRED) {
+      // A refusal while the field is already showing means the caller submitted nothing in it.
+      // Swallowing that too would blank the field with no explanation.
+      if (this.open()) return false;
       this.code = '';
       this.open.set(true);
       return true;

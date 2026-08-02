@@ -8,6 +8,7 @@ import jakarta.enterprise.event.Observes;
 import org.jboss.logging.Logger;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 @ApplicationScoped
 public class MfaStartupValidator {
@@ -31,7 +32,7 @@ public class MfaStartupValidator {
     }
 
     void validate(@Observes StartupEvent ignored) {
-        validate(configuration.mfa().enabled(), secretProvider.enrollmentSecret());
+        validate(configuration.mfa().enabled(), secretProvider::enrollmentSecret);
         if (configuration.mfa().enabled()) {
             reportStaleEnrollments();
         }
@@ -54,11 +55,15 @@ public class MfaStartupValidator {
         }
     }
 
-    static void validate(boolean enabled, Optional<String> enrollmentSecret) {
+    /**
+     * The secret is supplied lazily because resolving it reads a configured file, which throws when
+     * the path is stale. An instance that has switched the feature off must still start.
+     */
+    static void validate(boolean enabled, Supplier<Optional<String>> enrollmentSecret) {
         if (!enabled) {
             return;
         }
-        if (enrollmentSecret.filter(SecretPolicy::valid).isEmpty()) {
+        if (enrollmentSecret.get().filter(SecretPolicy::valid).isEmpty()) {
             throw new IllegalStateException(
                 "Second-factor support requires GLACIER_MFA_ENCRYPTION_SECRET_FILE or "
                     + "GLACIER_MFA_ENCRYPTION_SECRET to hold at least "

@@ -338,7 +338,9 @@ export class AdminUserDetailComponent {
   }
 
   private fail(failure: unknown): void {
-    if (this.prompt.handle(failure)) return;
+    // The code field lives in the confirmation panel. Without one open there is no queued request
+    // to attach a code to, so a refusal has to be reported rather than turned into a prompt.
+    if (this.pending() && this.prompt.handle(failure)) return;
     this.error.set(this.problems.message(failure));
   }
 }

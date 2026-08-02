@@ -127,12 +127,8 @@ public class AdministrationResource implements AdministrationApi {
 
     @Override
     public ResetLink createAdministrativePasswordReset(UUID userId, AdminStepUpRequest request) {
-        return lifecycle.administrativeReset(
-            userId,
-            stepUp(request == null ? null : request.getCurrentPassword(),
-                request == null ? null : request.getCode()),
-            correlationId()
-        );
+        return lifecycle.administrativeReset(userId,
+            stepUp(request.getCurrentPassword(), request.getCode()), correlationId());
     }
 
     @Override

@@ -502,6 +502,7 @@ paths:
         '403': { $ref: '#/components/responses/ProblemResponse' }
         '409': { $ref: '#/components/responses/ProblemResponse' }
         '422': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/me/mfa/totp/confirm:
     post:
@@ -527,6 +528,7 @@ paths:
         '401': { $ref: '#/components/responses/ProblemResponse' }
         '409': { $ref: '#/components/responses/ProblemResponse' }
         '422': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/me/mfa/totp/pending:
     delete:
@@ -585,6 +587,7 @@ paths:
         '403': { $ref: '#/components/responses/ProblemResponse' }
         '409': { $ref: '#/components/responses/ProblemResponse' }
         '422': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
         default: { $ref: '#/components/responses/ProblemResponse' }
   /api/v1/me/sessions:
     get:
@@ -2236,8 +2239,10 @@ components:
           format: date-time
         attemptsRemaining:
           type: integer
+          minimum: 0
         acceptedFactors:
           type: array
+          minItems: 1
           items:
             type: string
             enum: [TOTP, RECOVERY_CODE]

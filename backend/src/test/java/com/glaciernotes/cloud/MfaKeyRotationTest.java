@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.SQLException;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,8 +66,12 @@ class MfaKeyRotationTest extends SecondFactorTestSupport {
 
         var challenge = passwordStep("rotation.user");
         challenge.then().statusCode(200).body("result", equalTo("MFA_REQUIRED"));
+        // A stranded enrollment is an operator fault, not a bad code. It must not read as a
+        // rejected credential, and the response must not describe the key state.
         complete(challenge.jsonPath().getString("challenge.token"), currentCode(secret))
-            .then().statusCode(not(equalTo(200)));
+            .then().statusCode(500)
+            .body("errorCode", equalTo("INTERNAL_ERROR"))
+            .body("detail", not(containsString("key")));
         assertEquals(0, count("user_sessions", "revoked_at is null"));
     }
 

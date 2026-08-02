@@ -115,4 +115,14 @@ describe('AuthStore', () => {
     store.abandonChallenge();
     expect(store.challenge()).toBeNull();
   });
+
+  it('reports a missing challenge through the observable rather than synchronously', () => {
+    const store = TestBed.inject(AuthStore);
+    let failure: unknown;
+
+    store.completeSecondFactor('123456').subscribe({ error: (error) => (failure = error) });
+
+    expect(failure).toBeInstanceOf(Error);
+    TestBed.inject(HttpTestingController).expectNone('/api/v1/auth/login/mfa');
+  });
 });

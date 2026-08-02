@@ -3,6 +3,7 @@ package com.glaciernotes.cloud.configuration;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -14,24 +15,37 @@ class MfaStartupValidatorTest {
 
     @Test
     void disabledSecondFactorSupportNeedsNoSecret() {
-        assertDoesNotThrow(() -> MfaStartupValidator.validate(false, Optional.empty()));
+        assertDoesNotThrow(() -> MfaStartupValidator.validate(false, Optional::empty));
+    }
+
+    /**
+     * A configured secret file that no longer exists makes resolution throw. With the feature off
+     * that must not reach startup, so the secret is never resolved at all.
+     */
+    @Test
+    void disabledSecondFactorSupportNeverResolvesTheSecret() {
+        Supplier<Optional<String>> unreadable = () -> {
+            throw new IllegalStateException("Could not read configured enrollment encryption secret file");
+        };
+
+        assertDoesNotThrow(() -> MfaStartupValidator.validate(false, unreadable));
     }
 
     @Test
     void enabledSecondFactorSupportRequiresASecretSatisfyingThePolicy() {
         assertThrows(
             IllegalStateException.class,
-            () -> MfaStartupValidator.validate(true, Optional.empty())
+            () -> MfaStartupValidator.validate(true, Optional::empty)
         );
         assertThrows(
             IllegalStateException.class,
-            () -> MfaStartupValidator.validate(true, Optional.of("too-short"))
+            () -> MfaStartupValidator.validate(true, () -> Optional.of("too-short"))
         );
         assertThrows(
             IllegalStateException.class,
-            () -> MfaStartupValidator.validate(true, Optional.of("secret with whitespace padded out to length"))
+            () -> MfaStartupValidator.validate(true, () -> Optional.of("secret with whitespace padded out to length"))
         );
-        assertDoesNotThrow(() -> MfaStartupValidator.validate(true, Optional.of(VALID_SECRET)));
+        assertDoesNotThrow(() -> MfaStartupValidator.validate(true, () -> Optional.of(VALID_SECRET)));
     }
 
     @Test
@@ -39,7 +53,7 @@ class MfaStartupValidatorTest {
         var rejected = "this rejected secret must never reach a log line";
         var failure = assertThrows(
             IllegalStateException.class,
-            () -> MfaStartupValidator.validate(true, Optional.of(rejected))
+            () -> MfaStartupValidator.validate(true, () -> Optional.of(rejected))
         );
 
         assertTrue(failure.getMessage().contains("GLACIER_MFA_ENCRYPTION_SECRET"));
