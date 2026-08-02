@@ -27,6 +27,21 @@ asserting the status is not `200`.
 One finding was disproved rather than fixed — see the Incidental Finding section of
 [R11-T0-T5-summary.md](R11-T0-T5-summary.md).
 
+## Batch 2 — documentation
+
+Batch 2 changes prose only; no behaviour changed, so there is no red-then-green record. The
+verification is that the corrected statements match the code, checked against it rather than against
+the plan that described it.
+
+| Claim corrected | Checked against |
+|---|---|
+| Notification is an obligation on the attempt, not on delivery | `SecondFactorNotifications` dispatch sites and the best-effort provisions already in specification §5.7 |
+| Enrollment state is secret only before the correct password | The `MFA_REQUIRED` branch of the login resource, which is reached only after password verification |
+| A non-enrolled account sees the `LoginOutcome` envelope like everyone else | `openapi/glacier-notes-v1.yaml` — one response schema for both results |
+| Administrators see per-account enrollment state and confirmation time, and nothing more | The admin user-detail response fields, which carry no secret, no codes, and no remaining count |
+| A stranded enrollment cannot re-enroll itself | `EnrollmentSecretCipher.decrypt` hard-fails on a foreign `key_id`, so the second login stage never completes |
+| T5 cut no release | `pom.xml` still `0.2.0`; `CHANGELOG.md` still under `[Unreleased]` |
+
 ## Commands
 
 ```

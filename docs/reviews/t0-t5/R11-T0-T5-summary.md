@@ -50,14 +50,14 @@ prior M0–M11 review evidence.
 
 | Severity | Finding | Classification | Final status |
 |---|---|---|---|
-| Major | Spec §5.7 requires a lifecycle notification unconditionally, but delivery is best-effort and SMTP is optional | **Valid.** The criterion as written is unsatisfiable on an instance without SMTP. | Pending |
-| Major | Milestone release-blocker repeats the same unconditional notification requirement | **Valid.** Same defect, mirrored into the release gate. | Pending |
-| Major | Spec forbids disclosing enrollment state, but `MFA_REQUIRED` necessarily discloses it after a correct password | **Valid.** The prohibition must be scoped to the pre-password phase; the implementation is correct and the prose is not. | Pending |
-| Major | Spec §18 claims "no behavioral change whatsoever" for non-enrolled accounts | **Valid.** T0 itself changed the login response shape via the `LoginOutcome` envelope. | Pending |
-| Major | Milestone release-blocker repeats the "no behavioral change" absolute | **Valid.** Same defect in the release gate. | Pending |
+| Major | Spec §5.7 requires a lifecycle notification unconditionally, but delivery is best-effort and SMTP is optional | **Valid.** The criterion as written is unsatisfiable on an instance without SMTP. The obligation is now on the attempt, and §5.7's lead points at the best-effort provisions it already carried further down. | Resolved |
+| Major | Milestone release-blocker repeats the same unconditional notification requirement | **Valid.** Same defect, mirrored into the release gate. T3's objective and exit gate now require a dispatch attempt; an instance without SMTP satisfies the gate by skipping. | Resolved |
+| Major | Spec forbids disclosing enrollment state, but `MFA_REQUIRED` necessarily discloses it after a correct password | **Valid.** The prohibition must be scoped to the pre-password phase; the implementation is correct and the prose is not. Scoped in spec §18 and in the T2 criterion that mirrored it. | Resolved |
+| Major | Spec §18 claims "no behavioral change whatsoever" for non-enrolled accounts | **Valid.** T0 itself changed the login response shape via the `LoginOutcome` envelope. Replaced by the narrower guarantee the code makes — never asked for a code, never refused on second-factor grounds — with new §18.1 recording the envelope change explicitly. | Resolved |
+| Major | Milestone release-blocker repeats the "no behavioral change" absolute | **Valid.** Same defect in the release gate. T2's exit gate now carries the same narrowed claim and defers to §18.1. | Resolved |
 | Minor | `AuthStore.login` keys session establishment off `outcome.context` truthiness rather than `result === SESSION` | **Not a defect.** The server always sends `context` with a `SESSION` result, so the added check would be redundant with the condition already written. Declined on the same ground as the `clearUserMfa` guard below: handling for a state the contract forecloses. | Closed — no change |
-| Minor | Spec overstates that the Angular client is the only consumer of the login contract | **Valid.** It is the only *in-repository* consumer; the portable format and desktop client make the broader claim unsafe. | Pending |
-| Minor | ADR 0009's rationale for rejecting `202` overstates client ambiguity | **Valid.** Exact status comparison does distinguish `202` from `200`; the real reason is the split response schema, which the ADR also gives. | Pending |
+| Minor | Spec overstates that the Angular client is the only consumer of the login contract | **Valid.** It is the only *in-repository* consumer; the portable format and desktop client make the broader claim unsafe. §14.1 now says so and connects the qualifier to the operator call-out it already required. | Resolved |
+| Minor | ADR 0009's rationale for rejecting `202` overstates client ambiguity | **Valid.** Exact status comparison does distinguish `202` from `200`; the real reason is the split response schema, which the ADR also gives. The ambiguity claim is dropped in favour of the schema argument. | Resolved |
 | Minor | `MfaChallenge` schema lacks `minimum: 0` on `attemptsRemaining` and `minItems`/`uniqueItems` on `acceptedFactors` | **Valid in part.** `minimum` and `minItems` added and regenerated. `uniqueItems` rejected: the TypeScript generator turns it into `Set<…>`, which `JSON.parse` never produces, so the committed client would carry a type that lies. | Resolved |
 | Minor | Milestone header still cites specification version 0.4 and a draft status | **Superseded.** Corrected before this review by the T5 documentation audit; the header now cites version 0.9 and "Delivered". | No change |
 
@@ -67,9 +67,9 @@ prior M0–M11 review evidence.
 |---|---|---|---|
 | Major | `TotpVerifier.generate` formats the code without a locale | **Valid defect.** `String.format("%0Nd", …)` follows the default locale, so a host whose locale carries a non-ASCII numbering system emits non-Latin digits. `constantTimeEquals` then compares them against the user's ASCII input and every verification fails. No test covers a non-default locale. | Resolved |
 | Major | `MfaChallengeEntity.recordFailure` increments in memory without concurrency control | **Valid defect, for a different reason than stated.** `MfaChallengeService` does take `PESSIMISTIC_WRITE` on the user row — but at line 112, *after* reading the challenge at line 107. Under READ COMMITTED a second transaction reads the stale count, blocks on the user lock, then writes the same value back. The lost increment lets a caller exceed `mfaChallengeAttemptLimit`. Fixed with an atomic `update … returning`, followed by `entityManager.refresh` so the later dirty flush cannot write the stale count back over it. | Resolved |
-| Major | `CHANGELOG.md` implies all login behavior is unchanged | **Valid.** The `LoginOutcome` envelope changed the response shape. | Pending |
+| Major | `CHANGELOG.md` implies all login behavior is unchanged | **Valid.** The `LoginOutcome` envelope changed the response shape. Same sentence as the T2a and T2b changelog findings; rewritten once to say the schema landed a release ahead of the endpoints, so upgrading to it alone changes no behaviour. | Resolved |
 | Minor | `MfaStartupValidator` resolves the enrollment secret before checking whether MFA is enabled | **Valid defect.** Java evaluates both arguments at line 34, and `SecretProvider.resolve` throws when a configured file is unreadable. A stale `GLACIER_MFA_ENCRYPTION_SECRET_FILE` path therefore blocks startup even with the feature off. | Resolved |
-| Minor | `README.md` sets MFA configuration after the Compose startup command | **Valid.** The order asks the reader to reconfigure a running container. | Pending |
+| Minor | `README.md` sets MFA configuration after the Compose startup command | **Valid.** The order asks the reader to reconfigure a running container. The secret-generation block now precedes `docker compose up`, which moved into its own step. | Resolved |
 
 ### T2a — contract and backend
 
@@ -80,7 +80,7 @@ prior M0–M11 review evidence.
 | Minor | `MfaEnrollmentService.confirm` lacks `dontRollbackOn` | **Valid defect.** The expired-enrollment `entityManager.remove` is discarded when `MfaFailure.notEnrolled()` is thrown. `confirm` audits only on success, so no audit row is lost — the cleanup is. Third occurrence of this trap in this feature. | Resolved |
 | Minor | Break-glass `curl` example neither fails on HTTP errors nor prints the status | **Valid.** `--fail-with-body` and `--write-out` make the documented `204` verifiable. | Resolved |
 | Minor | `MfaEnrollmentTest` compares a confirmation response against the grouped secret | **Valid.** The assertion should strip the display grouping before comparing. Both forms are now checked, in the confirmation body and the status body. | Resolved |
-| Minor | `CHANGELOG.md` V13 entry says no endpoint reads the MFA tables | **Valid.** Stale within its own `[Unreleased]` section, which goes on to document those endpoints. | Pending |
+| Minor | `CHANGELOG.md` V13 entry says no endpoint reads the MFA tables | **Valid.** Stale within its own `[Unreleased]` section, which goes on to document those endpoints. Fixed with the T1 finding above — the same sentence. | Resolved |
 | Minor | `docs/UPGRADE.md` describes the second factor as forthcoming | **Superseded.** Reworded during the T4 documentation pass; the file now describes it as available. | No change |
 
 ### T2b — browser enrollment and login
@@ -90,7 +90,7 @@ prior M0–M11 review evidence.
 | Major | `AuthStore.completeSecondFactor` throws synchronously from a method returning an `Observable` | **Valid.** A subscriber's `error` handler cannot see it. Currently unreachable — the component only calls it with a challenge open — but latent. Now returns `throwError`. | Resolved |
 | Major | The two-factor card renders nothing when its status load fails | **Valid.** `@if (status(); as value)` yields an empty card on a null status; the `mfaCardLoadFailed` string exists but no path reaches it, so a failed load is indistinguishable from an absent feature. The card now has an `@else if` branch that renders the message. | Resolved |
 | Minor | `copyCodes()` does not handle a clipboard rejection | **Valid.** It bypasses the `run()` helper every other action uses, so a denied permission produces an unhandled rejection and silent failure. Fixed with a dedicated message pointing at the download, rather than routing through `run()` — the generic problem text would not tell the user their codes are still recoverable. | Resolved |
-| Minor | `CHANGELOG.md` retains a stale groundwork statement | **Valid.** Same doc drift as the T1 and T2a entries. | Pending |
+| Minor | `CHANGELOG.md` retains a stale groundwork statement | **Valid.** Same doc drift as the T1 and T2a entries, and the third milestone at which the same sentence was flagged. Fixed once. | Resolved |
 
 ### T3a — step-up enforcement
 
@@ -114,15 +114,15 @@ against its own backend code.
 | Severity | Finding | Classification | Final status |
 |---|---|---|---|
 | Major | `AdministrationResource.clearUserMfa` dereferences its request body without a null guard | **Not a defect.** Both bodies are declared `required: true`, which the generator emits as `@Valid @NotNull` on the interface parameter, so a literal JSON `null` is rejected during validation and never reaches the resource. Verified against a running instance: both operations answer `400` with a constraint-violation body, not `500`. A guard here would handle a case the contract already forecloses. | Closed — no change |
-| Minor | Deployment alerting guidance presents rejected codes as evidence of clock drift | **Valid.** A fleet-wide spike in `glacier_mfa_verifications{outcome="rejected"}` is equally the signature of an attack; the wording teaches operators to dismiss it. | Pending |
+| Minor | Deployment alerting guidance presents rejected codes as evidence of clock drift | **Valid.** A fleet-wide spike in `glacier_mfa_verifications{outcome="rejected"}` is equally the signature of an attack; the wording teaches operators to dismiss it. Now states that a drifted clock and a credential-stuffing run produce the same curve, that drift is the cheaper hypothesis to check first, and that ruling it in does not rule an attack out. | Resolved |
 
 ### T5 — hardening and documentation
 
 | Severity | Finding | Classification | Final status |
 |---|---|---|---|
-| Major | `docs/THREAT_MODEL.md` understates administrative visibility | **Valid.** T4 added per-account second-factor state to the admin user page; the threat model still says administrators see no more than aggregate enrollment counts. | Pending |
-| Major | The milestone table still titles T5 "Feature Release" | **Valid.** T5 deliberately cut no release — `pom.xml` remains at `0.2.0` and `CHANGELOG.md` under `[Unreleased]`. | Pending |
-| Major | `page/documentation.html` implies enrollments self-heal after a secret rotation | **Valid.** "changing it has the same effect until those accounts enroll again" omits that the stale rows must be cleared or disabled first; rotation is not a standalone setting change. | Pending |
+| Major | `docs/THREAT_MODEL.md` understates administrative visibility | **Valid.** T4 added per-account second-factor state to the admin user page; the threat model still says administrators see no more than aggregate enrollment counts. Split into two residual risks: enforcement is still per account, and administrators do see per-account enrollment state and confirmation time — a deliberate disclosure to the operator, bounded to exclude secrets and remaining-code counts. | Resolved |
+| Major | The milestone table still titles T5 "Feature Release" | **Valid.** T5 deliberately cut no release — `pom.xml` remains at `0.2.0` and `CHANGELOG.md` under `[Unreleased]`. Retitled "Release Qualification" in both the overview table and the section heading, with the exit gate stating outright that no release is cut and why. | Resolved |
+| Major | `page/documentation.html` implies enrollments self-heal after a secret rotation | **Valid.** "changing it has the same effect until those accounts enroll again" omits that the stale rows must be cleared or disabled first; rotation is not a standalone setting change. The page now says a stranded owner cannot sign in to re-enroll, gives the supported order, and mentions the startup warning. | Resolved |
 | Minor | `MfaKeyRotationTest` asserts only that completion is not `200` | **Valid.** The assertion should pin the status and error code, as the other MFA login tests do. Now pins `500` / `INTERNAL_ERROR` and that the detail does not describe the key state. | Resolved |
 | Minor | Milestone body cites specification version 0.4 against metadata claiming 0.9 | **Superseded.** Corrected by the T5 documentation audit before this review. | No change |
 
@@ -131,19 +131,28 @@ against its own backend code.
 | Disposition | Count |
 |---|---:|
 | Resolved in batch 1 (code, contract, and operator procedure) | 15 |
-| Valid, pending remediation in batch 2 (documentation) | 15 |
+| Resolved in batch 2 (documentation) | 15 |
 | Superseded by a later milestone or the T5 documentation audit | 4 |
 | Not a defect | 2 |
+
+All 36 are dispositioned; none remain open.
 
 Four findings are executable defects in shipped backend code: the locale-dependent TOTP formatting,
 the attempt-counter race, the missing `dontRollbackOn` on `confirm`, and the eager secret resolution
 at startup. Five are frontend correctness issues that degrade error reporting without affecting
 authorization. Two sharpen backend tests that passed for the wrong reason, three tighten the OpenAPI
 contract, and one is a security-hygiene correction to a documented operator procedure. The remaining
-fifteen are documentation accuracy — predominantly
-absolute claims in the specification and milestone plan that the implementation does not honour, and
-which the traceability matrix in [`docs/SECOND_FACTOR_TRACEABILITY.md`](../../SECOND_FACTOR_TRACEABILITY.md)
-did not catch because it traces requirements to tests rather than auditing requirement wording.
+fifteen are documentation accuracy — predominantly absolute claims in the specification and milestone
+plan that the implementation does not honour, and which the traceability matrix in
+[`docs/SECOND_FACTOR_TRACEABILITY.md`](../../SECOND_FACTOR_TRACEABILITY.md) did not catch because it
+traces requirements to tests rather than auditing requirement wording.
+
+Three of the fifteen were the same `CHANGELOG.md` sentence reported at three successive milestones,
+and two more were milestone-plan copies of specification absolutes. That is the failure mode of a
+requirement written as an unqualified "shall": it gets mirrored into gates and release notes, and
+each copy has to be found separately. The three genuinely unsatisfiable requirements — unconditional
+notification, unscoped enrollment-state secrecy, and "no behavioral change whatsoever" — are recorded
+with their corrected wording in specification §21.11.
 
 No finding reopens or contradicts a disposition from R0–R10 or remediation batches 3–7.
 
@@ -166,6 +175,9 @@ its own change with its own spec and documentation impact.
 
 ## Outcome
 
-Remediation is sequenced in two batches: code defects first, each preceded by a regression test that
-fails without the fix, then documentation accuracy. Commands and results are recorded in
-[test-results.md](test-results.md).
+Remediation ran in two batches: code defects first, each preceded by a regression test that fails
+without the fix, then documentation accuracy. Both are complete and every finding carries a final
+status. Commands and results are recorded in [test-results.md](test-results.md).
+
+Nothing here blocks a release. The one acceptance criterion still unticked — a portable round trip
+through the desktop application — is a manual check outside this repository and predates the review.
