@@ -15,9 +15,10 @@
   <div class="disclaimer" role="alert">
     <i class="fa-solid fa-triangle-exclamation"></i>
     <strong>Early development.</strong>
-    Glacier Notes Cloud is a pre-1.0 release (v0.1.x). APIs, database schema, and configuration may
-    change between versions without notice. Not production-ready &mdash; do not rely on it for
-    irreplaceable data, and always keep verified backups.
+    Glacier Notes Cloud is a pre-1.0 release (v0.3.x). APIs, database schema, and configuration may
+    change between versions without notice &mdash; v0.3.0 already changed the login response shape.
+    Not production-ready &mdash; do not rely on it for irreplaceable data, and always keep verified
+    backups.
   </div>
   <header class="hero">
     <div class="wrap">
@@ -86,6 +87,8 @@
         <article class="feature-card">
           <h3><i class="fa-solid fa-lock"></i> Security &amp; operations</h3>
           <ul>
+            <li>Optional TOTP second factor, off by default and chosen per account, with single-use recovery codes</li>
+            <li>Step-up verification on sensitive operations, and an administrative reset for a lost authenticator</li>
             <li>Opaque session tokens with keyed hashes and double-submit CSRF protection</li>
             <li>Argon2id password hashing and progressive login throttling</li>
             <li>Ownership isolation enforced at the repository layer &mdash; no cross-owner lookups</li>
@@ -137,17 +140,25 @@ openssl rand -base64 36 &gt; deployment/secrets/database-password.txt
 openssl rand -base64 36 &gt; deployment/secrets/bootstrap-token.txt
 openssl rand -base64 48 &gt; deployment/secrets/session-secret.txt
 chmod 600 deployment/secrets/*.txt
+sudo chown 10001:10001 deployment/secrets/*.txt
 
-curl -fLO https://github.com/Cracksoldier/glacier-notes-cloud/releases/download/v0.1.0/compose-v0.1.0.yaml
+curl -fLO https://github.com/Cracksoldier/glacier-notes-cloud/releases/download/v0.3.1/compose-v0.3.1.yaml
 
 # Optional but recommended: verify the image was built by this repo's release workflow.
-cosign verify ghcr.io/cracksoldier/glacier-notes-cloud:v0.1.0 \
+cosign verify ghcr.io/cracksoldier/glacier-notes-cloud:v0.3.1 \
   --certificate-identity-regexp \
-    'https://github.com/Cracksoldier/glacier-notes-cloud/.github/workflows/release.yml@refs/tags/v0.1.0' \
+    'https://github.com/Cracksoldier/glacier-notes-cloud/.github/workflows/release.yml@refs/tags/v0.3.1' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 
-docker compose -f compose-v0.1.0.yaml up -d
+docker compose -f compose-v0.3.1.yaml up -d
 # Open http://127.0.0.1:8080</code></pre>
+        <p>
+          The <code>chown</code> is required, not optional. Compose bind-mounts these files with the
+          ownership they have on the host, and the container runs unprivileged as uid 10001 &mdash; a
+          mode-600 file owned by your host account is unreadable inside it. Run the Compose file in a
+          directory that has not hosted another instance of this project, since it would otherwise
+          reuse that instance's database volume.
+        </p>
       </article>
 
       <article class="setup-block">
@@ -162,6 +173,7 @@ openssl rand -base64 36 &gt; deployment/secrets/database-password.txt
 openssl rand -base64 36 &gt; deployment/secrets/bootstrap-token.txt
 openssl rand -base64 48 &gt; deployment/secrets/session-secret.txt
 chmod 600 deployment/secrets/*.txt
+sudo chown 10001:10001 deployment/secrets/*.txt
 
 docker compose up --build --wait
 # Open http://127.0.0.1:8080
