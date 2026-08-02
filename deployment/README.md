@@ -14,9 +14,16 @@ openssl rand -base64 36 > deployment/secrets/database-password.txt
 openssl rand -base64 36 > deployment/secrets/bootstrap-token.txt
 openssl rand -base64 48 > deployment/secrets/session-secret.txt
 chmod 600 deployment/secrets/*.txt
+sudo chown 10001:10001 deployment/secrets/*.txt
 docker compose up --build -d
 docker compose ps
 ```
+
+The `chown` is required, not optional. Compose bind-mounts these files into the container with the
+ownership they have on the host, and the application container runs unprivileged as uid 10001. A
+mode-600 file owned by your host account is unreadable inside the container, and the app exits at
+startup saying so. Owning them by 10001 keeps the mode-600 restriction while making them readable to
+exactly the one uid that needs them.
 
 Open `http://127.0.0.1:8080`, create the administrator with the bootstrap token, and then retain or
 rotate the token file according to your secret-management policy. Keep a file at the configured path
@@ -40,6 +47,7 @@ openssl rand -base64 36 > deployment/secrets/database-password.txt
 openssl rand -base64 36 > deployment/secrets/bootstrap-token.txt
 openssl rand -base64 48 > deployment/secrets/session-secret.txt
 chmod 600 deployment/secrets/*.txt
+sudo chown 10001:10001 deployment/secrets/*.txt
 
 curl -fLO https://github.com/Cracksoldier/glacier-notes-cloud/releases/download/v0.1.0/compose-v0.1.0.yaml
 cosign verify ghcr.io/cracksoldier/glacier-notes-cloud:v0.1.0 \
@@ -123,6 +131,7 @@ uploaded to another backend:
 openssl rand -hex 16 > deployment/secrets/s3-access-key.txt
 openssl rand -base64 36 > deployment/secrets/s3-secret-key.txt
 chmod 600 deployment/secrets/s3-*.txt
+sudo chown 10001:10001 deployment/secrets/s3-*.txt
 docker compose -f compose.yaml -f compose.minio.yaml up --build -d
 ```
 
@@ -172,6 +181,7 @@ one is offered a setup that would fail.
 ```bash
 openssl rand -base64 48 > deployment/secrets/mfa-encryption-secret.txt
 chmod 600 deployment/secrets/mfa-encryption-secret.txt
+sudo chown 10001:10001 deployment/secrets/mfa-encryption-secret.txt
 # then set GLACIER_MFA_ENABLED=true and GLACIER_MFA_ENCRYPTION_SECRET_FILE in .env
 docker compose up -d
 ```

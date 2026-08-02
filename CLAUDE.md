@@ -55,6 +55,7 @@ openssl rand -base64 36 > deployment/secrets/database-password.txt
 openssl rand -base64 36 > deployment/secrets/bootstrap-token.txt
 openssl rand -base64 48 > deployment/secrets/session-secret.txt
 chmod 600 deployment/secrets/*.txt
+sudo chown 10001:10001 deployment/secrets/*.txt   # the container runs unprivileged as uid 10001
 docker compose up --build --wait
 docker compose down          # stop, preserve volumes (add --volumes to delete data permanently)
 ```

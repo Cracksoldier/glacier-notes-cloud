@@ -68,6 +68,22 @@ test('the configured backup directory and persistent volume target stay aligned'
   );
 });
 
+test('the released compose template carries every setting the repository compose file does', () => {
+  const compose = readFileSync(resolve(repositoryRoot, 'compose.yaml'), 'utf8');
+  const template = readFileSync(
+    resolve(repositoryRoot, 'deployment/docker/compose.release-template.yaml'),
+    'utf8',
+  );
+
+  const environment = (source) => [...source.matchAll(/^\s+(GLACIER_[A-Z0-9_]+):/gm)].map((m) => m[1]);
+  const mounts = (source) => [...source.matchAll(/^\s+target: (\S+)/gm)].map((m) => m[1]);
+
+  // Operators deploy from the rendered template, so anything only compose.yaml knows about is
+  // unreachable for them — v0.3.0 shipped without a way to turn its own headline feature on.
+  assert.deepEqual(environment(template).sort(), environment(compose).sort());
+  assert.deepEqual(mounts(template).sort(), mounts(compose).sort());
+});
+
 test('the filesystem restore runbook provides an executable image-volume restore', () => {
   const runbook = readFileSync(resolve(repositoryRoot, 'docs/BACKUP_RESTORE.md'), 'utf8');
 

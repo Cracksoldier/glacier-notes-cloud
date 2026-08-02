@@ -104,6 +104,10 @@ jobs:
           printf '%s\n' 'ci-bootstrap-token-with-at-least-32-characters' > deployment/secrets/bootstrap-token.txt
           printf '%s\n' 'ci-session-secret-with-at-least-32-characters' > deployment/secrets/session-secret.txt
           printf '%s\n' 'ci-mfa-encryption-secret-with-32-characters' > deployment/secrets/mfa-encryption-secret.txt
+          # Mirror what the operator documentation prescribes. Left at the runner's permissive
+          # default, this step proves nothing about the path an operator actually follows.
+          chmod 600 deployment/secrets/*.txt
+          sudo chown 10001:10001 deployment/secrets/*.txt
       - name: Build and start the supported deployment
         run: |
           export BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"

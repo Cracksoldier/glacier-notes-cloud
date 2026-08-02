@@ -171,6 +171,10 @@ jobs:
           printf '%s\n' 'release-verify-database-password-32chars' > deployment/secrets/database-password.txt
           printf '%s\n' 'release-verify-bootstrap-token-with-32-chars' > deployment/secrets/bootstrap-token.txt
           printf '%s\n' 'release-verify-session-secret-with-32-chars' > deployment/secrets/session-secret.txt
+          # Mirror what the operator documentation prescribes, so this smoke test exercises the path
+          # an operator actually follows rather than the runner's permissive default.
+          chmod 600 deployment/secrets/*.txt
+          sudo chown 10001:10001 deployment/secrets/*.txt
       - name: Pull and start the published release
         run: docker compose up --pull always --wait --wait-timeout 180
       - name: Verify application and management endpoints

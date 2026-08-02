@@ -109,9 +109,17 @@ openssl rand -base64 36 &gt; deployment/secrets/database-password.txt
 openssl rand -base64 36 &gt; deployment/secrets/bootstrap-token.txt
 openssl rand -base64 48 &gt; deployment/secrets/session-secret.txt
 chmod 600 deployment/secrets/*.txt
+sudo chown 10001:10001 deployment/secrets/*.txt
 
 docker compose up --build --wait
 # Open http://127.0.0.1:8080</code></pre>
+          <p>
+            The <code>chown</code> is required, not optional. Compose bind-mounts these files with the
+            ownership they have on the host, and the application container runs unprivileged as uid
+            10001 &mdash; a mode-600 file owned by your host account is unreadable inside the container
+            and the app refuses to start. Owning them by 10001 keeps the restrictive mode while
+            granting exactly the one uid that needs them.
+          </p>
           <p>
             <code>base64 -w0</code> output length scales roughly 4/3 with input bytes, so 36 and 48
             random bytes comfortably clear the 32-character minimum with room to spare. Edit
@@ -163,6 +171,7 @@ docker compose up --build --wait
           <pre><code>openssl rand -base64 24 &gt; deployment/secrets/s3-access-key.txt
 openssl rand -base64 32 &gt; deployment/secrets/s3-secret-key.txt
 chmod 600 deployment/secrets/s3-*.txt
+sudo chown 10001:10001 deployment/secrets/s3-*.txt
 
 docker compose -f compose.yaml -f compose.minio.yaml up --build --wait
 # MinIO console: http://127.0.0.1:9003</code></pre>

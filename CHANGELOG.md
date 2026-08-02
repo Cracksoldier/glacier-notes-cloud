@@ -6,6 +6,22 @@ v0.1.0 are milestone-scoped, since the project had not yet made a numbered relea
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Full acceptance
 criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.md`.
 
+## [Unreleased]
+
+### Fixed
+
+- The Compose file attached to a release can now enable the second factor. `compose-v0.3.0.yaml` was
+  rendered from a template that had not been updated since v0.1.0, so it carried neither
+  `GLACIER_MFA_ENABLED` nor the mount for the encryption secret — an operator deploying the released
+  artifact had no way to turn on the release's headline feature. The template now matches the
+  repository Compose file, and `npm run test:repository` fails if the two drift apart again.
+- Following the documented secret setup no longer produces a container that never starts. Every
+  operator document said `chmod 600 deployment/secrets/*.txt`, but Compose bind-mounts host secret
+  files with their host ownership and the application runs unprivileged as uid 10001, so the
+  container could not read them and exited with a bare `sed: Permission denied`. The documents now
+  pair the `chmod` with `chown 10001:10001`, and the container entrypoint checks readability up front
+  and explains the fix instead of failing opaquely.
+
 ## v0.3.0 — Optional second authentication factor
 
 ### Added

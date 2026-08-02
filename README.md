@@ -130,6 +130,7 @@ openssl rand -base64 36 > deployment/secrets/database-password.txt
 openssl rand -base64 36 > deployment/secrets/bootstrap-token.txt
 openssl rand -base64 48 > deployment/secrets/session-secret.txt
 chmod 600 deployment/secrets/*.txt
+sudo chown 10001:10001 deployment/secrets/*.txt
 
 curl -fLO https://github.com/Cracksoldier/glacier-notes-cloud/releases/download/v0.1.0/compose-v0.1.0.yaml
 
@@ -161,7 +162,13 @@ openssl rand -base64 36 > deployment/secrets/database-password.txt
 openssl rand -base64 36 > deployment/secrets/bootstrap-token.txt
 openssl rand -base64 48 > deployment/secrets/session-secret.txt
 chmod 600 deployment/secrets/*.txt
+sudo chown 10001:10001 deployment/secrets/*.txt
 ~~~
+
+The `chown` is required. Compose bind-mounts these files with their host ownership and the
+application container runs unprivileged as uid 10001, so a mode-600 file owned by your host account
+is unreadable inside the container and the app refuses to start. Owning them by 10001 keeps the
+restrictive mode while granting exactly the one uid that needs them.
 
 The optional TOTP second factor is off by default and needs no secret. To enable it, generate its own
 key and point `.env` at it *before* starting Compose — it is deliberately separate from the session
@@ -171,6 +178,7 @@ invalidate every stored enrollment:
 ~~~bash
 openssl rand -base64 48 > deployment/secrets/mfa-encryption-secret.txt
 chmod 600 deployment/secrets/mfa-encryption-secret.txt
+sudo chown 10001:10001 deployment/secrets/mfa-encryption-secret.txt
 # in .env: GLACIER_MFA_ENABLED=true
 #          GLACIER_MFA_ENCRYPTION_SECRET_FILE=./deployment/secrets/mfa-encryption-secret.txt
 ~~~
