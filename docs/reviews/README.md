@@ -1,8 +1,12 @@
 # Structured Review Evidence
 
-This directory stores durable evidence from the M0–M11 CodeRabbit review program. Each review gets
-its own milestone directory so the raw tool output, human disposition, and later test evidence remain
-traceable to one immutable source range.
+This directory stores durable evidence from the M0–M11 and T0–T5 CodeRabbit review programs. Each
+review gets its own milestone directory so the raw tool output, human disposition, and later test
+evidence remain traceable to one immutable source range.
+
+A review whose diff exceeds the service's payload ceiling is split along milestone boundaries into
+several runs sharing one review ID and one summary, as R11 does. Each run keeps its own raw artifact
+and commit pair.
 
 ## Directory Convention
 
@@ -64,6 +68,7 @@ dated runs; do not replace an earlier failure with a later success.
 | R8 | M9 | `2cf76f3..0f02251` | Completed | 14 | [Summary](m9/R8-M9-summary.md), [raw JSONL](m9/R8-M9.jsonl), [test results](m9/test-results.md) |
 | R9 | M10 | `0f02251..ea3cce3` | Completed | 8 | [Summary](m10/R9-M10-summary.md), [raw JSONL](m10/R9-M10.jsonl), [test results](m10/test-results.md) |
 | R10 | M11 | `94ed527..255b7e3` | Completed | 10 | [Summary](m11/R10-M11-summary.md), [raw JSONL](m11/R10-M11.jsonl), [test results](m11/test-results.md) |
+| R11 | T0–T5 (optional second factor) | `c1de83f~1..bf9b276`, reviewed as seven per-milestone runs | Completed | 36 | [Summary](t0-t5/R11-T0-T5-summary.md), raw JSONL [t0](t0-t5/R11-t0.jsonl) [t1](t0-t5/R11-t1.jsonl) [t2a](t0-t5/R11-t2a.jsonl) [t2b](t0-t5/R11-t2b.jsonl) [t3a](t0-t5/R11-t3a.jsonl) [t3b](t0-t5/R11-t3b.jsonl) [t4](t0-t5/R11-t4.jsonl) [t5](t0-t5/R11-t5.jsonl), [test results](t0-t5/test-results.md) |
 
 ## Remediation Reviews
 
