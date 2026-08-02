@@ -61,10 +61,11 @@ between `SESSION` (with a `context`) and `MFA_REQUIRED` (with a `challenge`). Tw
 rejected. A `oneOf` schema models the union more precisely, but the typescript-angular generator's
 output for `oneOf` would need hand-editing, and the generated client is committed to this repository
 — a contract shape that cannot round-trip through code generation is not usable here. A distinct
-`202` status for the challenge case keeps the `200` body unchanged, but it makes "authentication
-incomplete" indistinguishable from a normal success to any intermediary that only inspects status
-codes, and it splits one logical operation across two response schemas that the generator would type
-independently.
+`202` status for the challenge case keeps the `200` body unchanged, but it splits one logical
+operation across two response schemas that the generator types independently, leaving callers to
+switch on a status code to decide which type they hold. A client comparing the status exactly can
+tell `202` from `200`; the cost is not ambiguity but that the distinction lives outside the payload,
+where neither the schema nor the generated type can carry it.
 
 The wrapper member is named `context`, not `session`: `SessionContext` already contains a `session`
 member, so the latter would produce the path `session.session.current`.

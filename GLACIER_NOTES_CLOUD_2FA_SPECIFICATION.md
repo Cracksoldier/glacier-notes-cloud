@@ -1,8 +1,8 @@
 # Glacier Notes Cloud — Two-Factor Authentication Specification
 
 **Status:** All specification decisions resolved — milestones T0 through T5 approved and delivered
-**Specification version:** 0.9
-**Date:** 2026-08-01
+**Specification version:** 0.10
+**Date:** 2026-08-02
 **Feature:** Optional time-based one-time password (TOTP) second factor with recovery codes
 **Extends:** `GLACIER_NOTES_CLOUD_SPECIFICATION.md` section 8 (Authentication)
 
@@ -247,8 +247,9 @@ the registered mailbox would be sufficient to defeat the factor entirely.
 
 ### 5.7 Notifications
 
-The account owner shall be emailed for every second-factor lifecycle event, through the existing
-mail infrastructure:
+Every second-factor lifecycle event shall attempt to email the account owner through the existing
+mail infrastructure. The obligation is on the attempt, not on delivery — see the best-effort and
+no-SMTP provisions at the end of this section, which govern the events below:
 
 | Event | Rationale |
 | --- | --- |
@@ -775,9 +776,11 @@ previously returned `SessionContext` directly; it now returns `LoginOutcome`, so
 read as `user` is read as `context.user`. This is not gated on enrollment and takes effect the moment
 the change ships.
 
-This is accepted rather than worked around. The only consumer is the first-party Angular client,
-which is generated from the same specification and regenerated in the same change; the desktop
-application exchanges portable files and does not call this API. A compatibility superset carrying
+This is accepted rather than worked around. The only consumer *in this repository* is the first-party
+Angular client, which is generated from the same specification and regenerated in the same change;
+the desktop application exchanges portable files and does not call this API. Out-of-tree consumers
+cannot be enumerated — a self-hosted deployment may have scripts against the login endpoint, which is
+why the paragraph below requires the break to be called out for operators. A compatibility superset carrying
 both shapes would be a permanent wart giving every future reader two ways to find the same data, and
 a parallel endpoint would need its own failure mode for enrolled accounts anyway, leaving two login
 paths to keep in sync.
@@ -881,12 +884,29 @@ rollout.
   with the action audited.
 - A sole administrator in the same situation can be restored by an operator holding the bootstrap
   token, with the action audited.
-- Every second-factor lifecycle event reaches the account owner by email, and a mail failure never
-  prevents the operation.
-- No endpoint, log line, audit record, or error response discloses a secret, a code, or the
-  enrollment state of an account to an unauthenticated caller.
-- Non-enrolled accounts observe no behavioral change whatsoever.
+- Every second-factor lifecycle event attempts an email to the account owner where the instance has
+  mail configured, and a mail failure never prevents the operation.
+- No endpoint, log line, audit record, or error response discloses a secret or a code. Enrollment
+  state is not disclosed to a caller who has not supplied the account's correct password; a caller
+  who has supplied it necessarily learns it, because the challenge is the response.
+- A non-enrolled account is never asked for a second factor, and no operation available to it is
+  refused on second-factor grounds. The login response envelope is shared with enrolled accounts and
+  is therefore not identical to the pre-feature shape — see section 18.1.
 - The full verification loop passes with no generated-code drift.
+
+### 18.1 The one observable change for non-enrolled accounts
+
+Earlier drafts of this section claimed non-enrolled accounts observe "no behavioral change
+whatsoever". That was never achievable. A successful login now answers with a `LoginOutcome`
+envelope carrying a `result` discriminator, and the session payload that used to be the whole body
+sits under `context`. Every account sees this, enrolled or not, because a client cannot be told
+which shape to expect without first learning the enrollment state the previous criterion forbids
+disclosing.
+
+The change is a one-time contract migration, landed in T0 with the feature dormant and with both
+generated clients regenerated in the same commit. What holds unconditionally for a non-enrolled
+account is the narrower claim above: it is never asked for a code, and nothing it could do before
+is refused on second-factor grounds.
 
 ## 19. Open Decisions
 
@@ -1155,3 +1175,21 @@ The browser suite runs single-worker and non-parallel, and the step-up case need
 account and a mutation of the instance-wide grace setting. A second spec file would have to re-enroll
 from scratch and would race the first over that singleton. Extending the existing spec also keeps the
 positive assertion next to the negative one it inverts.
+
+### 21.11 Resolved in version 0.10
+
+Resolved during remediation of review R11, which audited the delivered T0–T5 range against this
+document. The findings were not about the implementation but about this specification: several
+requirements were written as absolutes the code could never satisfy, and the traceability matrix did
+not catch them because it traces requirements to tests rather than auditing requirement wording.
+
+| Decision | Outcome | Sections |
+| --- | --- | --- |
+| Whether notification is an obligation on delivery or on the attempt | On the attempt. Delivery is best-effort and an instance without SMTP satisfies the requirement by skipping | 5.7, 18 |
+| How the enrollment-state prohibition is scoped | To callers who have not supplied the correct password. Past that point the challenge *is* the disclosure and cannot be avoided | 6.1, 18 |
+| What "no behavioral change" means for a non-enrolled account | Never asked for a code, never refused on second-factor grounds. The `LoginOutcome` envelope changed for everyone and is stated as such | 14.1, 18.1 |
+
+An unsatisfiable requirement is worse than a missing one: it cannot be tested, so it is either
+quietly ignored or it blocks a release for a defect that does not exist. Each of the three above was
+rewritten to state the guarantee the implementation actually makes, and section 18.1 was added to
+record the one change non-enrolled accounts genuinely do observe rather than leaving it implied.

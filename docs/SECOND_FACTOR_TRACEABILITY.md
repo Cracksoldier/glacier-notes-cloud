@@ -15,7 +15,7 @@ rather than pointing at something adjacent — see [Known gaps](#known-gaps).
 
 ## Matrix
 
-### 1. Non-enrolled login is unchanged (§5.2, §18)
+### 1. A non-enrolled account is never asked for a second factor (§5.2, §18, §18.1)
 
 | Kind | Evidence |
 | --- | --- |
@@ -181,6 +181,14 @@ are recorded here rather than papered over.
 3. **The desktop round trip is manual and outside this repository.** The codec and all three fixtures
    pass here; reading a fresh cloud export back into the desktop application needs that application.
    This is the corresponding open acceptance criterion in the milestone plan.
+
+A fourth limitation is structural rather than a missing test. This matrix answers "does a test cover
+this requirement", never "is this requirement satisfiable". Review R11 found three that were not —
+notification stated as an obligation on delivery, enrollment-state secrecy stated without a
+pre-password scope, and "no behavioral change whatsoever" — each of which had a green row here while
+the wording above it could not be met. A requirement that cannot fail is not traceable evidence.
+Corrected wording is recorded in specification §21.11; the dispositions are in
+[`docs/reviews/t0-t5/R11-T0-T5-summary.md`](reviews/t0-t5/R11-T0-T5-summary.md).
 
 ## Keeping this current
 

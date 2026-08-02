@@ -13,8 +13,8 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
 - Groundwork for the optional TOTP second factor: migration `V13` adds `user_mfa_totp`,
   `user_mfa_recovery_codes`, and `mfa_challenges`, a `user_sessions.second_factor_verified_at`
   column, four bounded `instance_settings` tunables (challenge lifetime, attempt cap,
-  pending-enrollment expiry, step-up grace window), and an `MFA_IP` rate-limit scope. No endpoint
-  reads or writes these tables yet and login behavior is unchanged.
+  pending-enrollment expiry, step-up grace window), and an `MFA_IP` rate-limit scope. The schema
+  landed one release ahead of the endpoints below, so upgrading to it alone changes no behaviour.
 - Optional TOTP second factor, reachable through the API and off unless `GLACIER_MFA_ENABLED` is
   set. An account can enroll (`POST /api/v1/me/mfa/totp`), confirm with a code from its
   authenticator app and receive ten single-use recovery codes

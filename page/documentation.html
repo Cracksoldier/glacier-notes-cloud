@@ -290,8 +290,15 @@ GLACIER_DATABASE_PASSWORD_FILE=/run/secrets/database_password</code></pre>
           <p>
             Stored enrollments are encrypted with a key derived from this secret, which is never
             written to the database or to a backup archive. Back it up with your other deployment
-            secrets: restoring a database without it locks every enrolled account out, and changing
-            it has the same effect until those accounts enroll again.
+            secrets: restoring a database without it locks every enrolled account out.
+          </p>
+          <p>
+            Changing the secret does the same, and does not repair itself. Existing enrollments are
+            not re-encrypted, so they become unreadable and their owners cannot sign in to re-enroll
+            &mdash; the stale enrollments have to be cleared first, by an administrator or through the
+            bootstrap break-glass reset. The supported order is to have enrolled accounts disable
+            their second factor <em>before</em> the swap, then re-enroll after it. An instance that
+            starts with enrollments under a foreign key logs a warning with their count.
           </p>
           <pre><code>GLACIER_MFA_ENABLED=true
 GLACIER_MFA_ENCRYPTION_SECRET_FILE=/run/secrets/mfa_encryption_secret</code></pre>

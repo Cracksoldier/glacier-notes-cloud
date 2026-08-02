@@ -85,10 +85,15 @@ These are known, deliberate, and not defended against in the current release.
   leaked or reused password; it is not a defence against a live adversary-in-the-middle. Phishing
   resistance needs origin-bound credentials (WebAuthn), which are not implemented.
 - **Enforcement is per account, never instance-wide.** An administrator cannot require the second
-  factor of anyone, and cannot see enough to enforce it socially beyond the enrollment counts on the
-  admin pages. This is a first-release scoping decision, not an oversight
+  factor of anyone. This is a first-release scoping decision, not an oversight
   (`GLACIER_NOTES_CLOUD_2FA_SPECIFICATION.md` §9.2), and it means an instance with the feature
   enabled can still be entirely password-only in practice.
+- **Administrators can see who is enrolled, per account.** A user's admin page reports whether a
+  second factor is active and when it was confirmed — not a count, and not only in aggregate. That is
+  what makes social enforcement possible without a technical policy, and it is deliberate: an
+  administrator who can clear a factor has to be able to see one. It is also a disclosure: enrollment
+  state is protected against unauthenticated callers, not against the operator of the instance. What
+  an administrator cannot see is any secret, any recovery code, or how many recovery codes remain.
 - **Losing `GLACIER_MFA_ENCRYPTION_SECRET` is unrecoverable by design.** There is no escrow, no
   recovery key, and no re-encryption tool; the only remedy is the bootstrap-token break-glass reset,
   once per enrolled account. See `docs/BACKUP_RESTORE.md`.

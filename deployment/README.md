@@ -193,8 +193,11 @@ beyond about a minute makes correct codes fail. Keep time synchronization runnin
 
 This matters for alerting as much as for users: a rejected code is a rejected code, and
 `glacier_mfa_verifications{outcome="rejected"}` cannot tell an attacker guessing from an instance
-whose clock has slipped. Rule drift out first when that counter rises — a fleet-wide climb across
-unrelated accounts is the signature of a clock problem, not of an attack.
+whose clock has slipped. A fleet-wide climb across unrelated accounts fits both — a drifted clock and
+a credential-stuffing run against many accounts at once produce the same curve. Treat that counter as
+an alert to investigate, never as one to explain away: check host time synchronization *and* the
+request sources before concluding which it was. Drift is the cheaper hypothesis to rule out, so check
+it first, but ruling it in is not the same as ruling an attack out.
 
 ### Clearing a second factor as an administrator
 

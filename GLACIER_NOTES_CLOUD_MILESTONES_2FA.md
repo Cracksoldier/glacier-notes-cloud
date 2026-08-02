@@ -62,14 +62,16 @@ resolve to a denied authentication, never to a session.
 ### 2.3 No enumeration regression
 
 The existing login path performs constant work against a dummy hash when no account matches. No
-milestone may introduce a branch, a timing difference, an error code, or a status code that lets an
-unauthenticated caller distinguish an enrolled account from a non-enrolled one, or an existing
-account from a missing one (specification section 6.1).
+milestone may introduce a branch, a timing difference, an error code, or a status code that lets a
+caller *who has not supplied the correct password* distinguish an enrolled account from a
+non-enrolled one, or an existing account from a missing one (specification section 6.1). Past a
+correct password the distinction is unavoidable, because the challenge is the response.
 
-### 2.4 Non-enrolled accounts observe nothing
+### 2.4 Non-enrolled accounts are never asked for a second factor
 
 Until an account enrolls, its login behavior is byte-for-byte unchanged apart from the response
-envelope of section 14.1. Every milestone carries a regression test asserting this.
+envelope of section 14.1, and no operation available to it is refused on second-factor grounds.
+Every milestone carries a regression test asserting this.
 
 ### 2.5 Secrets are never logged, audited, exported, or backed up in the clear
 
@@ -93,7 +95,7 @@ account can enroll but cannot recover, or where an operator has no path back fro
 | T2 | Enrollment, Two-Stage Login, and Recovery Codes | A user can enroll, log in with a code, and recover | T1 | 2 | Complete |
 | T3 | Step-Up, Notifications, and Operator Escape Hatch | Sensitive operations gated, owner notified, lockout recoverable | T2 | 2 | Complete |
 | T4 | Administrative Surface, Tunables, and Observability | Admin visibility, admin clear, runtime tunables, metrics | T3 | 3 | Complete |
-| T5 | Hardening, Documentation, and Feature Release | Threat model, end-to-end coverage, operator documentation, release | T4 | 3 | Complete |
+| T5 | Hardening, Documentation, and Release Qualification | Threat model, end-to-end coverage, operator documentation | T4 | 3 | Complete |
 
 ### 3.1 Rollout stage mapping
 
@@ -385,15 +387,18 @@ escape hatch is therefore in scope here rather than later.
 
 ### Disclosure
 
-- [x] No response, log line, or audit record discloses a secret, a code, a challenge token, or the
-      enrollment state of an account to an unauthenticated caller.
+- [x] No response, log line, or audit record discloses a secret, a code, or a challenge token.
+      Enrollment state is not disclosed to a caller who has not supplied the correct password; past
+      that point the challenge is itself the disclosure (specification section 18).
 - [x] Challenge state is held only in memory on the client and never reaches `localStorage`,
       `sessionStorage`, or the URL.
 
 ## Exit Gate
 
 T2 is complete when a user can enroll, log in with a code, log in with a recovery code, and be
-recovered by an operator — and when a non-enrolled account still observes no behavioral change.
+recovered by an operator — and when a non-enrolled account is still never asked for a second factor
+and never refused on second-factor grounds. The `LoginOutcome` envelope introduced in T0 is visible
+to every account and is out of scope for this gate (specification section 18.1).
 
 ---
 
@@ -402,7 +407,7 @@ recovered by an operator — and when a non-enrolled account still observes no b
 ## Objective
 
 Extend the second factor to the sensitive operations that a stolen session would otherwise reach,
-and ensure the account owner learns about every lifecycle event. This milestone completes rollout
+and notify the account owner of every lifecycle event where the instance has mail configured. This milestone completes rollout
 stage 2 and is released together with T2.
 
 ## Scope
@@ -466,7 +471,8 @@ stage 2 and is released together with T2.
 ## Exit Gate
 
 T3 is complete when a stolen session cannot perform a sensitive operation on an enrolled account
-without a fresh factor, every lifecycle event reaches the owner, and stage 2 can be released.
+without a fresh factor, every lifecycle event dispatches a notification attempt, and stage 2 can be
+released. Delivery itself is best-effort: an instance without SMTP satisfies this gate by skipping.
 
 ---
 
@@ -534,7 +540,7 @@ metrics alone.
 
 ---
 
-# T5 — Hardening, Documentation, and Feature Release
+# T5 — Hardening, Documentation, and Release Qualification
 
 ## Objective
 
@@ -602,7 +608,7 @@ rotation story.
 - [x] The new secret is generated the same way as the existing ones, with the same restrictive
       permissions, in both the local and production instructions.
 
-### Release
+### Release readiness
 
 - [x] Every acceptance criterion in specification section 18 is satisfied and traceable to a test,
       through the section 6 matrix in
@@ -613,7 +619,12 @@ rotation story.
 ## Exit Gate
 
 T5 is complete when the feature is fully tested, an operator can deploy, back up, restore, and rotate
-without ambiguity, and the release carries no unresolved blocker.
+without ambiguity, and no unresolved blocker stands between the feature and a release.
+
+T5 cuts no release. `pom.xml` stays at `0.2.0` and `CHANGELOG.md` stays under `[Unreleased]`;
+bumping the version, writing the release notes, and tagging v0.3.0 are a separately approved step
+(specification section 21.10). A milestone that both produced the evidence and tagged the release it
+justifies would leave the tag unreviewable.
 
 ---
 
@@ -667,12 +678,15 @@ A change in this plan is not done until every applicable condition holds.
 
 ### Blocker
 
-- An unauthenticated caller can determine whether an account exists or is enrolled.
+- A caller who has not supplied the correct password can determine whether an account exists or is
+  enrolled.
 - The second factor can be bypassed by any path other than a valid code, a valid recovery code, an
   administrative clear, or the operator escape hatch.
 - A challenge or recovery code can be consumed more than once.
 - An enrollment secret, recovery code, or the enrollment key is disclosed or logged.
-- A non-enrolled account's authentication behavior changes.
+- A non-enrolled account is asked for a second factor, or is refused an operation on second-factor
+  grounds. The `LoginOutcome` envelope of section 14.1 is the one accepted exception and is not a
+  blocker.
 - An enrolled account has no recovery path.
 - The migration fails on a populated database.
 

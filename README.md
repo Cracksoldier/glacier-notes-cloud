@@ -161,18 +161,24 @@ openssl rand -base64 36 > deployment/secrets/database-password.txt
 openssl rand -base64 36 > deployment/secrets/bootstrap-token.txt
 openssl rand -base64 48 > deployment/secrets/session-secret.txt
 chmod 600 deployment/secrets/*.txt
-docker compose up --build --wait
 ~~~
 
 The optional TOTP second factor is off by default and needs no secret. To enable it, generate its own
-key and point `.env` at it — it is deliberately separate from the session secret, because rotating the
-session secret only ends sessions whereas rotating this one would invalidate every stored enrollment:
+key and point `.env` at it *before* starting Compose — it is deliberately separate from the session
+secret, because rotating the session secret only ends sessions whereas rotating this one would
+invalidate every stored enrollment:
 
 ~~~bash
 openssl rand -base64 48 > deployment/secrets/mfa-encryption-secret.txt
 chmod 600 deployment/secrets/mfa-encryption-secret.txt
 # in .env: GLACIER_MFA_ENABLED=true
 #          GLACIER_MFA_ENCRYPTION_SECRET_FILE=./deployment/secrets/mfa-encryption-secret.txt
+~~~
+
+With `.env` and the secrets in place, build and start the environment:
+
+~~~bash
+docker compose up --build --wait
 ~~~
 
 Open `http://127.0.0.1:8080` and use the generated bootstrap token to create the administrator.
