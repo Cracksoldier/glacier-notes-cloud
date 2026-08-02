@@ -115,6 +115,15 @@ criteria and verification commands per milestone are in `docs/MILESTONE_STATUS.m
   "challenge": {…}}` and no cookies until it completes `POST /api/v1/auth/login/mfa`; an account
   without one is unaffected. See `docs/adr/0009-optional-second-authentication-factor.md`.
 
+### Security
+
+- Quarkus platform upgraded from 3.37.3 to 3.37.4, which raises the transitive Netty version to
+  4.1.136.Final. This clears four CVSS ≥ 7.0 findings that had begun failing the dependency scan:
+  an OCSP certificate-ID replay, XXE in `XmlDecoder`, and two buffer leaks in the SPDY and HTTP/2
+  decompression paths. A fifth reported against the same CPE, `CVE-2026-56816`, is an HTTP/3 frame
+  codec that exists only on Netty's 4.2.x line and in no artifact this build resolves; it is
+  suppressed with that justification in `docs/KNOWN_ISSUES.md`.
+
 ## v0.2.0 — Internationalization and admin polish
 
 ### Added

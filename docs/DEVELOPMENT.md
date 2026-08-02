@@ -4,7 +4,7 @@
 
 - Java source and bytecode level: 21
 - Maven: 3.9.16 through the committed wrapper
-- Quarkus: 3.37.3
+- Quarkus: 3.37.4
 - PostgreSQL integration image: `postgres:18.3-alpine`
 - Node.js: 24.15 or newer
 - npm: 11.12.1

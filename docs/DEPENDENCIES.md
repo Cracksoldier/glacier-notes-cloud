@@ -6,7 +6,7 @@ Maven Wrapper, and npm lockfile.
 
 | Component | Version | License |
 |---|---:|---|
-| Quarkus | 3.37.3 | Apache-2.0 |
+| Quarkus | 3.37.4 | Apache-2.0 |
 | OpenAPI Generator | 7.24.0 | Apache-2.0 |
 | PostgreSQL JDBC | Quarkus BOM | BSD-2-Clause |
 | Flyway Community | Quarkus BOM | Apache-2.0 |

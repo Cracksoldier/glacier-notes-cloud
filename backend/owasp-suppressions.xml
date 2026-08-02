@@ -12,7 +12,7 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <suppress>
         <notes><![CDATA[
-        Transitive dependency of io.quarkus:quarkus-vertx (via Quarkus platform 3.37.3), not a
+        Transitive dependency of io.quarkus:quarkus-vertx (via Quarkus platform 3.37.4), not a
         direct dependency. CVE-2026-44891, CVE-2026-55831, and CVE-2026-55833 are in Netty's STOMP
         (io.netty.handler.codec.stomp) and SPDY (io.netty.handler.codec.spdy) frame decoders. This
         application never constructs a STOMP or SPDY server/client and does not expose those
@@ -20,8 +20,11 @@
         Vert.x HTTP server. Matched by CPE rather than packageUrl because dependency-check correlates
         this CVE against every jar sharing the netty:netty CPE (both netty-transport and
         netty-transport-classes-epoll were observed flagged across different scan runs, depending on
-        which jar the tool picks as the CPE match target). Revisit when the Quarkus platform version
-        is next upgraded, in case the bundled Netty version changes.
+        which jar the tool picks as the CPE match target). As of the Quarkus 3.37.4 upgrade
+        (Netty 4.1.136.Final) these three no longer match and dependency-check reports the rule as
+        unused; it is kept for one release cycle because the NVD dataset has previously returned
+        different ID sets for this CPE on different runs. Prune it if the next platform upgrade
+        still shows zero matches.
         ]]></notes>
         <cpe regex="true">^cpe:2\.3:a:netty:netty:.*$</cpe>
         <cve>CVE-2026-44891</cve>
@@ -48,7 +51,7 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        Transitive dependency of io.quarkus:quarkus-virtual-threads (via Quarkus platform 3.37.3),
+        Transitive dependency of io.quarkus:quarkus-virtual-threads (via Quarkus platform 3.37.4),
         not a direct dependency. CVE-2026-15075 and CVE-2026-15076 are in Vert.x's Web Client
         (io.vertx.ext.web.client.WebClient / WebClientSession) redirect and cookie-domain handling.
         This backend never uses vertx-web-client to make outbound HTTP requests (confirmed: no
@@ -56,10 +59,29 @@
         here only back the inbound Quarkus HTTP server. Matched by CPE rather than packageUrl because
         dependency-check correlates this CVE against every jar sharing the eclipse:vert.x CPE
         (vertx-core and vertx-auth-common were both observed flagged across different scan runs).
-        Revisit when the Quarkus platform version is next upgraded.
+        As of the Quarkus 3.37.4 upgrade these no longer match and the rule is reported as unused;
+        kept for one release cycle for the same dataset-volatility reason as the Netty rule above.
         ]]></notes>
         <cpe regex="true">^cpe:2\.3:a:eclipse:vert\.x:.*$</cpe>
         <cve>CVE-2026-15075</cve>
         <cve>CVE-2026-15076</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Added 2026-08-02. CVE-2026-56816 is unbounded buffering of HTTP/3 reserved frames in
+        io.netty.handler.codec.http3.Http3FrameCodec, whose decodeFrame trusts the wire-specified
+        payLoadLength. The affected class exists only on Netty's 4.2.x line, in the separate
+        netty-codec-http3 artifact; the NVD record carries a bare versionEndExcluding of 4.2.16 with
+        no lower bound, so it matches every 4.1.x version too. This build resolves no HTTP/3 or QUIC
+        artifact at all (verified with `mvn dependency:list`), and no jar on the resolved tree
+        contains an Http3FrameCodec class (verified by scanning the 4.1.136.Final jars). The
+        vulnerable code path is therefore absent, not merely unreached: Quarkus serves HTTP/1.1 and
+        HTTP/2 over TCP here. This is not a case of a fix being unavailable — the four genuinely
+        applicable Netty CVEs from the same advisory batch were fixed by upgrading the platform to
+        3.37.4 (Netty 4.1.136.Final) rather than suppressed. Revisit if this project ever adopts
+        HTTP/3, or if the NVD record gains a lower version bound and stops matching 4.1.x.
+        ]]></notes>
+        <cpe regex="true">^cpe:2\.3:a:netty:netty:.*$</cpe>
+        <cve>CVE-2026-56816</cve>
     </suppress>
 </suppressions>
